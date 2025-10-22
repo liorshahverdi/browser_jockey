@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: audio-visualizer
+    ports:
+      - "5001:5001"
+    volumes:
+      # Mount for development - comment out for production
+      - ./app:/app/app
+      - ./content:/app/content
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    restart: unless-stopped
+    networks:
+      - visualizer-network
+
+networks:
+  visualizer-network:
+    driver: bridge
