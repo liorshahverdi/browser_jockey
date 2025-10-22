@@ -11,6 +11,8 @@ const modeCircleBtn = document.getElementById('modeCircle');
 const modeBarsBtn = document.getElementById('modeBars');
 const modeSphereBtn = document.getElementById('modeSphere');
 const currentKeyDisplay = document.getElementById('currentKey');
+const tempoSlider = document.getElementById('tempoSlider');
+const tempoValue = document.getElementById('tempoValue');
 
 // Audio context and analyser
 let audioContext;
@@ -572,6 +574,13 @@ pauseBtn.addEventListener('click', () => {
 stopBtn.addEventListener('click', () => {
     audioElement.pause();
     audioElement.currentTime = 0;
+});
+
+// Tempo slider
+tempoSlider.addEventListener('input', (e) => {
+    const tempo = parseFloat(e.target.value);
+    audioElement.playbackRate = tempo;
+    tempoValue.textContent = tempo.toFixed(2) + 'x';
 });
 
 // Mode buttons
