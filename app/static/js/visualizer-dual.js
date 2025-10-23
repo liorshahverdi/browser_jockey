@@ -1,3 +1,41 @@
+// Import modules
+import { scales, keyboardMap, noteFrequencies, musicScales } from './modules/constants.js';
+import { 
+    formatTime, 
+    updateLoopRegion, 
+    clearLoopPoints, 
+    animateReversePlayback, 
+    stopReversePlayback, 
+    handleLoopPlayback 
+} from './modules/loop-controls.js';
+import { 
+    drawWaveform, 
+    redrawWaveformWithZoom, 
+    drawWaveformSimple, 
+    detectBPM, 
+    detectKey, 
+    detectMusicalKey as detectMusicalKeyFromFrequency 
+} from './modules/audio-utils.js';
+import { 
+    createReverb, 
+    createDelay, 
+    initAudioEffects, 
+    connectEffectsChain 
+} from './modules/audio-effects.js';
+import { 
+    startRecording as startRecordingModule, 
+    stopRecording as stopRecordingModule, 
+    drawRecordingWaveform, 
+    downloadRecording 
+} from './modules/recording.js';
+import { 
+    playSamplerNote, 
+    handleKeyDown as samplerHandleKeyDown, 
+    handleKeyUp as samplerHandleKeyUp, 
+    enableSampler, 
+    disableSampler 
+} from './modules/sampler.js';
+
 // Get DOM elements for Track 1
 const audioFile1 = document.getElementById('audioFile1');
 const fileName1 = document.getElementById('fileName1');
@@ -5,6 +43,14 @@ const audioElement1 = document.getElementById('audioElement1');
 const playBtn1 = document.getElementById('playBtn1');
 const pauseBtn1 = document.getElementById('pauseBtn1');
 const stopBtn1 = document.getElementById('stopBtn1');
+
+// Debug: Check if elements exist
+console.log('DOM Elements loaded:', {
+    audioFile1: !!audioFile1,
+    playBtn1: !!playBtn1,
+    audioElement1: !!audioElement1
+});
+if (!audioFile1) console.error('ERROR: audioFile1 not found!');
 const loopBtn1 = document.getElementById('loopBtn1');
 const reverseLoopBtn1 = document.getElementById('reverseLoopBtn1');
 const clearLoopBtn1 = document.getElementById('clearLoopBtn1');
@@ -198,8 +244,8 @@ let bassLevel = 0;
 let trebleLevel = 0;
 
 // Loop state for both tracks
-let loopState1 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0, reverse: false };
-let loopState2 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0, reverse: false };
+let loopState1 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0, reverse: false, reverseAnimationId: null, lastReverseTime: 0 };
+let loopState2 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0, reverse: false, reverseAnimationId: null, lastReverseTime: 0 };
 
 // Zoom state for both tracks
 let zoomState1 = { level: 1.0, offset: 0.0, audioBuffer: null, isDragging: false, dragStartX: 0, dragStartOffset: 0 };
@@ -230,21 +276,6 @@ let samplerRoot = 'C';
 let samplerVolume = 0.6; // Default 60%
 let activeKeys = new Set();
 
-// Pentatonic scales (semitone intervals from root)
-const scales = {
-    'pentatonic-major': [0, 2, 4, 7, 9, 12, 14, 16], // C D E G A C D E
-    'pentatonic-minor': [0, 3, 5, 7, 10, 12, 15, 17], // A C D E G A C D
-    'chromatic': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] // All semitones
-};
-
-// Keyboard mapping (2 octaves)
-const keyboardMap = {
-    // Lower octave
-    'A': 0, 'S': 1, 'D': 2, 'F': 3, 'G': 4, 'H': 5, 'J': 6, 'K': 7,
-    // Upper octave
-    'Q': 0, 'W': 1, 'E': 2, 'R': 3, 'T': 4, 'Y': 5, 'U': 6, 'I': 7
-};
-
 const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 // Raycaster for click detection
@@ -256,408 +287,53 @@ let selectedObject = null;
 let currentKey = 'C';
 let currentKeyColor = { h: 0, s: 100, l: 50 };
 
-// Map musical notes to frequencies and colors
-const noteFrequencies = {
-    'C': { freq: 261.63, color: { h: 0, s: 100, l: 50 } },
-    'C#': { freq: 277.18, color: { h: 30, s: 100, l: 50 } },
-    'D': { freq: 293.66, color: { h: 60, s: 100, l: 50 } },
-    'D#': { freq: 311.13, color: { h: 90, s: 100, l: 50 } },
-    'E': { freq: 329.63, color: { h: 120, s: 100, l: 50 } },
-    'F': { freq: 349.23, color: { h: 150, s: 100, l: 50 } },
-    'F#': { freq: 369.99, color: { h: 180, s: 100, l: 50 } },
-    'G': { freq: 392.00, color: { h: 210, s: 100, l: 50 } },
-    'G#': { freq: 415.30, color: { h: 240, s: 100, l: 50 } },
-    'A': { freq: 440.00, color: { h: 270, s: 100, l: 50 } },
-    'A#': { freq: 466.16, color: { h: 300, s: 100, l: 50 } },
-    'B': { freq: 493.88, color: { h: 330, s: 100, l: 50 } }
+// === Recording State (for module) ===
+const recordingState = {
+    mediaRecorder: null,
+    chunks: [],
+    blob: null,
+    startTime: 0,
+    interval: null,
+    animationId: null
 };
 
-// Helper function to format time
-function formatTime(seconds) {
-    if (isNaN(seconds)) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
+const recordingElements = {
+    recordBtn,
+    stopBtn: stopRecordBtn,
+    time: recordingTime,
+    waveform: recordingWaveform,
+    waveformContainer: recordingWaveformContainer,
+    audio: recordedAudio,
+    exportGroup: recordingExportGroup
+};
 
-// Update loop region display
-function updateLoopRegion(loopState, loopRegion, loopMarkerStart, loopMarkerEnd, duration, zoomState) {
-    if (loopState.start !== null && loopState.end !== null) {
-        // Calculate visible time window based on zoom
-        const visibleDuration = duration / zoomState.level;
-        const visibleStartTime = zoomState.offset * duration;
-        const visibleEndTime = visibleStartTime + visibleDuration;
-        
-        // Check if loop points are within visible range
-        const startVisible = loopState.start >= visibleStartTime && loopState.start <= visibleEndTime;
-        const endVisible = loopState.end >= visibleStartTime && loopState.end <= visibleEndTime;
-        
-        if (startVisible || endVisible) {
-            // Calculate percentages relative to visible window
-            const startPercent = ((loopState.start - visibleStartTime) / visibleDuration) * 100;
-            const endPercent = ((loopState.end - visibleStartTime) / visibleDuration) * 100;
-            
-            // Clamp to viewport boundaries (0-100%)
-            const clampedStartPercent = Math.max(0, Math.min(100, startPercent));
-            const clampedEndPercent = Math.max(0, Math.min(100, endPercent));
-            
-            loopRegion.style.left = clampedStartPercent + '%';
-            loopRegion.style.width = (clampedEndPercent - clampedStartPercent) + '%';
-            loopRegion.style.display = 'block';
-            
-            // Show/hide start marker based on visibility
-            if (startVisible && startPercent >= 0 && startPercent <= 100) {
-                loopMarkerStart.style.left = startPercent + '%';
-                loopMarkerStart.style.display = 'flex';
-                loopMarkerStart.setAttribute('data-time', formatTime(loopState.start));
-            } else {
-                loopMarkerStart.style.display = 'none';
-            }
-            
-            // Show/hide end marker based on visibility
-            if (endVisible && endPercent >= 0 && endPercent <= 100) {
-                loopMarkerEnd.style.left = endPercent + '%';
-                loopMarkerEnd.style.display = 'flex';
-                loopMarkerEnd.setAttribute('data-time', formatTime(loopState.end));
-            } else {
-                loopMarkerEnd.style.display = 'none';
-            }
-        } else {
-            // Both markers outside visible range, hide everything
-            loopRegion.style.display = 'none';
-            loopMarkerStart.style.display = 'none';
-            loopMarkerEnd.style.display = 'none';
-        }
-    }
-}
-
-// Clear loop points
-function clearLoopPoints(loopState, loopRegion, loopMarkerStart, loopMarkerEnd) {
-    loopState.start = null;
-    loopState.end = null;
-    loopState.settingPoint = 'start';
-    loopRegion.style.display = 'none';
-    loopMarkerStart.style.display = 'none';
-    loopMarkerEnd.style.display = 'none';
-}
-
-// Check and handle loop playback
-function handleLoopPlayback(audioElement, loopState, isDraggingMarker) {
-    if (loopState.enabled && loopState.start !== null && loopState.end !== null) {
-        // Don't enforce loop boundaries while dragging markers
-        // This allows smooth marker adjustment during playback
-        if (isDraggingMarker) {
-            return;
-        }
-        
-        // Adjust tolerance based on playback rate to catch loop point reliably
-        // Higher playback rate = larger tolerance needed
-        const tolerance = 0.1 * Math.abs(audioElement.playbackRate);
-        
-        // Debounce seeking to prevent rapid seeks that cause static
-        const now = Date.now();
-        const minSeekInterval = 50; // Minimum 50ms between seeks
-        
-        if (loopState.reverse) {
-            // Reverse loop: play from end to start
-            // Handle reaching the start (loop back to end)
-            if (audioElement.currentTime <= loopState.start + tolerance) {
-                if (now - loopState.lastSeekTime >= minSeekInterval) {
-                    console.log('Reverse looping: currentTime', audioElement.currentTime, 'jumping to', loopState.end);
-                    
-                    if (audioElement.readyState >= 2) {
-                        const wasPlaying = !audioElement.paused;
-                        
-                        try {
-                            audioElement.currentTime = loopState.end;
-                            loopState.lastSeekTime = now;
-                            
-                            if (wasPlaying && audioElement.paused) {
-                                audioElement.play().catch(e => console.error('Error resuming playback:', e));
-                            }
-                        } catch (e) {
-                            console.error('Error seeking during reverse loop:', e);
-                        }
-                    }
-                }
-            }
-            // Enforce end boundary for reverse
-            else if (audioElement.currentTime > loopState.end) {
-                if (now - loopState.lastSeekTime >= minSeekInterval) {
-                    if (audioElement.readyState >= 2) {
-                        try {
-                            audioElement.currentTime = loopState.end;
-                            loopState.lastSeekTime = now;
-                        } catch (e) {
-                            console.error('Error seeking to loop end:', e);
-                        }
-                    }
-                }
-            }
-        } else {
-            // Normal forward loop
-            // Handle end of loop - always enforce this
-            if (audioElement.currentTime >= loopState.end - tolerance) {
-                // Check if enough time has passed since last seek
-                if (now - loopState.lastSeekTime >= minSeekInterval) {
-                    console.log('Looping: currentTime', audioElement.currentTime, 'jumping to', loopState.start);
-                    
-                    // Only seek if the audio is in a seekable state
-                    if (audioElement.readyState >= 2) { // HAVE_CURRENT_DATA or better
-                        const wasPlaying = !audioElement.paused;
-                        
-                        try {
-                            audioElement.currentTime = loopState.start;
-                            loopState.lastSeekTime = now;
-                            
-                            // Ensure playback continues after jumping
-                            if (wasPlaying && audioElement.paused) {
-                                audioElement.play().catch(e => console.error('Error resuming playback:', e));
-                            }
-                        } catch (e) {
-                            console.error('Error seeking during loop:', e);
-                        }
-                    }
-                }
-            }
-            // Enforce start boundary
-            else if (audioElement.currentTime < loopState.start) {
-                // Check if enough time has passed since last seek
-                if (now - loopState.lastSeekTime >= minSeekInterval) {
-                    // Only seek if the audio is in a seekable state
-                    if (audioElement.readyState >= 2) {
-                        try {
-                            audioElement.currentTime = loopState.start;
-                            loopState.lastSeekTime = now;
-                        } catch (e) {
-                            console.error('Error seeking to loop start:', e);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// Start recording the mixed audio output
+// Wrapper functions
 function startRecording() {
-    if (!audioContext || !recordingDestination) {
-        alert('Please load at least one audio file first!');
-        return;
+    const success = startRecordingModule(
+        audioContext,
+        recordingDestination,
+        recordingAnalyser,
+        recordingElements,
+        recordingState
+    );
+    if (success) {
+        // Keep reference for compatibility
+        mediaRecorder = recordingState.mediaRecorder;
+        recordedChunks = recordingState.chunks;
+        recordingStartTime = recordingState.startTime;
+        recordingInterval = recordingState.interval;
+        recordingAnimationId = recordingState.animationId;
     }
-    
-    if (!recordingAnalyser) {
-        console.error('Recording analyser not initialized!');
-        alert('Recording analyser not ready. Please try again.');
-        return;
-    }
-    
-    // Ensure audio context is running
-    if (audioContext.state === 'suspended') {
-        audioContext.resume();
-    }
-    
-    console.log('Starting recording with analyser connected:', recordingAnalyser);
-    console.log('Audio context state:', audioContext.state);
-    
-    recordedChunks = [];
-    recordedBlob = null; // Clear previous recording
-    
-    // Hide export group until recording is stopped
-    recordingExportGroup.style.display = 'none';
-    
-    // Create MediaRecorder from the destination stream
-    const options = { mimeType: 'audio/webm' };
-    try {
-        mediaRecorder = new MediaRecorder(recordingDestination.stream, options);
-    } catch (e) {
-        console.error('MediaRecorder error:', e);
-        alert('Recording not supported in this browser');
-        return;
-    }
-    
-    mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-            recordedChunks.push(event.data);
-        }
-    };
-    
-    mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-        recordedBlob = blob; // Store for loading into tracks
-        const url = URL.createObjectURL(blob);
-        recordedAudio.src = url;
-        
-        // Decode and draw waveform
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const arrayBuffer = e.target.result;
-                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                drawWaveform(recordingWaveform, audioBuffer);
-                recordingWaveformContainer.style.display = 'block';
-            } catch (err) {
-                console.error('Error decoding recorded audio:', err);
-            }
-        };
-        reader.readAsArrayBuffer(blob);
-        
-        // Show export group with all buttons
-        recordingExportGroup.style.display = 'flex';
-    };
-    
-    mediaRecorder.start();
-    recordingStartTime = Date.now();
-    
-    // Update recording time
-    recordingInterval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
-        recordingTime.textContent = formatTime(elapsed);
-    }, 100);
-    
-    // Show waveform container and start real-time drawing
-    recordingWaveformContainer.style.display = 'block';
-    drawRecordingWaveform();
-    
-    // Update UI
-    recordBtn.style.display = 'none';
-    stopRecordBtn.disabled = false;
-    stopRecordBtn.style.display = 'inline-block';
-    recordingTime.style.display = 'inline-block';
 }
 
-// Stop recording
 function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        clearInterval(recordingInterval);
-        
-        // Stop real-time waveform animation
-        if (recordingAnimationId) {
-            cancelAnimationFrame(recordingAnimationId);
-            recordingAnimationId = null;
-        }
-        
-        // Update UI
-        stopRecordBtn.style.display = 'none';
-        recordBtn.style.display = 'inline-block';
-        recordingTime.style.display = 'none';
-    }
+    stopRecordingModule(recordingState, recordingElements);
+    // Update blob reference for compatibility
+    recordedBlob = recordingState.blob;
 }
 
-// Draw real-time recording waveform
-function drawRecordingWaveform() {
-    if (!recordingAnalyser) {
-        console.warn('Recording analyser not initialized');
-        return;
-    }
-    
-    const canvas = recordingWaveform;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-    const height = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-    
-    const bufferLength = recordingAnalyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    
-    function draw() {
-        recordingAnimationId = requestAnimationFrame(draw);
-        
-        recordingAnalyser.getByteTimeDomainData(dataArray);
-        
-        // Clear with slight trail for smoother animation
-        ctx.fillStyle = 'rgba(10, 10, 10, 0.3)';
-        ctx.fillRect(0, 0, width, height);
-        
-        ctx.lineWidth = 3 * window.devicePixelRatio;
-        ctx.strokeStyle = 'rgba(255, 0, 100, 1)';
-        ctx.beginPath();
-        
-        const sliceWidth = width / bufferLength;
-        let x = 0;
-        
-        for (let i = 0; i < bufferLength; i++) {
-            const v = dataArray[i] / 128.0;
-            const y = v * height / 2;
-            
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-            
-            x += sliceWidth;
-        }
-        
-        ctx.lineTo(width, height / 2);
-        ctx.stroke();
-        
-        // Add center line for reference
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, height / 2);
-        ctx.lineTo(width, height / 2);
-        ctx.stroke();
-    }
-    
-    draw();
-}
-
-// Download recorded audio
-async function downloadRecording() {
-    if (!recordedBlob) {
-        alert('No recording available');
-        return;
-    }
-    
-    const format = recordingExportFormat.value;
-    
-    try {
-        let blob, extension, filename;
-        
-        if (format === 'webm') {
-            // Original WebM format - direct download
-            blob = recordedBlob;
-            extension = 'webm';
-            filename = `mix_recording_${new Date().getTime()}.webm`;
-        } else {
-            // Convert to WAV or MP3
-            // First decode the WebM audio to AudioBuffer
-            const arrayBuffer = await recordedBlob.arrayBuffer();
-            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-            
-            if (format === 'wav') {
-                const wav = audioBufferToWav(audioBuffer);
-                blob = new Blob([wav], { type: 'audio/wav' });
-                extension = 'wav';
-            } else if (format === 'mp3') {
-                const mp3Data = audioBufferToMp3(audioBuffer);
-                blob = new Blob([mp3Data], { type: 'audio/mp3' });
-                extension = 'mp3';
-            }
-            
-            filename = `mix_recording_${new Date().getTime()}.${extension}`;
-        }
-        
-        // Download the file
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 100);
-        
-        console.log(`Recording downloaded as ${extension.toUpperCase()}`);
-    } catch (error) {
-        console.error('Error downloading recording:', error);
-        alert('Error downloading recording. Please try again.');
-    }
+async function downloadRecordingWrapper() {
+    await downloadRecording(recordedBlob, recordingExportFormat.value, audioContext);
 }
 
 // Load recorded audio into Track 1
@@ -690,6 +366,7 @@ async function loadRecordingToTrack1() {
         pauseBtn1.disabled = false;
         stopBtn1.disabled = false;
         loopBtn1.disabled = false;
+        reverseLoopBtn1.disabled = false;
         clearLoopBtn1.disabled = false;
         exportStem1.disabled = false;
         recordBtn.disabled = false;
@@ -785,6 +462,7 @@ async function loadRecordingToTrack2() {
         pauseBtn2.disabled = false;
         stopBtn2.disabled = false;
         loopBtn2.disabled = false;
+        reverseLoopBtn2.disabled = false;
         clearLoopBtn2.disabled = false;
         exportStem2.disabled = false;
         recordBtn.disabled = false;
@@ -1277,13 +955,6 @@ function updateVocoderBands(value) {
     }
 }
 
-// Musical scales for auto-tune
-const musicScales = {
-    major: [0, 2, 4, 5, 7, 9, 11],
-    minor: [0, 2, 3, 5, 7, 8, 10],
-    chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-};
-
 // Enable auto-tune effect
 function enableAutotune() {
     if (!micSource || !audioContext) {
@@ -1659,371 +1330,88 @@ async function loadSamplerSource() {
     }
 }
 
-function enableSampler() {
-    if (!samplerAudioBuffer) {
-        alert('Please select and load a sample source first');
-        return;
-    }
-    
+// === Sampler Functions (wrappers for module functions) ===
+
+function enableSamplerWrapper() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
     
-    samplerEnabled = true;
     samplerScale = samplerScaleSelect.value;
     samplerRoot = samplerRootSelect.value;
     
-    // Update UI
-    enableSamplerBtn.style.display = 'none';
-    disableSamplerBtn.style.display = 'inline-block';
-    keyboardVisual.style.display = 'block';
-    samplerSourceSelect.disabled = true;
+    const samplerElements = {
+        enableBtn: enableSamplerBtn,
+        disableBtn: disableSamplerBtn,
+        keyboardVisual: keyboardVisual,
+        sourceSelect: samplerSourceSelect
+    };
     
-    console.log('Keyboard sampler enabled');
-    console.log('Scale:', samplerScale, 'Root:', samplerRoot);
+    const samplerState = {
+        enabled: samplerEnabled,
+        scale: samplerScale,
+        root: samplerRoot
+    };
+    
+    const success = enableSampler(samplerAudioBuffer, audioContext, samplerElements, samplerState);
+    if (success) {
+        samplerEnabled = true;
+    }
 }
 
-function disableSampler() {
+function disableSamplerWrapper() {
+    const samplerElements = {
+        enableBtn: enableSamplerBtn,
+        disableBtn: disableSamplerBtn,
+        keyboardVisual: keyboardVisual,
+        sourceSelect: samplerSourceSelect
+    };
+    
+    const samplerState = {
+        enabled: samplerEnabled
+    };
+    
+    disableSampler(activeKeys, samplerElements, samplerState);
     samplerEnabled = false;
-    activeKeys.clear();
-    
-    // Update UI
-    enableSamplerBtn.style.display = 'inline-block';
-    disableSamplerBtn.style.display = 'none';
-    keyboardVisual.style.display = 'none';
-    samplerSourceSelect.disabled = false;
-    
-    // Remove active classes from keys
-    document.querySelectorAll('.key-indicator').forEach(key => {
-        key.classList.remove('active');
-    });
-    
-    console.log('Keyboard sampler disabled');
 }
 
-function playSamplerNote(scaleIndex, isUpperOctave = false) {
-    if (!samplerEnabled || !samplerAudioBuffer) return;
-    
-    // Get the scale intervals
-    const scaleIntervals = scales[samplerScale];
-    if (scaleIndex >= scaleIntervals.length) return;
-    
-    // Calculate semitone offset
-    let semitoneOffset = scaleIntervals[scaleIndex];
-    
-    // Add octave if upper octave
-    if (isUpperOctave && samplerScale !== 'chromatic') {
-        semitoneOffset += 12; // One octave up
-    }
-    
-    // Adjust for root note
-    const rootNoteIndex = noteNames.indexOf(samplerRoot);
-    semitoneOffset += rootNoteIndex;
-    
-    // Calculate playback rate (each semitone is 2^(1/12))
-    const playbackRate = Math.pow(2, semitoneOffset / 12);
-    
-    // Create buffer source
-    const source = audioContext.createBufferSource();
-    source.buffer = samplerAudioBuffer;
-    source.playbackRate.value = playbackRate;
-    
-    // Create gain for this note
-    const noteGain = audioContext.createGain();
-    noteGain.gain.setValueAtTime(samplerVolume, audioContext.currentTime);
-    noteGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + samplerAudioBuffer.duration);
-    
-    // Connect: source -> gain -> destination (speakers)
-    source.connect(noteGain);
-    noteGain.connect(audioContext.destination);
-    
-    // Also connect to recording destination if it exists
-    if (recordingDestination) {
-        noteGain.connect(recordingDestination);
-    }
-    
-    // Play
-    source.start(0);
-    
-    console.log(`Playing note: scale index ${scaleIndex}, semitone offset ${semitoneOffset}, rate ${playbackRate.toFixed(3)}`);
+function playSamplerNoteWrapper(scaleIndex, isUpperOctave = false) {
+    playSamplerNote(
+        samplerAudioBuffer,
+        scaleIndex,
+        isUpperOctave,
+        samplerScale,
+        samplerRoot,
+        samplerVolume,
+        audioContext,
+        recordingDestination,
+        noteNames
+    );
 }
 
-// Keyboard event handlers
+// Keyboard event handlers using module
 function handleKeyDown(event) {
-    if (!samplerEnabled) return;
-    
-    const key = event.key.toUpperCase();
-    
-    // Prevent default for our keys
-    if (key in keyboardMap) {
-        event.preventDefault();
-        
-        // Check if already pressed (prevent key repeat)
-        if (activeKeys.has(key)) return;
-        activeKeys.add(key);
-        
-        // Determine if upper or lower octave
-        const isUpperOctave = 'QWERTYUI'.includes(key);
-        const scaleIndex = keyboardMap[key];
-        
-        // Play the note
-        playSamplerNote(scaleIndex, isUpperOctave);
-        
-        // Visual feedback
-        const keyElement = document.querySelector(`.key-indicator[data-key="${key}"]`);
-        if (keyElement) {
-            keyElement.classList.add('active');
-        }
-    }
+    samplerHandleKeyDown(event, samplerEnabled, activeKeys, playSamplerNoteWrapper);
 }
 
 function handleKeyUp(event) {
-    if (!samplerEnabled) return;
-    
-    const key = event.key.toUpperCase();
-    
-    if (key in keyboardMap) {
-        event.preventDefault();
-        activeKeys.delete(key);
-        
-        // Remove visual feedback
-        const keyElement = document.querySelector(`.key-indicator[data-key="${key}"]`);
-        if (keyElement) {
-            keyElement.classList.remove('active');
-        }
-    }
+    samplerHandleKeyUp(event, samplerEnabled, activeKeys);
 }
 
-// Draw waveform on canvas with zoom support
-function drawWaveform(canvas, audioBuffer, zoomLevel = 1.0, zoomOffset = 0.0, color = 'rgba(0, 255, 255, 0.8)') {
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-    const height = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-    
-    ctx.fillStyle = 'rgba(10, 10, 10, 0.5)';
-    ctx.fillRect(0, 0, width, height);
-    
-    const data = audioBuffer.getChannelData(0);
-    
-    // Calculate zoom window
-    const totalSamples = data.length;
-    const visibleSamples = Math.floor(totalSamples / zoomLevel);
-    const startSample = Math.floor(zoomOffset * totalSamples);
-    const endSample = Math.min(startSample + visibleSamples, totalSamples);
-    
-    const step = Math.max(1, Math.ceil((endSample - startSample) / width));
-    const amp = height / 2;
-    
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = color;
-    ctx.beginPath();
-    
-    for (let i = 0; i < width; i++) {
-        const sampleIndex = startSample + (i * step);
-        if (sampleIndex >= endSample) break;
-        
-        let min = 1.0;
-        let max = -1.0;
-        
-        for (let j = 0; j < step && sampleIndex + j < endSample; j++) {
-            const datum = data[sampleIndex + j];
-            if (datum < min) min = datum;
-            if (datum > max) max = datum;
-        }
-        
-        ctx.moveTo(i, (1 + min) * amp);
-        ctx.lineTo(i, (1 + max) * amp);
-    }
-    
-    ctx.stroke();
-}
+// === Audio Analysis & Waveform Functions ===
+// Note: These functions are imported from modules but kept here as local wrappers
+// or kept due to specific local dependencies
 
-// Redraw waveform with zoom
-function redrawWaveformWithZoom(canvas, zoomState, zoomLevelDisplay, trackNumber) {
-    if (!zoomState.audioBuffer) return;
-    
-    const color = trackNumber === 1 ? waveformColors.track1 : waveformColors.track2;
-    drawWaveform(canvas, zoomState.audioBuffer, zoomState.level, zoomState.offset, color);
-    zoomLevelDisplay.textContent = zoomState.level.toFixed(1) + 'x';
-}
-
-// Draw waveform on canvas (old signature for compatibility)
-function drawWaveformSimple(canvas, audioBuffer) {
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-    const height = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-    
-    ctx.fillStyle = 'rgba(10, 10, 10, 0.5)';
-    ctx.fillRect(0, 0, width, height);
-    
-    const data = audioBuffer.getChannelData(0);
-    const step = Math.ceil(data.length / width);
-    const amp = height / 2;
-    
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)';
-    ctx.beginPath();
-    
-    for (let i = 0; i < width; i++) {
-        let min = 1.0;
-        let max = -1.0;
-        
-        for (let j = 0; j < step; j++) {
-            const datum = data[(i * step) + j];
-            if (datum < min) min = datum;
-            if (datum > max) max = datum;
-        }
-        
-        ctx.moveTo(i, (1 + min) * amp);
-        ctx.lineTo(i, (1 + max) * amp);
-    }
-    
-    ctx.stroke();
-}
-
-// Detect BPM using autocorrelation
-function detectBPM(audioBuffer) {
-    const data = audioBuffer.getChannelData(0);
-    const sampleRate = audioBuffer.sampleRate;
-    
-    // Analyze first 30 seconds of audio
-    const samplesPerAnalysis = Math.min(sampleRate * 30, data.length);
-    const samples = data.slice(0, samplesPerAnalysis);
-    
-    // Calculate energy in windows
-    const energyBuffer = [];
-    const windowSize = 2048;
-    const hopSize = 512; // Overlap windows
-    
-    for (let i = 0; i < samples.length - windowSize; i += hopSize) {
-        let energy = 0;
-        for (let j = 0; j < windowSize; j++) {
-            const sample = samples[i + j];
-            energy += sample * sample; // RMS energy
-        }
-        energyBuffer.push(Math.sqrt(energy / windowSize));
-    }
-    
-    // Find dynamic threshold (mean + std dev)
-    const mean = energyBuffer.reduce((sum, val) => sum + val, 0) / energyBuffer.length;
-    const variance = energyBuffer.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / energyBuffer.length;
-    const stdDev = Math.sqrt(variance);
-    const threshold = mean + stdDev * 0.5;
-    
-    // Find peaks above threshold
-    const peaks = [];
-    for (let i = 1; i < energyBuffer.length - 1; i++) {
-        if (energyBuffer[i] > threshold &&
-            energyBuffer[i] > energyBuffer[i - 1] && 
-            energyBuffer[i] > energyBuffer[i + 1]) {
-            peaks.push(i);
-        }
-    }
-    
-    if (peaks.length < 4) return 0;
-    
-    // Calculate intervals between consecutive peaks
-    const intervals = [];
-    for (let i = 1; i < peaks.length; i++) {
-        intervals.push(peaks[i] - peaks[i - 1]);
-    }
-    
-    // Use histogram to find most common interval with tolerance
-    const histogram = {};
-    const tolerance = 3; // Allow slight variations
-    
-    intervals.forEach(interval => {
-        let found = false;
-        for (const key in histogram) {
-            if (Math.abs(interval - parseInt(key)) <= tolerance) {
-                histogram[key]++;
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            histogram[interval] = 1;
-        }
-    });
-    
-    // Find interval with highest count
-    let maxCount = 0;
-    let mostCommonInterval = 0;
-    for (const interval in histogram) {
-        if (histogram[interval] > maxCount) {
-            maxCount = histogram[interval];
-            mostCommonInterval = parseInt(interval);
-        }
-    }
-    
-    if (mostCommonInterval === 0) return 0;
-    
-    // Convert interval to BPM
-    const secondsPerBeat = (mostCommonInterval * hopSize) / sampleRate;
-    let bpm = 60 / secondsPerBeat;
-    
-    // Normalize to typical BPM range (60-180)
-    while (bpm < 60) bpm *= 2;
-    while (bpm > 180) bpm /= 2;
-    
-    return Math.round(bpm);
-}
-
-// Detect musical key from audio buffer
-function detectKey(audioBuffer) {
-    const sampleRate = audioBuffer.sampleRate;
-    const data = audioBuffer.getChannelData(0);
-    
-    // Analyze first 10 seconds
-    const analysisLength = Math.min(sampleRate * 10, data.length);
-    const samples = data.slice(0, analysisLength);
-    
-    // Simple FFT-like approach: detect dominant frequency
-    const fftSize = 8192;
-    const chromaProfile = new Array(12).fill(0); // 12 chromatic notes
-    
-    // Process windows
-    for (let i = 0; i < samples.length - fftSize; i += fftSize / 2) {
-        const window = samples.slice(i, i + fftSize);
-        
-        // Calculate energy for each chromatic note
-        Object.keys(noteFrequencies).forEach((note, noteIndex) => {
-            for (let octave = 1; octave < 5; octave++) {
-                const freq = noteFrequencies[note].freq * Math.pow(2, octave);
-                const k = Math.round((freq * fftSize) / sampleRate);
-                
-                if (k < window.length) {
-                    let real = 0, imag = 0;
-                    for (let n = 0; n < window.length; n++) {
-                        const angle = (2 * Math.PI * k * n) / fftSize;
-                        real += window[n] * Math.cos(angle);
-                        imag += window[n] * Math.sin(angle);
-                    }
-                    const magnitude = Math.sqrt(real * real + imag * imag);
-                    chromaProfile[noteIndex] += magnitude;
-                }
-            }
-        });
-    }
-    
-    // Find note with highest energy
-    let maxEnergy = 0;
-    let detectedNote = 'C';
-    Object.keys(noteFrequencies).forEach((note, index) => {
-        if (chromaProfile[index] > maxEnergy) {
-            maxEnergy = chromaProfile[index];
-            detectedNote = note;
-        }
-    });
-    
-    return detectedNote;
-}
-
-// Load audio file and draw waveform
+// Load audio file and draw waveform (uses module functions)
 async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, keyDisplay) {
+    console.log('loadAudioFile called with:', { file: file.name, canvas, bpmDisplay, audioElement, zoomState, keyDisplay });
+    
     const arrayBuffer = await file.arrayBuffer();
+    console.log('Got arrayBuffer:', arrayBuffer.byteLength, 'bytes');
+    
     const tempContext = new (window.AudioContext || window.webkitAudioContext)();
     const audioBuffer = await tempContext.decodeAudioData(arrayBuffer);
+    console.log('Decoded audio:', audioBuffer.duration, 'seconds');
     
     // Store audio buffer for zoom
     if (zoomState) {
@@ -2032,59 +1420,40 @@ async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, 
         zoomState.offset = 0.0;
     }
     
+    console.log('Drawing waveform...');
     drawWaveform(canvas, audioBuffer);
+    console.log('Waveform drawn');
     
+    console.log('Detecting BPM...');
     const bpm = detectBPM(audioBuffer);
+    console.log('BPM detected:', bpm);
     bpmDisplay.textContent = bpm > 0 ? bpm : '--';
     
+    console.log('Detecting key...');
     const key = detectKey(audioBuffer);
+    console.log('Key detected:', key);
     if (keyDisplay) {
         keyDisplay.textContent = key;
     }
     
     tempContext.close();
+    console.log('loadAudioFile completed successfully');
 }
 
-// Detect musical key from frequency data
+// Detect musical key from real-time frequency data (wrapper for module function)
 function detectMusicalKey() {
     if (!analyser || !dataArray) return;
     
-    const frequencyData = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(frequencyData);
+    const detectedNote = detectMusicalKeyFromFrequency(analyser, dataArray, audioContext);
     
-    let maxValue = 0;
-    let maxIndex = 0;
-    for (let i = 0; i < frequencyData.length; i++) {
-        if (frequencyData[i] > maxValue) {
-            maxValue = frequencyData[i];
-            maxIndex = i;
-        }
-    }
-    
-    const nyquist = audioContext.sampleRate / 2;
-    const dominantFreq = (maxIndex * nyquist) / analyser.frequencyBinCount;
-    
-    let closestNote = 'C';
-    let minDiff = Infinity;
-    
-    Object.keys(noteFrequencies).forEach(note => {
-        for (let octave = 0; octave < 5; octave++) {
-            const freq = noteFrequencies[note].freq * Math.pow(2, octave);
-            const diff = Math.abs(dominantFreq - freq);
-            if (diff < minDiff) {
-                minDiff = diff;
-                closestNote = note;
-            }
-        }
-    });
-    
-    if (closestNote !== currentKey) {
-        currentKey = closestNote;
-        currentKeyColor = noteFrequencies[closestNote].color;
+    if (detectedNote && detectedNote !== currentKey) {
+        currentKey = detectedNote;
+        currentKeyColor = noteFrequencies[detectedNote].color;
         updateVisualizationColors();
     }
 }
 
+// Update visualization colors based on detected key
 function updateVisualizationColors() {
     const baseHue = currentKeyColor.h;
     visualizationObjects.forEach((obj, i) => {
@@ -2095,82 +1464,7 @@ function updateVisualizationColors() {
     });
 }
 
-// Create reverb effect using convolution
-function createReverb(context) {
-    const convolver = context.createConvolver();
-    
-    // Create impulse response for reverb
-    const sampleRate = context.sampleRate;
-    const length = sampleRate * 2; // 2 seconds reverb
-    const impulse = context.createBuffer(2, length, sampleRate);
-    const impulseL = impulse.getChannelData(0);
-    const impulseR = impulse.getChannelData(1);
-    
-    for (let i = 0; i < length; i++) {
-        const n = length - i;
-        impulseL[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
-        impulseR[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
-    }
-    
-    convolver.buffer = impulse;
-    return convolver;
-}
-
-// Create delay effect
-function createDelay(context) {
-    const delay = context.createDelay(5.0); // Max 5 seconds delay
-    delay.delayTime.value = 0.3; // Default 300ms
-    
-    const feedback = context.createGain();
-    feedback.gain.value = 0.3; // 30% feedback
-    
-    delay.connect(feedback);
-    feedback.connect(delay);
-    
-    return { delay, feedback };
-}
-
-// Initialize audio effects for a track
-function initAudioEffects(context, trackNumber) {
-    // Create gain node (for volume control)
-    const gain = context.createGain();
-    gain.gain.value = 1.0;
-    
-    // Create reverb
-    const reverb = createReverb(context);
-    const reverbWet = context.createGain();
-    reverbWet.gain.value = 0; // Dry by default
-    const reverbDry = context.createGain();
-    reverbDry.gain.value = 1.0;
-    
-    // Create delay
-    const { delay, feedback } = createDelay(context);
-    const delayWet = context.createGain();
-    delayWet.gain.value = 0; // Dry by default
-    const delayDry = context.createGain();
-    delayDry.gain.value = 1.0;
-    
-    // Create filter (low-pass by default)
-    const filter = context.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 20000; // Wide open by default
-    filter.Q.value = 1.0;
-    
-    // Store effects for this track
-    if (trackNumber === 1) {
-        gain1 = gain;
-        reverb1 = { convolver: reverb, wet: reverbWet, dry: reverbDry };
-        delay1 = { node: delay, feedback, wet: delayWet, dry: delayDry };
-        filter1 = filter;
-    } else {
-        gain2 = gain;
-        reverb2 = { convolver: reverb, wet: reverbWet, dry: reverbDry };
-        delay2 = { node: delay, feedback, wet: delayWet, dry: delayDry };
-        filter2 = filter;
-    }
-    
-    return { gain, reverb: { convolver: reverb, wet: reverbWet, dry: reverbDry }, delay: { node: delay, feedback, wet: delayWet, dry: delayDry }, filter };
-}
+// === Audio Context & Effects Initialization ===
 
 // Initialize audio context and connect both tracks
 function initAudioContext() {
@@ -2201,9 +1495,18 @@ function initAudioContext() {
         merger.connect(recordingAnalyser);
         analyser.connect(audioContext.destination);
         
-        // Initialize effects for both tracks
-        initAudioEffects(audioContext, 1);
-        initAudioEffects(audioContext, 2);
+        // Initialize effects for both tracks using module
+        const effects1 = initAudioEffects(audioContext, 1);
+        gain1 = effects1.gain;
+        reverb1 = effects1.reverb;
+        delay1 = effects1.delay;
+        filter1 = effects1.filter;
+        
+        const effects2 = initAudioEffects(audioContext, 2);
+        gain2 = effects2.gain;
+        reverb2 = effects2.reverb;
+        delay2 = effects2.delay;
+        filter2 = effects2.filter;
     }
     
     // Connect track 1 if it exists and isn't already connected
@@ -2571,8 +1874,10 @@ function createSphereVisualization() {
 
 // File upload handlers for Track 1
 audioFile1.addEventListener('change', async (e) => {
+    console.log('Track 1 file upload triggered');
     const file = e.target.files[0];
     if (file) {
+        console.log('Track 1 file selected:', file.name, file.type, file.size);
         // Remember if track was playing
         const wasPlaying = !audioElement1.paused;
         const currentTime = audioElement1.currentTime;
@@ -2636,12 +1941,18 @@ audioFile1.addEventListener('change', async (e) => {
         pauseBtn1.disabled = false;
         stopBtn1.disabled = false;
         loopBtn1.disabled = false;
+        reverseLoopBtn1.disabled = false;
         clearLoopBtn1.disabled = false;
         exportStem1.disabled = false;
         recordBtn.disabled = false;
         
         // Load and draw waveform
-        await loadAudioFile(file, waveform1, bpm1Display, audioElement1, zoomState1, key1Display);
+        try {
+            await loadAudioFile(file, waveform1, bpm1Display, audioElement1, zoomState1, key1Display);
+        } catch (error) {
+            console.error('Error loading audio file:', error);
+            alert('⚠️ Error analyzing audio file: ' + error.message + '\n\nThe file will still play, but waveform/BPM/key detection may not work.');
+        }
         
         if (!scene) {
             initThreeJS();
@@ -2756,6 +2067,7 @@ audioFile2.addEventListener('change', async (e) => {
         pauseBtn2.disabled = false;
         stopBtn2.disabled = false;
         loopBtn2.disabled = false;
+        reverseLoopBtn2.disabled = false;
         clearLoopBtn2.disabled = false;
         exportStem2.disabled = false;
         recordBtn.disabled = false;
@@ -2766,7 +2078,12 @@ audioFile2.addEventListener('change', async (e) => {
         });
         
         // Load and draw waveform
-        await loadAudioFile(file, waveform2, bpm2Display, audioElement2, zoomState2, key2Display);
+        try {
+            await loadAudioFile(file, waveform2, bpm2Display, audioElement2, zoomState2, key2Display);
+        } catch (error) {
+            console.error('Error loading audio file:', error);
+            alert('⚠️ Error analyzing audio file: ' + error.message + '\n\nThe file will still play, but waveform/BPM/key detection may not work.');
+        }
         
         if (!scene) {
             initThreeJS();
@@ -2897,7 +2214,7 @@ waveform1.parentElement.addEventListener('mousemove', (e) => {
         const deltaPercent = -(deltaX / rect.width) / zoomState1.level;
         
         zoomState1.offset = Math.max(0, Math.min(1 - (1 / zoomState1.level), zoomState1.dragStartOffset + deltaPercent));
-        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
+        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1, waveformColors);
         updateLoopMarkersAfterZoom(1);
     }
 });
@@ -3000,7 +2317,7 @@ waveform2.parentElement.addEventListener('mousemove', (e) => {
         const deltaPercent = -(deltaX / rect.width) / zoomState2.level;
         
         zoomState2.offset = Math.max(0, Math.min(1 - (1 / zoomState2.level), zoomState2.dragStartOffset + deltaPercent));
-        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
+        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2, waveformColors);
         updateLoopMarkersAfterZoom(2);
     }
 });
@@ -3262,6 +2579,11 @@ playBtn1.addEventListener('click', () => {
     audioContext.resume().then(() => {
         audioElement1.play();
         if (!animationId) draw();
+        // Start reverse animation if in reverse mode
+        if (loopState1.reverse && loopState1.enabled) {
+            loopState1.lastReverseTime = performance.now();
+            animateReversePlayback(audioElement1, loopState1);
+        }
     });
 });
 
@@ -3270,40 +2592,49 @@ playBtn2.addEventListener('click', () => {
     audioContext.resume().then(() => {
         audioElement2.play();
         if (!animationId) draw();
+        // Start reverse animation if in reverse mode
+        if (loopState2.reverse && loopState2.enabled) {
+            loopState2.lastReverseTime = performance.now();
+            animateReversePlayback(audioElement2, loopState2);
+        }
     });
 });
 
 // Pause button handlers
 pauseBtn1.addEventListener('click', () => {
     audioElement1.pause();
+    // Stop reverse animation when pausing
+    stopReversePlayback(loopState1);
 });
 
 pauseBtn2.addEventListener('click', () => {
     audioElement2.pause();
+    // Stop reverse animation when pausing
+    stopReversePlayback(loopState2);
 });
 
 // Stop button handlers
 stopBtn1.addEventListener('click', () => {
     audioElement1.pause();
     audioElement1.currentTime = 0;
+    // Stop reverse animation
+    stopReversePlayback(loopState1);
 });
 
 stopBtn2.addEventListener('click', () => {
     audioElement2.pause();
     audioElement2.currentTime = 0;
+    // Stop reverse animation
+    stopReversePlayback(loopState2);
 });
 
 // Loop button handlers
 loopBtn1.addEventListener('click', () => {
     loopState1.enabled = !loopState1.enabled;
     loopState1.reverse = false; // Disable reverse mode for normal loop
+    stopReversePlayback(loopState1); // Stop any reverse animation
     loopBtn1.classList.toggle('active');
     reverseLoopBtn1.classList.remove('active');
-    
-    // Ensure positive playback rate
-    if (loopState1.enabled) {
-        audioElement1.playbackRate = Math.abs(audioElement1.playbackRate || 1.0);
-    }
     
     // Show/hide quick loop section
     const quickLoopSection = document.getElementById('quickLoopSection1');
@@ -3312,20 +2643,21 @@ loopBtn1.addEventListener('click', () => {
     }
     
     if (!loopState1.enabled) {
-        clearLoopPoints(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1);
+        // Clear loop points when disabling
+        loopState1.start = null;
+        loopState1.end = null;
+        loopRegion1.style.display = 'none';
+        loopMarkerStart1.style.display = 'none';
+        loopMarkerEnd1.style.display = 'none';
     }
 });
 
 loopBtn2.addEventListener('click', () => {
     loopState2.enabled = !loopState2.enabled;
     loopState2.reverse = false; // Disable reverse mode for normal loop
+    stopReversePlayback(loopState2); // Stop any reverse animation
     loopBtn2.classList.toggle('active');
     reverseLoopBtn2.classList.remove('active');
-    
-    // Ensure positive playback rate
-    if (loopState2.enabled) {
-        audioElement2.playbackRate = Math.abs(audioElement2.playbackRate || 1.0);
-    }
     
     // Show/hide quick loop section
     const quickLoopSection = document.getElementById('quickLoopSection2');
@@ -3334,7 +2666,12 @@ loopBtn2.addEventListener('click', () => {
     }
     
     if (!loopState2.enabled) {
-        clearLoopPoints(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2);
+        // Clear loop points when disabling
+        loopState2.start = null;
+        loopState2.end = null;
+        loopRegion2.style.display = 'none';
+        loopMarkerStart2.style.display = 'none';
+        loopMarkerEnd2.style.display = 'none';
     }
 });
 
@@ -3349,11 +2686,22 @@ clearLoopBtn2.addEventListener('click', () => {
 
 // Reverse loop button handlers
 reverseLoopBtn1.addEventListener('click', () => {
-    loopState1.enabled = !loopState1.enabled;
-    loopState1.reverse = true;
+    // Check if loop points are set
+    if (loopState1.start === null || loopState1.end === null) {
+        alert('⚠️ Please set loop points (A-B) first by clicking on the waveform!');
+        return;
+    }
+    
+    // Toggle reverse mode (keep loop enabled)
+    loopState1.reverse = !loopState1.reverse;
+    loopState1.enabled = true; // Always enable loop when reverse is on
     
     reverseLoopBtn1.classList.toggle('active');
-    loopBtn1.classList.remove('active');
+    
+    // If reverse is now active, deactivate normal loop button
+    if (loopState1.reverse) {
+        loopBtn1.classList.remove('active');
+    }
     
     // Show/hide quick loop section
     const quickLoopSection = document.getElementById('quickLoopSection1');
@@ -3361,27 +2709,38 @@ reverseLoopBtn1.addEventListener('click', () => {
         quickLoopSection.style.display = loopState1.enabled ? 'block' : 'none';
     }
     
-    if (loopState1.enabled) {
-        // Set negative playback rate for reverse playback
-        audioElement1.playbackRate = -Math.abs(audioElement1.playbackRate || 1.0);
-        // Start from the end of the loop
-        if (loopState1.start !== null && loopState1.end !== null) {
-            audioElement1.currentTime = loopState1.end;
+    if (loopState1.reverse) {
+        // DON'T jump to end - let it play from current position for seamless transition
+        // Only start reverse animation if playing
+        if (!audioElement1.paused) {
+            loopState1.lastReverseTime = performance.now();
+            animateReversePlayback(audioElement1, loopState1);
         }
     } else {
-        // Reset to normal playback
-        audioElement1.playbackRate = Math.abs(audioElement1.playbackRate || 1.0);
-        loopState1.reverse = false;
-        clearLoopPoints(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1);
+        // Stop reverse animation but keep loop points
+        stopReversePlayback(loopState1);
+        // Loop remains enabled in normal mode
+        // DON'T jump playhead - continue from current position
     }
 });
 
 reverseLoopBtn2.addEventListener('click', () => {
-    loopState2.enabled = !loopState2.enabled;
-    loopState2.reverse = true;
+    // Check if loop points are set
+    if (loopState2.start === null || loopState2.end === null) {
+        alert('⚠️ Please set loop points (A-B) first by clicking on the waveform!');
+        return;
+    }
+    
+    // Toggle reverse mode (keep loop enabled)
+    loopState2.reverse = !loopState2.reverse;
+    loopState2.enabled = true; // Always enable loop when reverse is on
     
     reverseLoopBtn2.classList.toggle('active');
-    loopBtn2.classList.remove('active');
+    
+    // If reverse is now active, deactivate normal loop button
+    if (loopState2.reverse) {
+        loopBtn2.classList.remove('active');
+    }
     
     // Show/hide quick loop section
     const quickLoopSection = document.getElementById('quickLoopSection2');
@@ -3389,18 +2748,18 @@ reverseLoopBtn2.addEventListener('click', () => {
         quickLoopSection.style.display = loopState2.enabled ? 'block' : 'none';
     }
     
-    if (loopState2.enabled) {
-        // Set negative playback rate for reverse playback
-        audioElement2.playbackRate = -Math.abs(audioElement2.playbackRate || 1.0);
-        // Start from the end of the loop
-        if (loopState2.start !== null && loopState2.end !== null) {
-            audioElement2.currentTime = loopState2.end;
+    if (loopState2.reverse) {
+        // DON'T jump to end - let it play from current position for seamless transition
+        // Only start reverse animation if playing
+        if (!audioElement2.paused) {
+            loopState2.lastReverseTime = performance.now();
+            animateReversePlayback(audioElement2, loopState2);
         }
     } else {
-        // Reset to normal playback
-        audioElement2.playbackRate = Math.abs(audioElement2.playbackRate || 1.0);
-        loopState2.reverse = false;
-        clearLoopPoints(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2);
+        // Stop reverse animation but keep loop points
+        stopReversePlayback(loopState2);
+        // Loop remains enabled in normal mode
+        // DON'T jump playhead - continue from current position
     }
 });
 
@@ -3494,7 +2853,7 @@ function zoomToLoop(trackNumber) {
     zoomState.offset = targetOffset;
     
     // Redraw waveform
-    redrawWaveformWithZoom(waveform, zoomState, zoomLevelDisplay, trackNumber);
+    redrawWaveformWithZoom(waveform, zoomState, zoomLevelDisplay, trackNumber, waveformColors);
     updateLoopMarkersAfterZoom(trackNumber);
     
     // Update cursor style
@@ -3513,7 +2872,7 @@ document.querySelectorAll('.quick-loop-btn').forEach(btn => {
 // Recording button handlers
 recordBtn.addEventListener('click', startRecording);
 stopRecordBtn.addEventListener('click', stopRecording);
-downloadBtn.addEventListener('click', downloadRecording);
+downloadBtn.addEventListener('click', downloadRecordingWrapper);
 loadToTrack1Btn.addEventListener('click', loadRecordingToTrack1);
 loadToTrack2Btn.addEventListener('click', loadRecordingToTrack2);
 
@@ -3580,8 +2939,8 @@ samplerRootSelect.addEventListener('change', () => {
     }
 });
 
-enableSamplerBtn.addEventListener('click', enableSampler);
-disableSamplerBtn.addEventListener('click', disableSampler);
+enableSamplerBtn.addEventListener('click', enableSamplerWrapper);
+disableSamplerBtn.addEventListener('click', disableSamplerWrapper);
 
 // Sampler volume slider
 samplerVolumeSlider.addEventListener('input', (e) => {
@@ -3722,7 +3081,7 @@ zoomInBtn1.addEventListener('click', () => {
         const centerTime = zoomState1.offset + (0.5 / zoomState1.level);
         zoomState1.level = Math.min(20, zoomState1.level * 2);
         zoomState1.offset = Math.max(0, Math.min(1 - (1 / zoomState1.level), centerTime - (0.5 / zoomState1.level)));
-        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
+        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1, waveformColors);
         updateLoopMarkersAfterZoom(1);
         waveform1.parentElement.style.cursor = 'grab';
     }
@@ -3733,7 +3092,7 @@ zoomOutBtn1.addEventListener('click', () => {
         const centerTime = zoomState1.offset + (0.5 / zoomState1.level);
         zoomState1.level = Math.max(1, zoomState1.level / 2);
         zoomState1.offset = Math.max(0, Math.min(1 - (1 / zoomState1.level), centerTime - (0.5 / zoomState1.level)));
-        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
+        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1, waveformColors);
         updateLoopMarkersAfterZoom(1);
         waveform1.parentElement.style.cursor = zoomState1.level > 1 ? 'grab' : 'pointer';
     }
@@ -3742,7 +3101,7 @@ zoomOutBtn1.addEventListener('click', () => {
 zoomResetBtn1.addEventListener('click', () => {
     zoomState1.level = 1.0;
     zoomState1.offset = 0.0;
-    redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
+    redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1, waveformColors);
     updateLoopMarkersAfterZoom(1);
     waveform1.parentElement.style.cursor = 'pointer';
 });
@@ -3753,7 +3112,7 @@ zoomInBtn2.addEventListener('click', () => {
         const centerTime = zoomState2.offset + (0.5 / zoomState2.level);
         zoomState2.level = Math.min(20, zoomState2.level * 2);
         zoomState2.offset = Math.max(0, Math.min(1 - (1 / zoomState2.level), centerTime - (0.5 / zoomState2.level)));
-        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
+        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2, waveformColors);
         updateLoopMarkersAfterZoom(2);
         waveform2.parentElement.style.cursor = 'grab';
     }
@@ -3764,7 +3123,7 @@ zoomOutBtn2.addEventListener('click', () => {
         const centerTime = zoomState2.offset + (0.5 / zoomState2.level);
         zoomState2.level = Math.max(1, zoomState2.level / 2);
         zoomState2.offset = Math.max(0, Math.min(1 - (1 / zoomState2.level), centerTime - (0.5 / zoomState2.level)));
-        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
+        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2, waveformColors);
         updateLoopMarkersAfterZoom(2);
         waveform2.parentElement.style.cursor = zoomState2.level > 1 ? 'grab' : 'pointer';
     }
@@ -3773,7 +3132,7 @@ zoomOutBtn2.addEventListener('click', () => {
 zoomResetBtn2.addEventListener('click', () => {
     zoomState2.level = 1.0;
     zoomState2.offset = 0.0;
-    redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
+    redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2, waveformColors);
     updateLoopMarkersAfterZoom(2);
     waveform2.parentElement.style.cursor = 'pointer';
 });

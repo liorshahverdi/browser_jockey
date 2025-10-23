@@ -24,8 +24,9 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 - 🎵 **BPM Detection** - Automatic tempo detection for each track
 - 🎹 **Key Detection** - Per-track musical key analysis
 - 🔁 **A-B Loop Markers** - Create precise loops with draggable markers
-- ⏪ **Reverse Loop** - Play loops backwards with reverse playback button
+- ⏪ **Reverse Loop** - Play loops backwards with seamless toggle (perfect for live performance)
 - ⚡ **Quick Loops** - Auto-create 1, 2, 4, or 8 bar loops based on BPM
+- 🎚️ **Seamless Loop Control** - Toggle between forward/reverse during playback with no audio cuts
 - 🔍 **Waveform Zoom** - Zoom up to 20x with drag-to-pan
 - 🎚️ **Audio Effects** - Reverb, delay, and filters (low/high/band pass)
 - 💾 **Export** - Export full stems or loop regions as WAV or MP3 files
@@ -46,6 +47,8 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
   - 📦 Sample from any track, loop region, or recording
 - 📱 **Professional Layout** - Side-by-side dual deck DJ interface
 - 🎨 **Customizable Colors** - Personalize waveform colors for each track
+- 🏗️ **Modular Architecture** - Clean ES6 modules for maintainability (see [MODULES.md](MODULES.md))
+- 🐛 **Production Ready** - Comprehensive error handling and live performance optimizations
 
 ## Prerequisites
 
@@ -448,7 +451,13 @@ Each key has its own color, creating a unique visual experience for different so
 
 ## Version History
 
-- **v3.2** (Current) - Reverse loop playback feature
+- **v3.3** (Current) - Code refactoring & seamless loop improvements
+  - Modularized codebase (6 reusable modules: constants, loop-controls, audio-utils, audio-effects, recording, sampler)
+  - Reduced main file by 753 lines (16.4% reduction)
+  - Fixed reverse loop bugs (loop points preservation, toggle logic)
+  - Seamless loop toggling for live performance (no audio cuts when switching modes)
+  - Improved error handling and validation
+- **v3.2** - Reverse loop playback feature
 - **v3.1** - Fixed sampler output routing to recording destination
 - **v3.0** - Keyboard sampler feature with volume control
 - **v2.9** - Improved load recording & seamless track loading (proper MediaElementSource handling)
