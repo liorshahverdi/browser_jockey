@@ -1,6 +1,8 @@
 # Browser Jockey (https://browser-jockey.onrender.com/)
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, and professional DJ controls.
 
+**Latest Update (v3.4)**: Complete code refactoring with 9 modular ES6 modules for improved maintainability and reusability. See [MODULES.md](MODULES.md) and [REFACTORING_STATUS.md](REFACTORING_STATUS.md) for details.
+
 ## Screenshots
 
 ![Browser Jockey Screenshot 1](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
@@ -451,7 +453,14 @@ Each key has its own color, creating a unique visual experience for different so
 
 ## Version History
 
-- **v3.3** (Current) - Code refactoring & seamless loop improvements
+- **v3.4** (Current) - Phase 2 refactoring: Microphone, vocoder, and autotune modules
+  - Created 3 additional modules: microphone.js, vocoder.js, autotune.js (540 lines)
+  - Total of 9 ES6 modules (1,635 lines of organized, reusable code)
+  - Reduced main file from 3,825 to 3,600 lines (21.4% total reduction from original)
+  - Refactored visualizer.js to use shared constants and utilities
+  - 40+ functions now modularized with clean separation of concerns
+  - Comprehensive documentation: MODULES.md, REFACTORING_STATUS.md, TESTING_GUIDE.md
+- **v3.3** - Code refactoring & seamless loop improvements
   - Modularized codebase (6 reusable modules: constants, loop-controls, audio-utils, audio-effects, recording, sampler)
   - Reduced main file by 753 lines (16.4% reduction)
   - Fixed reverse loop bugs (loop points preservation, toggle logic)

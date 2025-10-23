@@ -28,6 +28,26 @@ import {
     drawRecordingWaveform, 
     downloadRecording 
 } from './modules/recording.js';
+import {
+    enableMicrophone as enableMicrophoneModule,
+    disableMicrophone as disableMicrophoneModule,
+    drawMicWaveform as drawMicWaveformModule,
+    updateMicVolume
+} from './modules/microphone.js';
+import {
+    enableVocoder as enableVocoderModule,
+    disableVocoder as disableVocoderModule,
+    updateVocoderMix,
+    getVocoderCarrierSource
+} from './modules/vocoder.js';
+import {
+    enableAutotune as enableAutotuneModule,
+    disableAutotune as disableAutotuneModule,
+    updateAutotuneStrength,
+    detectPitch,
+    findNearestNoteInScale,
+    correctPitchToTarget
+} from './modules/autotune.js';
 import { 
     playSamplerNote, 
     handleKeyDown as samplerHandleKeyDown, 
@@ -202,28 +222,17 @@ let bufferLength;
 let animationId;
 
 // Microphone state
-let micStream = null;
-let micSource = null;
-let micGain = null;
-let micAnalyser = null;
+let micState = null;
 let micAnimationId = null;
 let micEnabled = false;
 
 // Vocoder state
 let vocoderEnabled = false;
-let vocoderBands = [];
-let vocoderCarrierGain = null;
-let vocoderModulatorGain = null;
-let vocoderOutputGain = null;
-const NUM_VOCODER_BANDS = 16;
+let vocoderState = null;
 
 // Auto-Tune state
 let autotuneEnabled = false;
-let autotuneProcessor = null;
-let autotuneAnalyser = null;
-let autotuneScriptNode = null;
-let pitchShifters = [];
-let currentPitch = 0;
+let autotuneState = null;
 
 // Audio effects nodes for Track 1
 let gain1, reverb1, delay1, filter1;
@@ -531,40 +540,13 @@ async function loadRecordingToTrack2() {
 // Enable microphone input
 async function enableMicrophone() {
     try {
-        // Request microphone access
-        micStream = await navigator.mediaDevices.getUserMedia({ 
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: false
-            } 
-        });
-        
         // Initialize audio context if not already
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
         
-        // Create microphone source
-        micSource = audioContext.createMediaStreamSource(micStream);
-        
-        // Create gain node for volume control
-        micGain = audioContext.createGain();
-        micGain.gain.value = 1.0; // 100%
-        
-        // Create analyser for visualization
-        micAnalyser = audioContext.createAnalyser();
-        micAnalyser.fftSize = 2048;
-        
-        // Connect: mic -> gain -> analyser
-        micSource.connect(micGain);
-        micGain.connect(micAnalyser);
-        
-        // Connect to merger/destination if tracks are loaded
-        if (merger) {
-            micGain.connect(merger);
-        }
-        
+        // Use module to enable microphone
+        micState = await enableMicrophoneModule(audioContext, merger);
         micEnabled = true;
         
         // Update UI
@@ -583,35 +565,20 @@ async function enableMicrophone() {
         console.log('Microphone enabled successfully');
     } catch (error) {
         console.error('Error enabling microphone:', error);
-        alert('Could not access microphone. Please check your permissions.');
+        alert(error.message || 'Could not access microphone. Please check your permissions.');
     }
 }
 
 // Disable microphone input
 function disableMicrophone() {
-    if (micStream) {
-        // Stop all tracks
-        micStream.getTracks().forEach(track => track.stop());
-        micStream = null;
-    }
-    
-    if (micSource) {
-        micSource.disconnect();
-        micSource = null;
-    }
-    
-    if (micGain) {
-        micGain.disconnect();
-        micGain = null;
-    }
-    
-    if (micAnalyser) {
-        micAnalyser = null;
-    }
-    
     if (micAnimationId) {
         cancelAnimationFrame(micAnimationId);
         micAnimationId = null;
+    }
+    
+    if (micState) {
+        disableMicrophoneModule(micState);
+        micState = null;
     }
     
     micEnabled = false;
@@ -636,112 +603,32 @@ function disableMicrophone() {
 
 // Draw microphone waveform
 function drawMicWaveform() {
-    if (!micAnalyser || !micEnabled) {
+    if (!micState || !micEnabled) {
         return;
     }
     
-    const canvas = micWaveform;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-    const height = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-    
-    const bufferLength = micAnalyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    
-    function draw() {
-        if (!micEnabled) return;
-        
-        micAnimationId = requestAnimationFrame(draw);
-        
-        micAnalyser.getByteTimeDomainData(dataArray);
-        
-        // Clear with trail effect
-        ctx.fillStyle = 'rgba(10, 10, 10, 0.3)';
-        ctx.fillRect(0, 0, width, height);
-        
-        // Draw waveform
-        ctx.lineWidth = 2 * window.devicePixelRatio;
-        ctx.strokeStyle = 'rgba(255, 100, 255, 1)';
-        ctx.beginPath();
-        
-        const sliceWidth = width / bufferLength;
-        let x = 0;
-        
-        for (let i = 0; i < bufferLength; i++) {
-            const v = dataArray[i] / 128.0;
-            const y = v * height / 2;
-            
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-            
-            x += sliceWidth;
-        }
-        
-        ctx.lineTo(width, height / 2);
-        ctx.stroke();
-        
-        // Add center line
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, height / 2);
-        ctx.lineTo(width, height / 2);
-        ctx.stroke();
-        
-        // Add level meter
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-            const value = (dataArray[i] - 128) / 128;
-            sum += value * value;
-        }
-        const rms = Math.sqrt(sum / bufferLength);
-        const dbLevel = 20 * Math.log10(rms + 0.0001);
-        const normalizedLevel = Math.max(0, Math.min(1, (dbLevel + 60) / 60));
-        
-        // Draw level meter on right side
-        const meterWidth = 20 * window.devicePixelRatio;
-        const meterX = width - meterWidth - 5;
-        const meterHeight = height - 10;
-        const levelHeight = meterHeight * normalizedLevel;
-        
-        // Background
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.fillRect(meterX, 5, meterWidth, meterHeight);
-        
-        // Level
-        const gradient = ctx.createLinearGradient(meterX, height - 5 - levelHeight, meterX, height - 5);
-        gradient.addColorStop(0, '#00ff00');
-        gradient.addColorStop(0.5, '#ffff00');
-        gradient.addColorStop(1, '#ff0000');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(meterX, height - 5 - levelHeight, meterWidth, levelHeight);
-    }
-    
-    draw();
+    micAnimationId = drawMicWaveformModule(micWaveform, micState.micAnalyser, micEnabled);
 }
 
 // Update microphone volume
-function updateMicVolume(value) {
-    if (micGain) {
-        micGain.gain.value = value / 100;
+function updateMicVolumeWrapper(value) {
+    if (micState && micState.micGain) {
+        updateMicVolume(micState.micGain, value);
         micVolumeValue.textContent = `${value}%`;
     }
 }
 
 // Toggle microphone monitoring (hearing yourself)
 function toggleMicMonitoring(enabled) {
-    if (!micGain || !audioContext) return;
+    if (!micState || !micState.micGain || !audioContext) return;
     
     if (enabled) {
         // Connect mic to destination (speakers)
-        micGain.connect(audioContext.destination);
+        micState.micGain.connect(audioContext.destination);
     } else {
         // Disconnect from destination
         try {
-            micGain.disconnect(audioContext.destination);
+            micState.micGain.disconnect(audioContext.destination);
         } catch (e) {
             // Already disconnected, ignore
         }
@@ -750,7 +637,7 @@ function toggleMicMonitoring(enabled) {
 
 // Enable vocoder effect
 function enableVocoder() {
-    if (!micSource || !audioContext) {
+    if (!micState || !micState.micSource || !audioContext) {
         alert('Please enable microphone first!');
         return;
     }
@@ -763,89 +650,31 @@ function enableVocoder() {
     }
     
     try {
-        // Create vocoder bands
-        const numBands = parseInt(vocoderBandsSlider.value);
-        vocoderBands = [];
-        
-        // Frequency range for vocoder bands (200Hz to 5000Hz typical for voice)
-        const minFreq = 200;
-        const maxFreq = 5000;
-        
-        // Create gain nodes for carrier and modulator input
-        vocoderCarrierGain = audioContext.createGain();
-        vocoderModulatorGain = audioContext.createGain();
-        vocoderOutputGain = audioContext.createGain();
-        
         // Get carrier source based on selection
-        const carrierSource = getVocoderCarrierSource();
-        if (carrierSource) {
-            carrierSource.connect(vocoderCarrierGain);
-        }
+        const carrierSource = getVocoderCarrierSource(carrier, gain1, gain2, micState.micSource);
         
-        // Connect microphone (modulator) to vocoder
-        micSource.connect(vocoderModulatorGain);
+        // Get number of bands
+        const numBands = parseInt(vocoderBandsSlider.value);
         
-        // Create vocoder bands
-        for (let i = 0; i < numBands; i++) {
-            // Calculate band frequency (logarithmic distribution)
-            const freqRatio = Math.pow(maxFreq / minFreq, i / (numBands - 1));
-            const frequency = minFreq * freqRatio;
-            const bandwidth = frequency * 0.15; // 15% bandwidth
-            
-            // Create filters for carrier (bandpass)
-            const carrierFilter = audioContext.createBiquadFilter();
-            carrierFilter.type = 'bandpass';
-            carrierFilter.frequency.value = frequency;
-            carrierFilter.Q.value = frequency / bandwidth;
-            
-            // Create filters for modulator (bandpass)
-            const modulatorFilter = audioContext.createBiquadFilter();
-            modulatorFilter.type = 'bandpass';
-            modulatorFilter.frequency.value = frequency;
-            modulatorFilter.Q.value = frequency / bandwidth;
-            
-            // Create envelope follower using waveshaper
-            const envelopeFollower = audioContext.createWaveShaper();
-            const curve = new Float32Array(256);
-            for (let j = 0; j < 256; j++) {
-                curve[j] = Math.abs(j / 128 - 1); // Absolute value for envelope
-            }
-            envelopeFollower.curve = curve;
-            
-            // Create gain node for this band
-            const bandGain = audioContext.createGain();
-            bandGain.gain.value = 1.0;
-            
-            // Connect the vocoder band
-            vocoderCarrierGain.connect(carrierFilter);
-            vocoderModulatorGain.connect(modulatorFilter);
-            modulatorFilter.connect(envelopeFollower);
-            envelopeFollower.connect(bandGain.gain); // Modulate the gain
-            carrierFilter.connect(bandGain);
-            bandGain.connect(vocoderOutputGain);
-            
-            vocoderBands.push({
-                carrierFilter,
-                modulatorFilter,
-                envelopeFollower,
-                bandGain,
-                frequency
-            });
-        }
+        // Use module to enable vocoder
+        vocoderState = enableVocoderModule(
+            audioContext,
+            micState.micSource,
+            carrierSource,
+            merger,
+            numBands
+        );
         
         // Disconnect mic from direct output
         try {
-            micGain.disconnect(merger);
+            micState.micGain.disconnect(merger);
         } catch (e) {
             // Already disconnected
         }
         
-        // Connect vocoder output to merger
-        vocoderOutputGain.connect(merger);
-        
         // Set initial mix level
-        const mixValue = parseInt(vocoderMixSlider.value) / 100;
-        vocoderOutputGain.gain.value = mixValue;
+        const mixValue = parseInt(vocoderMixSlider.value);
+        updateVocoderMix(vocoderState.vocoderOutputGain, mixValue);
         
         vocoderEnabled = true;
         
@@ -854,47 +683,27 @@ function enableVocoder() {
         disableVocoderBtn.disabled = false;
         disableVocoderBtn.style.display = 'inline-block';
         vocoderSettings.style.display = 'flex';
+        vocoderMixValue.textContent = `${mixValue}%`;
         
         console.log(`Vocoder enabled with ${numBands} bands`);
     } catch (error) {
         console.error('Error enabling vocoder:', error);
-        alert('Error enabling vocoder. Please try again.');
+        alert(error.message || 'Error enabling vocoder. Please try again.');
     }
 }
 
 // Disable vocoder effect
 function disableVocoder() {
-    if (!vocoderEnabled) return;
+    if (!vocoderEnabled || !vocoderState) return;
     
     try {
-        // Disconnect and clean up vocoder nodes
-        if (vocoderCarrierGain) {
-            vocoderCarrierGain.disconnect();
-            vocoderCarrierGain = null;
-        }
-        
-        if (vocoderModulatorGain) {
-            vocoderModulatorGain.disconnect();
-            vocoderModulatorGain = null;
-        }
-        
-        if (vocoderOutputGain) {
-            vocoderOutputGain.disconnect();
-            vocoderOutputGain = null;
-        }
-        
-        // Clean up all band nodes
-        vocoderBands.forEach(band => {
-            band.carrierFilter.disconnect();
-            band.modulatorFilter.disconnect();
-            band.envelopeFollower.disconnect();
-            band.bandGain.disconnect();
-        });
-        vocoderBands = [];
+        // Use module to disable vocoder
+        disableVocoderModule(vocoderState);
+        vocoderState = null;
         
         // Reconnect mic directly to merger
-        if (micGain && merger) {
-            micGain.connect(merger);
+        if (micState && micState.micGain && merger) {
+            micState.micGain.connect(merger);
         }
         
         vocoderEnabled = false;
@@ -910,23 +719,6 @@ function disableVocoder() {
     }
 }
 
-// Get carrier source for vocoder
-function getVocoderCarrierSource() {
-    const carrier = vocoderCarrier.value;
-    
-    if (carrier === 'track1' && gain1) {
-        return gain1;
-    } else if (carrier === 'track2' && gain2) {
-        return gain2;
-    } else if (carrier === 'mix' && merger) {
-        return merger;
-    } else if (carrier === 'mic' && micGain) {
-        return micGain;
-    }
-    
-    return null;
-}
-
 // Update vocoder carrier source
 function updateVocoderCarrier() {
     if (!vocoderEnabled) return;
@@ -937,15 +729,15 @@ function updateVocoderCarrier() {
 }
 
 // Update vocoder mix (dry/wet)
-function updateVocoderMix(value) {
-    if (vocoderOutputGain) {
-        vocoderOutputGain.gain.value = value / 100;
+function updateVocoderMixWrapper(value) {
+    if (vocoderState && vocoderState.vocoderOutputGain) {
+        updateVocoderMix(vocoderState.vocoderOutputGain, value);
         vocoderMixValue.textContent = `${value}%`;
     }
 }
 
 // Update number of vocoder bands
-function updateVocoderBands(value) {
+function updateVocoderBandsCount(value) {
     vocoderBandsValue.textContent = value;
     
     if (vocoderEnabled) {
@@ -957,76 +749,26 @@ function updateVocoderBands(value) {
 
 // Enable auto-tune effect
 function enableAutotune() {
-    if (!micSource || !audioContext) {
+    if (!micState || !micState.micGain || !audioContext) {
         alert('Please enable microphone first!');
         return;
     }
     
     try {
-        // Create analyser for pitch detection
-        autotuneAnalyser = audioContext.createAnalyser();
-        autotuneAnalyser.fftSize = 4096;
-        
-        // Create gain nodes for wet/dry mix
-        const dryGain = audioContext.createGain();
-        const wetGain = audioContext.createGain();
-        
         // Get strength value
-        const strength = parseInt(autotuneStrengthSlider.value) / 100;
-        dryGain.gain.value = 1 - strength;
-        wetGain.gain.value = strength;
+        const strength = parseInt(autotuneStrengthSlider.value);
         
-        // Create pitch shifters using multiple delay nodes
-        // This is a simplified pitch correction using formant shifting
-        pitchShifters = [];
-        for (let i = 0; i < 12; i++) {
-            const shifter = {
-                delay: audioContext.createDelay(1.0),
-                gain: audioContext.createGain(),
-                filter: audioContext.createBiquadFilter()
-            };
-            
-            shifter.delay.delayTime.value = 0.02; // 20ms base delay
-            shifter.gain.gain.value = 0;
-            shifter.filter.type = 'allpass';
-            shifter.filter.frequency.value = 1000;
-            
-            pitchShifters.push(shifter);
-        }
-        
-        // Store reference to auto-tune processor
-        autotuneProcessor = {
-            dryGain,
-            wetGain,
-            pitchShifters
-        };
-        
-        // Connect audio graph for pitch detection
-        micGain.connect(autotuneAnalyser);
-        
-        // Connect dry signal
-        micGain.connect(dryGain);
-        
-        // Connect wet signal through pitch shifters
-        pitchShifters.forEach(shifter => {
-            micGain.connect(shifter.filter);
-            shifter.filter.connect(shifter.delay);
-            shifter.delay.connect(shifter.gain);
-            shifter.gain.connect(wetGain);
-        });
+        // Use module to enable autotune
+        autotuneState = enableAutotuneModule(audioContext, micState.micGain, merger, strength);
         
         // Disconnect mic from direct path
         try {
             if (!vocoderEnabled) {
-                micGain.disconnect(merger);
+                micState.micGain.disconnect(merger);
             }
         } catch (e) {
             // Already disconnected
         }
-        
-        // Connect to output
-        dryGain.connect(merger);
-        wetGain.connect(merger);
         
         autotuneEnabled = true;
         
@@ -1042,38 +784,22 @@ function enableAutotune() {
         console.log('Auto-tune enabled');
     } catch (error) {
         console.error('Error enabling auto-tune:', error);
-        alert('Error enabling auto-tune. Please try again.');
+        alert(error.message || 'Error enabling auto-tune. Please try again.');
     }
 }
 
 // Disable auto-tune effect
 function disableAutotune() {
-    if (!autotuneEnabled) return;
+    if (!autotuneEnabled || !autotuneState) return;
     
     try {
-        // Disconnect and clean up
-        if (autotuneProcessor) {
-            autotuneProcessor.dryGain.disconnect();
-            autotuneProcessor.wetGain.disconnect();
-            
-            pitchShifters.forEach(shifter => {
-                shifter.filter.disconnect();
-                shifter.delay.disconnect();
-                shifter.gain.disconnect();
-            });
-            
-            autotuneProcessor = null;
-            pitchShifters = [];
-        }
-        
-        if (autotuneAnalyser) {
-            autotuneAnalyser.disconnect();
-            autotuneAnalyser = null;
-        }
+        // Use module to disable autotune
+        disableAutotuneModule(autotuneState);
+        autotuneState = null;
         
         // Reconnect mic directly
-        if (micGain && merger && !vocoderEnabled) {
-            micGain.connect(merger);
+        if (micState && micState.micGain && merger && !vocoderEnabled) {
+            micState.micGain.connect(merger);
         }
         
         autotuneEnabled = false;
@@ -1212,13 +938,11 @@ function updateAutotuneSpeed(value) {
 }
 
 // Update auto-tune strength
-function updateAutotuneStrength(value) {
+function updateAutotuneStrengthWrapper(value) {
     autotuneStrengthValue.textContent = `${value}%`;
     
-    if (autotuneProcessor) {
-        const strength = value / 100;
-        autotuneProcessor.dryGain.gain.value = 1 - strength;
-        autotuneProcessor.wetGain.gain.value = strength;
+    if (autotuneState && autotuneState.dryGain && autotuneState.wetGain) {
+        updateAutotuneStrength(autotuneState.dryGain, autotuneState.wetGain, value);
     }
 }
 
@@ -2881,7 +2605,7 @@ enableMicBtn.addEventListener('click', enableMicrophone);
 disableMicBtn.addEventListener('click', disableMicrophone);
 
 micVolumeSlider.addEventListener('input', (e) => {
-    updateMicVolume(parseInt(e.target.value));
+    updateMicVolumeWrapper(parseInt(e.target.value));
 });
 
 micMonitorCheckbox.addEventListener('change', (e) => {
@@ -2895,11 +2619,11 @@ disableVocoderBtn.addEventListener('click', disableVocoder);
 vocoderCarrier.addEventListener('change', updateVocoderCarrier);
 
 vocoderMixSlider.addEventListener('input', (e) => {
-    updateVocoderMix(parseInt(e.target.value));
+    updateVocoderMixWrapper(parseInt(e.target.value));
 });
 
 vocoderBandsSlider.addEventListener('input', (e) => {
-    updateVocoderBands(parseInt(e.target.value));
+    updateVocoderBandsCount(parseInt(e.target.value));
 });
 
 // Auto-Tune button handlers
@@ -2919,7 +2643,7 @@ autotuneSpeedSlider.addEventListener('input', (e) => {
 });
 
 autotuneStrengthSlider.addEventListener('input', (e) => {
-    updateAutotuneStrength(parseInt(e.target.value));
+    updateAutotuneStrengthWrapper(parseInt(e.target.value));
 });
 
 // Keyboard Sampler event handlers

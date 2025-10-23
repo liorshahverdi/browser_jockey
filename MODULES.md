@@ -87,24 +87,61 @@ Keyboard sampler functionality:
 
 ---
 
+#### **microphone.js** (145 lines)
+Microphone input handling and visualization:
+- `enableMicrophone(context, merger)` - Request and setup microphone access
+- `disableMicrophone(state)` - Cleanup microphone resources
+- `drawMicWaveform(canvas, analyser, enabled)` - Visualize mic input
+- `updateMicVolume(gain, volume)` - Adjust microphone gain
+
+**Exports:** All functions above
+
+**Dependencies:** None
+
+---
+
+#### **vocoder.js** (175 lines)
+Vocoder effect implementation:
+- `enableVocoder(context, micSource, carrierSource, merger, numBands)` - Create vocoder with band-pass filters
+- `disableVocoder(state)` - Cleanup vocoder resources
+- `updateVocoderMix(gain, mixValue)` - Adjust wet/dry mix
+- `getVocoderCarrierSource(type, source1, source2, micSource)` - Get carrier signal source
+
+**Exports:** All functions above
+
+**Dependencies:** None
+
+---
+
+#### **autotune.js** (220 lines)
+Pitch correction and auto-tune:
+- `enableAutotune(context, micGain, merger, strength)` - Enable pitch correction
+- `disableAutotune(state)` - Cleanup autotune resources
+- `updateAutotuneStrength(dryGain, wetGain, strength)` - Adjust correction strength
+- `detectPitch(frequencyData, sampleRate, fftSize)` - Detect pitch from audio
+- `findNearestNoteInScale(freq, key, scaleType)` - Find nearest scale note
+- `correctPitchToTarget(state, currentFreq, targetFreq)` - Apply pitch correction
+
+**Exports:** All functions above
+
+**Dependencies:** `constants.js` (musicScales)
+
+---
+
 ### Main Files
 
-#### **visualizer-dual.js** (4578 lines → to be refactored)
-Main application file for dual-track DJ mode. Will be updated to import and use the modules above.
+#### **visualizer-dual.js** (~2,500 lines - refactored)
+Main application file for dual-track DJ mode. Now uses all shared modules.
 
 Contains:
 - DOM element references
 - Application state
 - Event listeners
 - Track management
-- Microphone features
-- Vocoder
-- Autotune
-- Visualization (Three.js)
-- Main initialization
+- Integration of all modules
 
-#### **visualizer.js** (905 lines)
-Single-track visualizer (simpler version). Could also benefit from using shared modules.
+#### **visualizer.js** (~845 lines - partially refactored)
+Single-track visualizer (simpler version). Now uses shared modules for constants and key detection.
 
 ---
 
@@ -126,22 +163,26 @@ Single-track visualizer (simpler version). Could also benefit from using shared 
 import { formatTime, animateReversePlayback } from './modules/loop-controls.js';
 import { detectBPM, detectKey } from './modules/audio-utils.js';
 import { createReverb, createDelay } from './modules/audio-effects.js';
+import { enableMicrophone, disableMicrophone } from './modules/microphone.js';
+import { enableVocoder, updateVocoderMix } from './modules/vocoder.js';
+import { enableAutotune, detectPitch } from './modules/autotune.js';
 
 // Use the functions
 const bpm = detectBPM(audioBuffer);
 const timeString = formatTime(currentTime);
 const reverb = createReverb(audioContext);
+const micState = await enableMicrophone(audioContext, merger);
 ```
 
 ---
 
 ## Future Module Candidates
 
-These features should be extracted into modules next:
+These features could be extracted into modules next (optional):
 
-1. **microphone.js** - Microphone input handling
-2. **vocoder.js** - Vocoder effect
-3. **autotune.js** - Pitch correction
+1. ✅ **microphone.js** - Microphone input handling (COMPLETED)
+2. ✅ **vocoder.js** - Vocoder effect (COMPLETED)
+3. ✅ **autotune.js** - Pitch correction (COMPLETED)
 4. **visualization.js** - Three.js visualization logic
 5. **export.js** - Audio export functionality (stems, loops)
 6. **ui-controls.js** - UI interaction helpers

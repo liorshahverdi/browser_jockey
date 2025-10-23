@@ -1,3 +1,7 @@
+// Import shared modules
+import { noteFrequencies } from './modules/constants.js';
+import { detectMusicalKey as detectKey } from './modules/audio-utils.js';
+
 // Get DOM elements
 const container = document.getElementById('visualizer-container');
 const audioElement = document.getElementById('audioElement');
@@ -41,23 +45,7 @@ let selectedObject = null;
 let currentKey = 'C';
 let currentKeyColor = { h: 0, s: 100, l: 50 };
 
-// Map musical notes to frequencies and colors
-const noteFrequencies = {
-    'C': { freq: 261.63, color: { h: 0, s: 100, l: 50 } },      // Red
-    'C#': { freq: 277.18, color: { h: 30, s: 100, l: 50 } },    // Orange
-    'D': { freq: 293.66, color: { h: 60, s: 100, l: 50 } },     // Yellow
-    'D#': { freq: 311.13, color: { h: 90, s: 100, l: 50 } },    // Yellow-Green
-    'E': { freq: 329.63, color: { h: 120, s: 100, l: 50 } },    // Green
-    'F': { freq: 349.23, color: { h: 150, s: 100, l: 50 } },    // Cyan-Green
-    'F#': { freq: 369.99, color: { h: 180, s: 100, l: 50 } },   // Cyan
-    'G': { freq: 392.00, color: { h: 210, s: 100, l: 50 } },    // Light Blue
-    'G#': { freq: 415.30, color: { h: 240, s: 100, l: 50 } },   // Blue
-    'A': { freq: 440.00, color: { h: 270, s: 100, l: 50 } },    // Purple
-    'A#': { freq: 466.16, color: { h: 300, s: 100, l: 50 } },   // Magenta
-    'B': { freq: 493.88, color: { h: 330, s: 100, l: 50 } }     // Pink
-};
-
-// Detect musical key from frequency data
+// Wrapper function for key detection using shared module
 function detectMusicalKey() {
     if (!analyser || !dataArray) return;
     
@@ -65,41 +53,14 @@ function detectMusicalKey() {
     const frequencyData = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(frequencyData);
     
-    // Find dominant frequency bin
-    let maxValue = 0;
-    let maxIndex = 0;
-    for (let i = 0; i < frequencyData.length; i++) {
-        if (frequencyData[i] > maxValue) {
-            maxValue = frequencyData[i];
-            maxIndex = i;
-        }
-    }
-    
-    // Convert bin index to frequency
-    const nyquist = audioContext.sampleRate / 2;
-    const dominantFreq = (maxIndex * nyquist) / analyser.frequencyBinCount;
-    
-    // Find closest note
-    let closestNote = 'C';
-    let minDiff = Infinity;
-    
-    Object.keys(noteFrequencies).forEach(note => {
-        // Check multiple octaves
-        for (let octave = 0; octave < 5; octave++) {
-            const freq = noteFrequencies[note].freq * Math.pow(2, octave);
-            const diff = Math.abs(dominantFreq - freq);
-            if (diff < minDiff) {
-                minDiff = diff;
-                closestNote = note;
-            }
-        }
-    });
+    // Use shared module function
+    const detectedKey = detectKey(frequencyData, audioContext.sampleRate, analyser.frequencyBinCount);
     
     // Update current key if changed
-    if (closestNote !== currentKey) {
-        currentKey = closestNote;
-        currentKeyColor = noteFrequencies[closestNote].color;
-        currentKeyDisplay.textContent = closestNote;
+    if (detectedKey && detectedKey !== currentKey) {
+        currentKey = detectedKey;
+        currentKeyColor = noteFrequencies[detectedKey].color;
+        currentKeyDisplay.textContent = detectedKey;
         currentKeyDisplay.style.color = `hsl(${currentKeyColor.h}, ${currentKeyColor.s}%, 60%)`;
         currentKeyDisplay.style.textShadow = `0 0 10px hsl(${currentKeyColor.h}, ${currentKeyColor.s}%, 50%)`;
         updateVisualizationColors();

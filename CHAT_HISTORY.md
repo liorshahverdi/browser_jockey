@@ -3112,5 +3112,165 @@ if (newTime <= loopState.start) {
 
 ---
 
+## Session 55: Phase 2 Code Refactoring - Microphone, Vocoder, and Autotune Modules (v3.4)
+**Date**: October 23, 2025
+
+**User Request**: "review the REFACTORING markdown files and refactor what is remaining to do in our js files"
+
+**Context**: 
+After completing Phase 1 refactoring (constants, loops, audio utilities, effects, recording, sampler), the REFACTORING_STATUS.md identified additional large features that should be extracted: microphone input, vocoder effect, and autotune functionality.
+
+**Implementation**:
+
+1. **Created microphone.js module** (145 lines):
+   - `enableMicrophone(context, merger)` - Microphone access with echo cancellation
+   - `disableMicrophone(state)` - Clean resource cleanup
+   - `drawMicWaveform(canvas, analyser, enabled)` - Real-time waveform visualization
+   - `updateMicVolume(gain, volume)` - Volume control
+   - Centralized microphone handling logic
+   - Simplified state management with state objects
+
+2. **Created vocoder.js module** (175 lines):
+   - `enableVocoder(context, micSource, carrierSource, merger, numBands)` - Multi-band vocoder
+   - `disableVocoder(state)` - Cleanup vocoder resources
+   - `updateVocoderMix(gain, mixValue)` - Wet/dry mix control
+   - `getVocoderCarrierSource(type, source1, source2, micSource)` - Carrier selection
+   - Configurable 2-32 band vocoder
+   - Logarithmic frequency distribution (200Hz-5000Hz)
+   - Envelope follower using waveshaper
+   - Support for multiple carrier sources (track1, track2, mic)
+
+3. **Created autotune.js module** (220 lines):
+   - `enableAutotune(context, micGain, merger, strength)` - Pitch correction
+   - `disableAutotune(state)` - Cleanup autotune resources
+   - `updateAutotuneStrength(dryGain, wetGain, strength)` - Correction intensity
+   - `detectPitch(frequencyData, sampleRate, fftSize)` - Pitch detection
+   - `findNearestNoteInScale(freq, key, scaleType)` - Scale-aware tuning
+   - `correctPitchToTarget(state, currentFreq, targetFreq)` - Pitch shifting
+   - Musical scale-aware pitch correction (major/minor scales)
+   - Configurable wet/dry mix for natural to robotic effect
+   - 12 pitch shifter nodes for smooth correction
+
+4. **Refactored visualizer-dual.js**:
+   - Changed from individual variables to state objects:
+     - `micStream, micSource, micGain, micAnalyser` → `micState`
+     - `vocoderBands, vocoderCarrierGain, ...` → `vocoderState`
+     - `autotuneProcessor, pitchShifters, ...` → `autotuneState`
+   - Updated all microphone functions to use module
+   - Updated all vocoder functions to use module
+   - Updated all autotune functions to use module
+   - Created wrapper functions for event handlers
+   - Maintained backward compatibility
+
+5. **Refactored visualizer.js**:
+   - Added imports for shared constants and audio utilities
+   - Removed duplicate `noteFrequencies` constant definition
+   - Updated `detectMusicalKey()` to use shared module function
+   - Reduced by ~60 lines
+
+6. **Updated Documentation**:
+   - `MODULES.md` - Added docs for 3 new modules
+   - `REFACTORING_STATUS.md` - Updated with Phase 2 completion
+   - `REFACTORING_PHASE2_COMPLETE.md` - Comprehensive Phase 2 summary
+   - `REFACTORING_FINAL_SUMMARY.md` - Complete refactoring overview
+   - `TESTING_GUIDE.md` - Testing instructions for all features
+
+**Results**:
+
+**Code Metrics**:
+- **Phase 2 Modules Created**: 3 (microphone, vocoder, autotune)
+- **Total Modules**: 9 (1,635 lines of organized code)
+- **Lines Removed Phase 2**: 225 lines
+- **Total Lines Removed**: 978 lines
+- **visualizer-dual.js**: 4,578 → 3,600 lines (21.4% reduction)
+- **Functions Refactored**: 40+ total
+
+**Module Breakdown**:
+| Module | Lines | Purpose |
+|--------|-------|---------|
+| constants.js | 47 | Musical constants, scales |
+| loop-controls.js | 167 | Loop playback logic |
+| audio-utils.js | 286 | Waveform & analysis |
+| audio-effects.js | 116 | Audio effects |
+| recording.js | 316 | Master recording |
+| sampler.js | 163 | Keyboard sampler |
+| microphone.js | 145 | Mic input (Phase 2) |
+| vocoder.js | 175 | Vocoder effect (Phase 2) |
+| autotune.js | 220 | Pitch correction (Phase 2) |
+
+**Benefits Achieved**:
+
+1. **Modularity**: Code organized into focused, single-responsibility modules
+2. **Reusability**: Modules can be used across different visualizer variants
+3. **Maintainability**: Single source of truth for each feature
+4. **Testability**: Each module can be tested independently
+5. **Developer Experience**: Much easier to navigate and understand
+6. **Collaboration**: Team members can work on different modules
+
+**Technical Details**:
+
+1. **State Management Pattern**:
+   ```javascript
+   // Before: Multiple variables
+   let micStream, micSource, micGain, micAnalyser;
+   
+   // After: State object
+   let micState = { micStream, micSource, micGain, micAnalyser };
+   ```
+
+2. **Module Usage**:
+   ```javascript
+   // Enable microphone
+   micState = await enableMicrophone(audioContext, merger);
+   
+   // Enable vocoder with carrier
+   vocoderState = enableVocoder(audioContext, micState.micSource, 
+                                 carrierSource, merger, numBands);
+   
+   // Enable autotune
+   autotuneState = enableAutotune(audioContext, micState.micGain, 
+                                   merger, strength);
+   ```
+
+3. **Wrapper Pattern**:
+   - Created wrapper functions to bridge modules with local state
+   - Example: `updateMicVolumeWrapper()` calls module with state
+   - Maintains clean separation while preserving functionality
+
+**Documentation Created**:
+- `REFACTORING_PHASE2_COMPLETE.md` - Phase 2 detailed summary
+- `REFACTORING_FINAL_SUMMARY.md` - Complete refactoring overview
+- `TESTING_GUIDE.md` - Comprehensive testing checklist
+- Updated `REFACTORING_STATUS.md` - Marked Phase 2 complete
+- Updated `MODULES.md` - Added new module documentation
+
+**Key Learnings**:
+59. **State Objects**: Grouping related state reduces complexity and parameters
+60. **Module Exports**: Export individual functions for flexibility and tree-shaking
+61. **Progressive Refactoring**: Breaking into phases prevents scope creep
+62. **Wrapper Functions**: Bridge pattern helps maintain backward compatibility
+63. **Documentation**: Update docs immediately to prevent drift
+64. **Testing Guides**: Comprehensive testing docs ensure quality
+65. **Metrics Matter**: Track actual line counts to set accurate expectations
+66. **Focus on Value**: Modularity and maintainability matter more than raw line reduction
+
+**Commits**:
+- "Create microphone.js module for microphone input handling"
+- "Create vocoder.js module for vocoder effect implementation"
+- "Create autotune.js module for pitch correction"
+- "Refactor visualizer-dual.js to use new microphone/vocoder/autotune modules"
+- "Refactor visualizer.js to use shared constants and utilities"
+- "Create comprehensive refactoring documentation and testing guide"
+- "Update REFACTORING_STATUS.md with Phase 2 completion"
+
+**Release**:
+- Created git tag `v3.4` with message "v3.4 - Phase 2 Refactoring: Microphone, Vocoder, and Autotune Modules"
+- Pushed all commits to main branch
+- Pushed v3.4 tag to remote repository
+- Updated README.md with v3.4 information
+- Release officially published on GitHub
+
+---
+
 **End of Chat History - Last Updated: October 23, 2025**
 
