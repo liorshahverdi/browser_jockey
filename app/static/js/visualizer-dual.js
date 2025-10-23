@@ -6,6 +6,7 @@ const playBtn1 = document.getElementById('playBtn1');
 const pauseBtn1 = document.getElementById('pauseBtn1');
 const stopBtn1 = document.getElementById('stopBtn1');
 const loopBtn1 = document.getElementById('loopBtn1');
+const reverseLoopBtn1 = document.getElementById('reverseLoopBtn1');
 const clearLoopBtn1 = document.getElementById('clearLoopBtn1');
 const tempoSlider1 = document.getElementById('tempoSlider1');
 const tempoValue1 = document.getElementById('tempoValue1');
@@ -47,6 +48,7 @@ const playBtn2 = document.getElementById('playBtn2');
 const pauseBtn2 = document.getElementById('pauseBtn2');
 const stopBtn2 = document.getElementById('stopBtn2');
 const loopBtn2 = document.getElementById('loopBtn2');
+const reverseLoopBtn2 = document.getElementById('reverseLoopBtn2');
 const clearLoopBtn2 = document.getElementById('clearLoopBtn2');
 const tempoSlider2 = document.getElementById('tempoSlider2');
 const tempoValue2 = document.getElementById('tempoValue2');
@@ -196,8 +198,8 @@ let bassLevel = 0;
 let trebleLevel = 0;
 
 // Loop state for both tracks
-let loopState1 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0 };
-let loopState2 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0 };
+let loopState1 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0, reverse: false };
+let loopState2 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0, reverse: false };
 
 // Zoom state for both tracks
 let zoomState1 = { level: 1.0, offset: 0.0, audioBuffer: null, isDragging: false, dragStartX: 0, dragStartOffset: 0 };
@@ -350,47 +352,86 @@ function handleLoopPlayback(audioElement, loopState, isDraggingMarker) {
         
         // Adjust tolerance based on playback rate to catch loop point reliably
         // Higher playback rate = larger tolerance needed
-        const tolerance = 0.1 * audioElement.playbackRate;
+        const tolerance = 0.1 * Math.abs(audioElement.playbackRate);
         
         // Debounce seeking to prevent rapid seeks that cause static
         const now = Date.now();
         const minSeekInterval = 50; // Minimum 50ms between seeks
         
-        // Handle end of loop - always enforce this
-        if (audioElement.currentTime >= loopState.end - tolerance) {
-            // Check if enough time has passed since last seek
-            if (now - loopState.lastSeekTime >= minSeekInterval) {
-                console.log('Looping: currentTime', audioElement.currentTime, 'jumping to', loopState.start);
-                
-                // Only seek if the audio is in a seekable state
-                if (audioElement.readyState >= 2) { // HAVE_CURRENT_DATA or better
-                    const wasPlaying = !audioElement.paused;
+        if (loopState.reverse) {
+            // Reverse loop: play from end to start
+            // Handle reaching the start (loop back to end)
+            if (audioElement.currentTime <= loopState.start + tolerance) {
+                if (now - loopState.lastSeekTime >= minSeekInterval) {
+                    console.log('Reverse looping: currentTime', audioElement.currentTime, 'jumping to', loopState.end);
                     
-                    try {
-                        audioElement.currentTime = loopState.start;
-                        loopState.lastSeekTime = now;
+                    if (audioElement.readyState >= 2) {
+                        const wasPlaying = !audioElement.paused;
                         
-                        // Ensure playback continues after jumping
-                        if (wasPlaying && audioElement.paused) {
-                            audioElement.play().catch(e => console.error('Error resuming playback:', e));
+                        try {
+                            audioElement.currentTime = loopState.end;
+                            loopState.lastSeekTime = now;
+                            
+                            if (wasPlaying && audioElement.paused) {
+                                audioElement.play().catch(e => console.error('Error resuming playback:', e));
+                            }
+                        } catch (e) {
+                            console.error('Error seeking during reverse loop:', e);
                         }
-                    } catch (e) {
-                        console.error('Error seeking during loop:', e);
                     }
                 }
             }
-        }
-        // Enforce start boundary
-        else if (audioElement.currentTime < loopState.start) {
-            // Check if enough time has passed since last seek
-            if (now - loopState.lastSeekTime >= minSeekInterval) {
-                // Only seek if the audio is in a seekable state
-                if (audioElement.readyState >= 2) {
-                    try {
-                        audioElement.currentTime = loopState.start;
-                        loopState.lastSeekTime = now;
-                    } catch (e) {
-                        console.error('Error seeking to loop start:', e);
+            // Enforce end boundary for reverse
+            else if (audioElement.currentTime > loopState.end) {
+                if (now - loopState.lastSeekTime >= minSeekInterval) {
+                    if (audioElement.readyState >= 2) {
+                        try {
+                            audioElement.currentTime = loopState.end;
+                            loopState.lastSeekTime = now;
+                        } catch (e) {
+                            console.error('Error seeking to loop end:', e);
+                        }
+                    }
+                }
+            }
+        } else {
+            // Normal forward loop
+            // Handle end of loop - always enforce this
+            if (audioElement.currentTime >= loopState.end - tolerance) {
+                // Check if enough time has passed since last seek
+                if (now - loopState.lastSeekTime >= minSeekInterval) {
+                    console.log('Looping: currentTime', audioElement.currentTime, 'jumping to', loopState.start);
+                    
+                    // Only seek if the audio is in a seekable state
+                    if (audioElement.readyState >= 2) { // HAVE_CURRENT_DATA or better
+                        const wasPlaying = !audioElement.paused;
+                        
+                        try {
+                            audioElement.currentTime = loopState.start;
+                            loopState.lastSeekTime = now;
+                            
+                            // Ensure playback continues after jumping
+                            if (wasPlaying && audioElement.paused) {
+                                audioElement.play().catch(e => console.error('Error resuming playback:', e));
+                            }
+                        } catch (e) {
+                            console.error('Error seeking during loop:', e);
+                        }
+                    }
+                }
+            }
+            // Enforce start boundary
+            else if (audioElement.currentTime < loopState.start) {
+                // Check if enough time has passed since last seek
+                if (now - loopState.lastSeekTime >= minSeekInterval) {
+                    // Only seek if the audio is in a seekable state
+                    if (audioElement.readyState >= 2) {
+                        try {
+                            audioElement.currentTime = loopState.start;
+                            loopState.lastSeekTime = now;
+                        } catch (e) {
+                            console.error('Error seeking to loop start:', e);
+                        }
                     }
                 }
             }
@@ -3255,7 +3296,14 @@ stopBtn2.addEventListener('click', () => {
 // Loop button handlers
 loopBtn1.addEventListener('click', () => {
     loopState1.enabled = !loopState1.enabled;
+    loopState1.reverse = false; // Disable reverse mode for normal loop
     loopBtn1.classList.toggle('active');
+    reverseLoopBtn1.classList.remove('active');
+    
+    // Ensure positive playback rate
+    if (loopState1.enabled) {
+        audioElement1.playbackRate = Math.abs(audioElement1.playbackRate || 1.0);
+    }
     
     // Show/hide quick loop section
     const quickLoopSection = document.getElementById('quickLoopSection1');
@@ -3270,7 +3318,14 @@ loopBtn1.addEventListener('click', () => {
 
 loopBtn2.addEventListener('click', () => {
     loopState2.enabled = !loopState2.enabled;
+    loopState2.reverse = false; // Disable reverse mode for normal loop
     loopBtn2.classList.toggle('active');
+    reverseLoopBtn2.classList.remove('active');
+    
+    // Ensure positive playback rate
+    if (loopState2.enabled) {
+        audioElement2.playbackRate = Math.abs(audioElement2.playbackRate || 1.0);
+    }
     
     // Show/hide quick loop section
     const quickLoopSection = document.getElementById('quickLoopSection2');
@@ -3290,6 +3345,63 @@ clearLoopBtn1.addEventListener('click', () => {
 
 clearLoopBtn2.addEventListener('click', () => {
     clearLoopPoints(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2);
+});
+
+// Reverse loop button handlers
+reverseLoopBtn1.addEventListener('click', () => {
+    loopState1.enabled = !loopState1.enabled;
+    loopState1.reverse = true;
+    
+    reverseLoopBtn1.classList.toggle('active');
+    loopBtn1.classList.remove('active');
+    
+    // Show/hide quick loop section
+    const quickLoopSection = document.getElementById('quickLoopSection1');
+    if (quickLoopSection) {
+        quickLoopSection.style.display = loopState1.enabled ? 'block' : 'none';
+    }
+    
+    if (loopState1.enabled) {
+        // Set negative playback rate for reverse playback
+        audioElement1.playbackRate = -Math.abs(audioElement1.playbackRate || 1.0);
+        // Start from the end of the loop
+        if (loopState1.start !== null && loopState1.end !== null) {
+            audioElement1.currentTime = loopState1.end;
+        }
+    } else {
+        // Reset to normal playback
+        audioElement1.playbackRate = Math.abs(audioElement1.playbackRate || 1.0);
+        loopState1.reverse = false;
+        clearLoopPoints(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1);
+    }
+});
+
+reverseLoopBtn2.addEventListener('click', () => {
+    loopState2.enabled = !loopState2.enabled;
+    loopState2.reverse = true;
+    
+    reverseLoopBtn2.classList.toggle('active');
+    loopBtn2.classList.remove('active');
+    
+    // Show/hide quick loop section
+    const quickLoopSection = document.getElementById('quickLoopSection2');
+    if (quickLoopSection) {
+        quickLoopSection.style.display = loopState2.enabled ? 'block' : 'none';
+    }
+    
+    if (loopState2.enabled) {
+        // Set negative playback rate for reverse playback
+        audioElement2.playbackRate = -Math.abs(audioElement2.playbackRate || 1.0);
+        // Start from the end of the loop
+        if (loopState2.start !== null && loopState2.end !== null) {
+            audioElement2.currentTime = loopState2.end;
+        }
+    } else {
+        // Reset to normal playback
+        audioElement2.playbackRate = Math.abs(audioElement2.playbackRate || 1.0);
+        loopState2.reverse = false;
+        clearLoopPoints(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2);
+    }
 });
 
 // Quick loop functionality

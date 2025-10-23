@@ -330,6 +330,35 @@ h1 {
                 0 8px 25px rgba(0, 0, 0, 0.5);
 }
 
+.reverse-loop-btn.active {
+    background: linear-gradient(135deg, #ff00ff, #ff8c00);
+    border-color: rgba(255, 0, 255, 0.8);
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.6),
+                0 0 30px rgba(255, 140, 0, 0.4),
+                0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: reverseLoopPulse 2s ease-in-out infinite;
+}
+
+@keyframes reverseLoopPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 0, 255, 0.6),
+                    0 0 30px rgba(255, 140, 0, 0.4),
+                    0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(255, 0, 255, 0.8),
+                    0 0 40px rgba(255, 140, 0, 0.6),
+                    0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+}
+
+.reverse-loop-btn.active:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 0 35px rgba(255, 0, 255, 0.9),
+                0 0 50px rgba(255, 140, 0, 0.7),
+                0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
 .tempo-control-inline {
     margin-top: 15px;
     padding: 12px 15px;
