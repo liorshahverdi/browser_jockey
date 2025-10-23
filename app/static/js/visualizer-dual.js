@@ -90,6 +90,17 @@ const recordingWaveform = document.getElementById('recordingWaveform');
 const recordingWaveformContainer = document.querySelector('.recording-waveform-container');
 const recordedAudio = document.getElementById('recordedAudio');
 
+// Microphone elements
+const enableMicBtn = document.getElementById('enableMicBtn');
+const disableMicBtn = document.getElementById('disableMicBtn');
+const micVolumeSlider = document.getElementById('micVolumeSlider');
+const micVolumeValue = document.getElementById('micVolumeValue');
+const micVolumeControl = document.getElementById('micVolumeControl');
+const micMonitoring = document.getElementById('micMonitoring');
+const micMonitorCheckbox = document.getElementById('micMonitorCheckbox');
+const micWaveform = document.getElementById('micWaveform');
+const micWaveformContainer = document.getElementById('micWaveformContainer');
+
 // Audio context and analysers
 let audioContext;
 let analyser;
@@ -98,6 +109,14 @@ let merger; // To mix both tracks
 let dataArray;
 let bufferLength;
 let animationId;
+
+// Microphone state
+let micStream = null;
+let micSource = null;
+let micGain = null;
+let micAnalyser = null;
+let micAnimationId = null;
+let micEnabled = false;
 
 // Audio effects nodes for Track 1
 let gain1, reverb1, delay1, filter1;
@@ -431,6 +450,217 @@ function downloadRecording() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }, 100);
+}
+
+// Enable microphone input
+async function enableMicrophone() {
+    try {
+        // Request microphone access
+        micStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: false
+            } 
+        });
+        
+        // Initialize audio context if not already
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        // Create microphone source
+        micSource = audioContext.createMediaStreamSource(micStream);
+        
+        // Create gain node for volume control
+        micGain = audioContext.createGain();
+        micGain.gain.value = 1.0; // 100%
+        
+        // Create analyser for visualization
+        micAnalyser = audioContext.createAnalyser();
+        micAnalyser.fftSize = 2048;
+        
+        // Connect: mic -> gain -> analyser
+        micSource.connect(micGain);
+        micGain.connect(micAnalyser);
+        
+        // Connect to merger/destination if tracks are loaded
+        if (merger) {
+            micGain.connect(merger);
+        }
+        
+        micEnabled = true;
+        
+        // Update UI
+        enableMicBtn.style.display = 'none';
+        disableMicBtn.disabled = false;
+        disableMicBtn.style.display = 'inline-block';
+        micVolumeControl.style.display = 'flex';
+        micMonitoring.style.display = 'block';
+        micWaveformContainer.style.display = 'block';
+        
+        // Start waveform visualization
+        drawMicWaveform();
+        
+        console.log('Microphone enabled successfully');
+    } catch (error) {
+        console.error('Error enabling microphone:', error);
+        alert('Could not access microphone. Please check your permissions.');
+    }
+}
+
+// Disable microphone input
+function disableMicrophone() {
+    if (micStream) {
+        // Stop all tracks
+        micStream.getTracks().forEach(track => track.stop());
+        micStream = null;
+    }
+    
+    if (micSource) {
+        micSource.disconnect();
+        micSource = null;
+    }
+    
+    if (micGain) {
+        micGain.disconnect();
+        micGain = null;
+    }
+    
+    if (micAnalyser) {
+        micAnalyser = null;
+    }
+    
+    if (micAnimationId) {
+        cancelAnimationFrame(micAnimationId);
+        micAnimationId = null;
+    }
+    
+    micEnabled = false;
+    
+    // Update UI
+    enableMicBtn.style.display = 'inline-block';
+    disableMicBtn.style.display = 'none';
+    micVolumeControl.style.display = 'none';
+    micMonitoring.style.display = 'none';
+    micWaveformContainer.style.display = 'none';
+    micMonitorCheckbox.checked = false;
+    
+    console.log('Microphone disabled');
+}
+
+// Draw microphone waveform
+function drawMicWaveform() {
+    if (!micAnalyser || !micEnabled) {
+        return;
+    }
+    
+    const canvas = micWaveform;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+    const height = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+    
+    const bufferLength = micAnalyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    function draw() {
+        if (!micEnabled) return;
+        
+        micAnimationId = requestAnimationFrame(draw);
+        
+        micAnalyser.getByteTimeDomainData(dataArray);
+        
+        // Clear with trail effect
+        ctx.fillStyle = 'rgba(10, 10, 10, 0.3)';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw waveform
+        ctx.lineWidth = 2 * window.devicePixelRatio;
+        ctx.strokeStyle = 'rgba(255, 100, 255, 1)';
+        ctx.beginPath();
+        
+        const sliceWidth = width / bufferLength;
+        let x = 0;
+        
+        for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = v * height / 2;
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+            
+            x += sliceWidth;
+        }
+        
+        ctx.lineTo(width, height / 2);
+        ctx.stroke();
+        
+        // Add center line
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, height / 2);
+        ctx.lineTo(width, height / 2);
+        ctx.stroke();
+        
+        // Add level meter
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+            const value = (dataArray[i] - 128) / 128;
+            sum += value * value;
+        }
+        const rms = Math.sqrt(sum / bufferLength);
+        const dbLevel = 20 * Math.log10(rms + 0.0001);
+        const normalizedLevel = Math.max(0, Math.min(1, (dbLevel + 60) / 60));
+        
+        // Draw level meter on right side
+        const meterWidth = 20 * window.devicePixelRatio;
+        const meterX = width - meterWidth - 5;
+        const meterHeight = height - 10;
+        const levelHeight = meterHeight * normalizedLevel;
+        
+        // Background
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.fillRect(meterX, 5, meterWidth, meterHeight);
+        
+        // Level
+        const gradient = ctx.createLinearGradient(meterX, height - 5 - levelHeight, meterX, height - 5);
+        gradient.addColorStop(0, '#00ff00');
+        gradient.addColorStop(0.5, '#ffff00');
+        gradient.addColorStop(1, '#ff0000');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(meterX, height - 5 - levelHeight, meterWidth, levelHeight);
+    }
+    
+    draw();
+}
+
+// Update microphone volume
+function updateMicVolume(value) {
+    if (micGain) {
+        micGain.gain.value = value / 100;
+        micVolumeValue.textContent = `${value}%`;
+    }
+}
+
+// Toggle microphone monitoring (hearing yourself)
+function toggleMicMonitoring(enabled) {
+    if (!micGain || !audioContext) return;
+    
+    if (enabled) {
+        // Connect mic to destination (speakers)
+        micGain.connect(audioContext.destination);
+    } else {
+        // Disconnect from destination
+        try {
+            micGain.disconnect(audioContext.destination);
+        } catch (e) {
+            // Already disconnected, ignore
+        }
+    }
 }
 
 // Draw waveform on canvas with zoom support
@@ -1995,6 +2225,18 @@ document.querySelectorAll('.quick-loop-btn').forEach(btn => {
 recordBtn.addEventListener('click', startRecording);
 stopRecordBtn.addEventListener('click', stopRecording);
 downloadBtn.addEventListener('click', downloadRecording);
+
+// Microphone button handlers
+enableMicBtn.addEventListener('click', enableMicrophone);
+disableMicBtn.addEventListener('click', disableMicrophone);
+
+micVolumeSlider.addEventListener('input', (e) => {
+    updateMicVolume(parseInt(e.target.value));
+});
+
+micMonitorCheckbox.addEventListener('change', (e) => {
+    toggleMicMonitoring(e.target.checked);
+});
 
 // Tempo sliders
 tempoSlider1.addEventListener('input', (e) => {

@@ -1,5 +1,18 @@
-# Browser Jockey
-![Browser Jockey Screenshot](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
+# Bro## Features
+
+- 🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneously
+- 🎵 **BPM Detection** - Automatic tempo detection for each track
+- 🎹 **Key Detection** - Per-track musical key analysis
+- 🔁 **A-B Loop Markers** - Create precise loops with draggable markers
+- ⚡ **Quick Loops** - Auto-create 1, 2, 4, or 8 bar loops based on BPM
+- 🔍 **Waveform Zoom** - Zoom up to 20x with drag-to-pan
+- 🎚️ **Audio Effects** - Reverb, delay, and filters (low/high/band pass)
+- 💾 **Export** - Export full stems or loop regions as WAV files
+- 🎤 **Microphone Input** - Live mic input with volume control and monitoring
+- 🎨 **3D Visualization** - Real-time WebGL visualization with Three.js
+- 🌈 **Musical Key Colors** - Dynamic colors based on detected key
+- 🎙️ **Recording** - Record your live mix with waveform display
+- 📱 **Professional Layout** - Side-by-side dual deck DJ interfaceBrowser Jockey Screenshot](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
 
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, and professional DJ controls.
 
@@ -194,12 +207,23 @@ browser_jockey/
 - **Export Stem**: Save full track with effects as WAV
 - **Export Loop**: Save loop region with effects as WAV
 
+### Microphone Input
+1. **Enable Microphone**: Click 🎤 Enable Microphone button
+2. **Grant Permission**: Allow browser access to your microphone
+3. **Adjust Volume**: Use the mic volume slider (0-100%)
+4. **Monitor**: Check "Monitor" to hear yourself through speakers
+5. **Visual Feedback**: Watch the real-time waveform and level meter
+6. **Auto-Mix**: Mic audio automatically mixed with DJ tracks and included in recordings
+
+**Use Cases**: DJ commentary, live vocals, karaoke, beatboxing, podcast recording, instrument input
+
 ### Recording
 1. Set up your mix (volume, tempo, loops, effects)
-2. Click "Start Recording"
-3. Perform your mix
-4. Click "Stop Recording"
-5. Click "Download Recording" to save as .webm
+2. (Optional) Enable microphone for voice/instrument input
+3. Click "Start Recording"
+4. Perform your mix
+5. Click "Stop Recording"
+6. Click "Download Recording" to save as .webm
 
 ### 3D Visualization
 - **Three Modes**: Circle, Bars, Sphere

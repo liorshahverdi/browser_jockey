@@ -202,6 +202,32 @@
                 </div>
             </div>
             
+            <div class="microphone-section">
+                <div class="mic-header">🎤 Microphone Input</div>
+                <div class="mic-controls">
+                    <button id="enableMicBtn" class="control-btn">
+                        <span class="mic-icon">🎤</span> Enable Microphone
+                    </button>
+                    <button id="disableMicBtn" class="control-btn" disabled style="display: none;">
+                        <span class="mic-icon">🔇</span> Disable Microphone
+                    </button>
+                    <div class="mic-volume-control" style="display: none;" id="micVolumeControl">
+                        <label>Mic Volume: <span id="micVolumeValue">100%</span></label>
+                        <input type="range" id="micVolumeSlider" min="0" max="100" step="1" value="100" class="volume-slider">
+                    </div>
+                    <div class="mic-monitoring" style="display: none;" id="micMonitoring">
+                        <label>
+                            <input type="checkbox" id="micMonitorCheckbox">
+                            Monitor (hear yourself)
+                        </label>
+                    </div>
+                </div>
+                <div class="mic-waveform-container" style="display: none;" id="micWaveformContainer">
+                    <label>Mic Input Level:</label>
+                    <canvas id="micWaveform" class="waveform-canvas" style="height: 60px;"></canvas>
+                </div>
+            </div>
+            
             <div class="recording-section">
                 <div class="recording-controls">
                     <button id="recordBtn" class="control-btn" disabled>

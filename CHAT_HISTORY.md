@@ -854,11 +854,124 @@ const keyColors = {
 - **v1.6.1**: Bug fixes (waveform progress, loop dragging, Track 2 buttons)
 - **v1.7**: Per-track key detection, click-to-move markers, side-by-side layout
 - **v1.7.1**: FLAC file playback error handling
-- **v1.7.2**: Branding update, MIT License, README enhancement, favicon ← **Current**
+- **v1.7.2**: Branding update, MIT License, README enhancement, favicon
+- **v1.8**: Microphone input with live monitoring ← **Current**
 
 ---
 
-### 21. Project Branding & Documentation
+### 22. Microphone Input Feature
+**User Request**: "add a feature to record audio from a microphone or some other input signal"
+
+**Implementation**:
+
+**Microphone Input System**:
+- **Enable/Disable Controls**: Toggle microphone access with buttons
+- **Volume Control**: Independent mic volume slider (0-100%)
+- **Live Monitoring**: Optional checkbox to hear yourself through speakers
+- **Real-time Waveform**: Visual feedback of mic input level
+- **Level Meter**: Color-coded VU meter (green → yellow → red)
+- **Automatic Mixing**: Mic audio automatically mixed with DJ tracks
+- **Recording Integration**: Mic included in mix recordings
+
+**Features**:
+- **Browser Permissions**: Requests microphone access via getUserMedia API
+- **Audio Enhancement**:
+  - Echo cancellation enabled
+  - Noise suppression enabled
+  - Auto gain control disabled (for DJ control)
+- **Web Audio Routing**:
+  ```
+  Microphone → GainNode → ChannelMerger (with Track 1 & 2)
+                ↓
+              AnalyserNode (for visualization)
+  ```
+- **Visual Feedback**:
+  - Real-time waveform with trail effect
+  - Center reference line
+  - RMS level meter with dB calculation
+  - Gradient coloring based on signal level
+
+**UI Components**:
+- **Mic Section**: New section above recording controls
+- **Enable Button**: 🎤 Enable Microphone
+- **Disable Button**: 🔇 Disable Microphone
+- **Volume Slider**: Mic Volume control with percentage display
+- **Monitor Checkbox**: Toggle monitoring (hear yourself)
+- **Waveform Canvas**: Compact 60px height visualization
+- **Styling**: Purple/magenta theme to match effects section
+
+**Use Cases**:
+1. **DJ Commentary**: Talk over mixes like radio DJs
+2. **Live Performance**: Add vocals or MC to DJ sets
+3. **Podcast Recording**: Mix music with voice commentary
+4. **Karaoke Mode**: Sing along with tracks
+5. **Production**: Record scratch vocals or ideas
+6. **Beatboxing**: Layer beatbox over DJ mixes
+7. **Instruments**: Mix live instruments with tracks
+
+**Technical Implementation**:
+- **MediaDevices API**: `navigator.mediaDevices.getUserMedia()`
+- **MediaStreamSource**: Creates audio node from mic stream
+- **GainNode**: For volume control (0.0 - 1.0)
+- **AnalyserNode**: FFT size 2048 for visualization
+- **Automatic Integration**: Connects to existing merger for mixing
+- **Clean Disconnection**: Proper cleanup when disabled
+- **Permission Handling**: User-friendly error messages
+
+**Audio Flow**:
+```
+Track 1 → Effects Chain → GainNode1 ─┐
+Track 2 → Effects Chain → GainNode2 ─┤
+Microphone → MicGainNode ────────────┴→ ChannelMerger → Analyser → Destination
+                                                     ↓
+                                              RecordingDestination
+```
+
+**Code Structure**:
+- **`enableMicrophone()`**: Request access, create nodes, connect routing
+- **`disableMicrophone()`**: Stop stream, disconnect nodes, cleanup
+- **`drawMicWaveform()`**: Real-time visualization with level meter
+- **`updateMicVolume(value)`**: Adjust mic gain
+- **`toggleMicMonitoring(enabled)`**: Connect/disconnect to speakers
+
+**Files Modified**:
+- `/app/templates/index.html`: Added mic section UI
+- `/app/static/css/style.css`: Added mic section styling (purple theme)
+- `/app/static/js/visualizer-dual.js`: Added mic functions and routing
+
+**Browser Compatibility**:
+- Chrome/Edge: ✅ Full support
+- Firefox: ✅ Full support
+- Safari: ✅ Full support (requires HTTPS for getUserMedia)
+- Mobile: ⚠️ Limited (getUserMedia restrictions)
+
+**Impact**:
+- Professional DJ/live performance capability
+- Podcasting and content creation support
+- Seamless integration with existing recording
+- Real-time visual feedback for input levels
+- No quality loss in audio chain
+
+---
+
+## Lessons Learned
+
+1. **Playback Rate & Tolerance**: Higher playback rates require larger tolerance for loop detection
+2. **Zoom Coordinate Systems**: Need separate calculations for absolute time vs. viewport percentage - applies to progress bars, markers, and all UI overlays
+3. **Audio Seeking**: Can pause playback, requires resume logic
+4. **BPM Detection**: RMS energy more reliable than simple peak detection
+5. **State Management**: Clean separation of zoom/loop/playback state essential - context awareness crucial for UX (e.g., isDraggingMarker)
+6. **Visual Feedback**: Users need clear indicators for zoom level, loop region, playback position - increase line widths and contrast for better visibility
+7. **HTML ID Uniqueness**: Critical for JavaScript element selection - duplicate IDs cause getElementById to return wrong elements
+8. **File Validation**: Manual edits can corrupt HTML structure - always validate against duplicates and proper tag nesting
+9. **Per-Track Analysis**: Detecting BPM/key per track (not merged) provides better DJ workflow and individual track info
+10. **Multiple Interaction Methods**: Providing both drag and click-to-move for markers gives users flexibility - precise vs. quick adjustments
+11. **Layout Matters**: Side-by-side dual deck layout matches professional DJ software expectations and improves usability
+12. **Branding Consistency**: Project name should be consistent across README, HTML title, heading, and documentation
+13. **Favicon Importance**: Small detail but improves professionalism and prevents 404 errors
+14. **Documentation Quality**: Good README is essential for open-source projects - clear features, usage, and compatibility info
+15. **Microphone Integration**: getUserMedia requires user permission and HTTPS - always provide fallback and clear error messages
+16. **Audio Routing Flexibility**: Modular Web Audio API graph makes adding new sources (like mic) straightforward
 **User Requests**: "add a basic license" → "update the README so that the app is called Browser Jockey" → "now update index.html accordingly" → "seeing these errors: 404 favicon.ico"
 
 **Implementation**:
