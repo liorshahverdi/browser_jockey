@@ -1723,3 +1723,16 @@ h1 {
 .reset-color-btn:active {
     transform: rotate(180deg) scale(1.05);
 }
+
+/* Credits Footer */
+.credits {
+    position: fixed;
+    bottom: 10px;
+    right: 15px;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.3);
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    z-index: 1;
+}
