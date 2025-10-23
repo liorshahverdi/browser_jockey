@@ -364,6 +364,82 @@
                     <audio id="recordedAudio" controls></audio>
                 </div>
             </div>
+            
+            <!-- Keyboard Sampler Section -->
+            <div class="keyboard-sampler-section">
+                <div class="sampler-header">🎹 Keyboard Sampler</div>
+                <div class="sampler-controls">
+                    <div class="sampler-source-select">
+                        <label>Sample Source:</label>
+                        <select id="samplerSource" class="sampler-select">
+                            <option value="none">-- Select Track/Clip --</option>
+                            <option value="track1">Track 1 (Full)</option>
+                            <option value="track2">Track 2 (Full)</option>
+                            <option value="track1-loop">Track 1 (Loop Only)</option>
+                            <option value="track2-loop">Track 2 (Loop Only)</option>
+                            <option value="recording">Last Recording</option>
+                        </select>
+                    </div>
+                    <div class="sampler-mode-select">
+                        <label>Scale:</label>
+                        <select id="samplerScale" class="sampler-select">
+                            <option value="pentatonic-major" selected>Pentatonic Major (C-D-E-G-A)</option>
+                            <option value="pentatonic-minor">Pentatonic Minor (A-C-D-E-G)</option>
+                            <option value="chromatic">Chromatic (All 12 notes)</option>
+                        </select>
+                    </div>
+                    <div class="sampler-root-select">
+                        <label>Root Note:</label>
+                        <select id="samplerRoot" class="sampler-select">
+                            <option value="C" selected>C</option>
+                            <option value="C#">C#</option>
+                            <option value="D">D</option>
+                            <option value="D#">D#</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                            <option value="F#">F#</option>
+                            <option value="G">G</option>
+                            <option value="G#">G#</option>
+                            <option value="A">A</option>
+                            <option value="A#">A#</option>
+                            <option value="B">B</option>
+                        </select>
+                    </div>
+                    <div class="sampler-info">
+                        <button id="enableSamplerBtn" class="control-btn sampler-btn" disabled>
+                            <span class="sampler-icon">🎹</span> Enable Sampler
+                        </button>
+                        <button id="disableSamplerBtn" class="control-btn sampler-btn" style="display: none;">
+                            <span class="sampler-icon">⏹️</span> Disable Sampler
+                        </button>
+                        <span class="sampler-help-text">Select a source and press keys: A-S-D-F-G-H-J-K (lower octave) or Q-W-E-R-T-Y-U-I (upper octave)</span>
+                    </div>
+                </div>
+                <div class="keyboard-visual" id="keyboardVisual" style="display: none;">
+                    <div class="keyboard-row">
+                        <span class="keyboard-note">Upper Octave:</span>
+                        <div class="key-indicator" data-key="Q">Q</div>
+                        <div class="key-indicator" data-key="W">W</div>
+                        <div class="key-indicator" data-key="E">E</div>
+                        <div class="key-indicator" data-key="R">R</div>
+                        <div class="key-indicator" data-key="T">T</div>
+                        <div class="key-indicator" data-key="Y">Y</div>
+                        <div class="key-indicator" data-key="U">U</div>
+                        <div class="key-indicator" data-key="I">I</div>
+                    </div>
+                    <div class="keyboard-row">
+                        <span class="keyboard-note">Lower Octave:</span>
+                        <div class="key-indicator" data-key="A">A</div>
+                        <div class="key-indicator" data-key="S">S</div>
+                        <div class="key-indicator" data-key="D">D</div>
+                        <div class="key-indicator" data-key="F">F</div>
+                        <div class="key-indicator" data-key="G">G</div>
+                        <div class="key-indicator" data-key="H">H</div>
+                        <div class="key-indicator" data-key="J">J</div>
+                        <div class="key-indicator" data-key="K">K</div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div id="visualizer-container" class="visualizer-container">

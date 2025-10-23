@@ -134,6 +134,14 @@ const autotuneSpeedValue = document.getElementById('autotuneSpeedValue');
 const autotuneStrengthSlider = document.getElementById('autotuneStrengthSlider');
 const autotuneStrengthValue = document.getElementById('autotuneStrengthValue');
 
+// Keyboard Sampler elements
+const samplerSourceSelect = document.getElementById('samplerSource');
+const samplerScaleSelect = document.getElementById('samplerScale');
+const samplerRootSelect = document.getElementById('samplerRoot');
+const enableSamplerBtn = document.getElementById('enableSamplerBtn');
+const disableSamplerBtn = document.getElementById('disableSamplerBtn');
+const keyboardVisual = document.getElementById('keyboardVisual');
+
 // Audio context and analysers
 let audioContext;
 let analyser;
@@ -208,6 +216,31 @@ let recordingInterval;
 let recordingDestination;
 let recordingAnalyser;
 let recordingAnimationId;
+
+// Keyboard Sampler state
+let samplerEnabled = false;
+let samplerSource = null; // 'track1', 'track2', 'track1-loop', 'track2-loop', 'recording'
+let samplerAudioBuffer = null;
+let samplerScale = 'pentatonic-major';
+let samplerRoot = 'C';
+let activeKeys = new Set();
+
+// Pentatonic scales (semitone intervals from root)
+const scales = {
+    'pentatonic-major': [0, 2, 4, 7, 9, 12, 14, 16], // C D E G A C D E
+    'pentatonic-minor': [0, 3, 5, 7, 10, 12, 15, 17], // A C D E G A C D
+    'chromatic': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] // All semitones
+};
+
+// Keyboard mapping (2 octaves)
+const keyboardMap = {
+    // Lower octave
+    'A': 0, 'S': 1, 'D': 2, 'F': 3, 'G': 4, 'H': 5, 'J': 6, 'K': 7,
+    // Upper octave
+    'Q': 0, 'W': 1, 'E': 2, 'R': 3, 'T': 4, 'Y': 5, 'U': 6, 'I': 7
+};
+
+const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 // Raycaster for click detection
 const raycaster = new THREE.Raycaster();
@@ -1471,6 +1504,244 @@ function updateAutotuneStrength(value) {
         const strength = value / 100;
         autotuneProcessor.dryGain.gain.value = 1 - strength;
         autotuneProcessor.wetGain.gain.value = strength;
+    }
+}
+
+// Keyboard Sampler Functions
+async function loadSamplerSource() {
+    samplerSource = samplerSourceSelect.value;
+    
+    if (samplerSource === 'none') {
+        samplerAudioBuffer = null;
+        enableSamplerBtn.disabled = true;
+        return;
+    }
+    
+    try {
+        let audioBuffer;
+        
+        if (samplerSource === 'track1' || samplerSource === 'track1-loop') {
+            if (!audioElement1.src) {
+                alert('Track 1 not loaded');
+                samplerSourceSelect.value = 'none';
+                return;
+            }
+            
+            // Get audio buffer from Track 1
+            if (zoomState1.audioBuffer) {
+                audioBuffer = zoomState1.audioBuffer;
+                
+                // If loop mode, extract loop region
+                if (samplerSource === 'track1-loop' && loopState1.enabled && loopState1.start !== null && loopState1.end !== null) {
+                    const duration = audioBuffer.duration;
+                    const startSample = Math.floor(loopState1.start * audioBuffer.sampleRate);
+                    const endSample = Math.floor(loopState1.end * audioBuffer.sampleRate);
+                    const loopLength = endSample - startSample;
+                    
+                    // Create new buffer with just the loop
+                    const loopBuffer = audioContext.createBuffer(
+                        audioBuffer.numberOfChannels,
+                        loopLength,
+                        audioBuffer.sampleRate
+                    );
+                    
+                    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                        const sourceData = audioBuffer.getChannelData(channel);
+                        const loopData = loopBuffer.getChannelData(channel);
+                        for (let i = 0; i < loopLength; i++) {
+                            loopData[i] = sourceData[startSample + i];
+                        }
+                    }
+                    
+                    audioBuffer = loopBuffer;
+                }
+            }
+        } else if (samplerSource === 'track2' || samplerSource === 'track2-loop') {
+            if (!audioElement2.src) {
+                alert('Track 2 not loaded');
+                samplerSourceSelect.value = 'none';
+                return;
+            }
+            
+            if (zoomState2.audioBuffer) {
+                audioBuffer = zoomState2.audioBuffer;
+                
+                // If loop mode, extract loop region
+                if (samplerSource === 'track2-loop' && loopState2.enabled && loopState2.start !== null && loopState2.end !== null) {
+                    const startSample = Math.floor(loopState2.start * audioBuffer.sampleRate);
+                    const endSample = Math.floor(loopState2.end * audioBuffer.sampleRate);
+                    const loopLength = endSample - startSample;
+                    
+                    // Create new buffer with just the loop
+                    const loopBuffer = audioContext.createBuffer(
+                        audioBuffer.numberOfChannels,
+                        loopLength,
+                        audioBuffer.sampleRate
+                    );
+                    
+                    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                        const sourceData = audioBuffer.getChannelData(channel);
+                        const loopData = loopBuffer.getChannelData(channel);
+                        for (let i = 0; i < loopLength; i++) {
+                            loopData[i] = sourceData[startSample + i];
+                        }
+                    }
+                    
+                    audioBuffer = loopBuffer;
+                }
+            }
+        } else if (samplerSource === 'recording') {
+            if (!recordedBlob) {
+                alert('No recording available');
+                samplerSourceSelect.value = 'none';
+                return;
+            }
+            
+            // Decode recording blob
+            const arrayBuffer = await recordedBlob.arrayBuffer();
+            audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        }
+        
+        samplerAudioBuffer = audioBuffer;
+        enableSamplerBtn.disabled = false;
+        console.log('Sampler source loaded:', samplerSource, 'Duration:', audioBuffer.duration);
+        
+    } catch (error) {
+        console.error('Error loading sampler source:', error);
+        alert('Error loading sampler source: ' + error.message);
+        samplerSourceSelect.value = 'none';
+        samplerAudioBuffer = null;
+        enableSamplerBtn.disabled = true;
+    }
+}
+
+function enableSampler() {
+    if (!samplerAudioBuffer) {
+        alert('Please select and load a sample source first');
+        return;
+    }
+    
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
+    samplerEnabled = true;
+    samplerScale = samplerScaleSelect.value;
+    samplerRoot = samplerRootSelect.value;
+    
+    // Update UI
+    enableSamplerBtn.style.display = 'none';
+    disableSamplerBtn.style.display = 'inline-block';
+    keyboardVisual.style.display = 'block';
+    samplerSourceSelect.disabled = true;
+    
+    console.log('Keyboard sampler enabled');
+    console.log('Scale:', samplerScale, 'Root:', samplerRoot);
+}
+
+function disableSampler() {
+    samplerEnabled = false;
+    activeKeys.clear();
+    
+    // Update UI
+    enableSamplerBtn.style.display = 'inline-block';
+    disableSamplerBtn.style.display = 'none';
+    keyboardVisual.style.display = 'none';
+    samplerSourceSelect.disabled = false;
+    
+    // Remove active classes from keys
+    document.querySelectorAll('.key-indicator').forEach(key => {
+        key.classList.remove('active');
+    });
+    
+    console.log('Keyboard sampler disabled');
+}
+
+function playSamplerNote(scaleIndex, isUpperOctave = false) {
+    if (!samplerEnabled || !samplerAudioBuffer) return;
+    
+    // Get the scale intervals
+    const scaleIntervals = scales[samplerScale];
+    if (scaleIndex >= scaleIntervals.length) return;
+    
+    // Calculate semitone offset
+    let semitoneOffset = scaleIntervals[scaleIndex];
+    
+    // Add octave if upper octave
+    if (isUpperOctave && samplerScale !== 'chromatic') {
+        semitoneOffset += 12; // One octave up
+    }
+    
+    // Adjust for root note
+    const rootNoteIndex = noteNames.indexOf(samplerRoot);
+    semitoneOffset += rootNoteIndex;
+    
+    // Calculate playback rate (each semitone is 2^(1/12))
+    const playbackRate = Math.pow(2, semitoneOffset / 12);
+    
+    // Create buffer source
+    const source = audioContext.createBufferSource();
+    source.buffer = samplerAudioBuffer;
+    source.playbackRate.value = playbackRate;
+    
+    // Create gain for this note
+    const noteGain = audioContext.createGain();
+    noteGain.gain.setValueAtTime(0.6, audioContext.currentTime);
+    noteGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + samplerAudioBuffer.duration);
+    
+    // Connect: source -> gain -> destination
+    source.connect(noteGain);
+    noteGain.connect(audioContext.destination);
+    
+    // Play
+    source.start(0);
+    
+    console.log(`Playing note: scale index ${scaleIndex}, semitone offset ${semitoneOffset}, rate ${playbackRate.toFixed(3)}`);
+}
+
+// Keyboard event handlers
+function handleKeyDown(event) {
+    if (!samplerEnabled) return;
+    
+    const key = event.key.toUpperCase();
+    
+    // Prevent default for our keys
+    if (key in keyboardMap) {
+        event.preventDefault();
+        
+        // Check if already pressed (prevent key repeat)
+        if (activeKeys.has(key)) return;
+        activeKeys.add(key);
+        
+        // Determine if upper or lower octave
+        const isUpperOctave = 'QWERTYUI'.includes(key);
+        const scaleIndex = keyboardMap[key];
+        
+        // Play the note
+        playSamplerNote(scaleIndex, isUpperOctave);
+        
+        // Visual feedback
+        const keyElement = document.querySelector(`.key-indicator[data-key="${key}"]`);
+        if (keyElement) {
+            keyElement.classList.add('active');
+        }
+    }
+}
+
+function handleKeyUp(event) {
+    if (!samplerEnabled) return;
+    
+    const key = event.key.toUpperCase();
+    
+    if (key in keyboardMap) {
+        event.preventDefault();
+        activeKeys.delete(key);
+        
+        // Remove visual feedback
+        const keyElement = document.querySelector(`.key-indicator[data-key="${key}"]`);
+        if (keyElement) {
+            keyElement.classList.remove('active');
+        }
     }
 }
 
@@ -3171,6 +3442,30 @@ autotuneSpeedSlider.addEventListener('input', (e) => {
 autotuneStrengthSlider.addEventListener('input', (e) => {
     updateAutotuneStrength(parseInt(e.target.value));
 });
+
+// Keyboard Sampler event handlers
+samplerSourceSelect.addEventListener('change', loadSamplerSource);
+
+samplerScaleSelect.addEventListener('change', () => {
+    samplerScale = samplerScaleSelect.value;
+    if (samplerEnabled) {
+        console.log('Scale changed to:', samplerScale);
+    }
+});
+
+samplerRootSelect.addEventListener('change', () => {
+    samplerRoot = samplerRootSelect.value;
+    if (samplerEnabled) {
+        console.log('Root note changed to:', samplerRoot);
+    }
+});
+
+enableSamplerBtn.addEventListener('click', enableSampler);
+disableSamplerBtn.addEventListener('click', disableSampler);
+
+// Global keyboard event listeners for sampler
+document.addEventListener('keydown', handleKeyDown);
+document.addEventListener('keyup', handleKeyUp);
 
 // Tempo sliders
 tempoSlider1.addEventListener('input', (e) => {

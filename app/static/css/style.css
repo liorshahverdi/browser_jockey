@@ -1196,6 +1196,146 @@ h1 {
     box-shadow: 0 0 20px rgba(255, 0, 255, 0.4);
 }
 
+/* Keyboard Sampler Section */
+.keyboard-sampler-section {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 2px solid rgba(138, 43, 226, 0.4);
+}
+
+.sampler-header {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: rgba(200, 150, 255, 0.9);
+    text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+}
+
+.sampler-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.sampler-source-select,
+.sampler-mode-select,
+.sampler-root-select {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sampler-source-select label,
+.sampler-mode-select label,
+.sampler-root-select label {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    min-width: 100px;
+}
+
+.sampler-select {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(138, 43, 226, 0.4);
+    border-radius: 5px;
+    color: white;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.sampler-select:hover {
+    background: rgba(138, 43, 226, 0.1);
+    border-color: rgba(138, 43, 226, 0.6);
+}
+
+.sampler-select:focus {
+    outline: none;
+    border-color: rgba(138, 43, 226, 0.8);
+    box-shadow: 0 0 8px rgba(138, 43, 226, 0.4);
+}
+
+.sampler-select option {
+    background: #1a1a1a;
+    color: white;
+}
+
+.sampler-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.sampler-btn {
+    border-color: rgba(138, 43, 226, 0.5);
+}
+
+.sampler-btn:not(:disabled):hover {
+    background: rgba(138, 43, 226, 0.2);
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
+}
+
+.sampler-icon {
+    font-size: 1.1rem;
+}
+
+.sampler-help-text {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+}
+
+.keyboard-visual {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    border: 1px solid rgba(138, 43, 226, 0.3);
+}
+
+.keyboard-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.keyboard-row:last-child {
+    margin-bottom: 0;
+}
+
+.keyboard-note {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    min-width: 120px;
+    font-size: 0.9rem;
+}
+
+.key-indicator {
+    padding: 10px 15px;
+    background: rgba(138, 43, 226, 0.2);
+    border: 2px solid rgba(138, 43, 226, 0.4);
+    border-radius: 6px;
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
+    text-align: center;
+    min-width: 45px;
+    transition: all 0.1s ease;
+    user-select: none;
+}
+
+.key-indicator.active {
+    background: rgba(138, 43, 226, 0.6);
+    border-color: rgba(200, 150, 255, 0.8);
+    box-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
+    transform: scale(0.95);
+}
+
 .visualizer-container,
 #visualizer-container {
     position: relative;
