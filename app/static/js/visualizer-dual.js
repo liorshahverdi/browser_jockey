@@ -138,6 +138,8 @@ const autotuneStrengthValue = document.getElementById('autotuneStrengthValue');
 const samplerSourceSelect = document.getElementById('samplerSource');
 const samplerScaleSelect = document.getElementById('samplerScale');
 const samplerRootSelect = document.getElementById('samplerRoot');
+const samplerVolumeSlider = document.getElementById('samplerVolumeSlider');
+const samplerVolumeValue = document.getElementById('samplerVolumeValue');
 const enableSamplerBtn = document.getElementById('enableSamplerBtn');
 const disableSamplerBtn = document.getElementById('disableSamplerBtn');
 const keyboardVisual = document.getElementById('keyboardVisual');
@@ -223,6 +225,7 @@ let samplerSource = null; // 'track1', 'track2', 'track1-loop', 'track2-loop', '
 let samplerAudioBuffer = null;
 let samplerScale = 'pentatonic-major';
 let samplerRoot = 'C';
+let samplerVolume = 0.6; // Default 60%
 let activeKeys = new Set();
 
 // Pentatonic scales (semitone intervals from root)
@@ -1686,7 +1689,7 @@ function playSamplerNote(scaleIndex, isUpperOctave = false) {
     
     // Create gain for this note
     const noteGain = audioContext.createGain();
-    noteGain.gain.setValueAtTime(0.6, audioContext.currentTime);
+    noteGain.gain.setValueAtTime(samplerVolume, audioContext.currentTime);
     noteGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + samplerAudioBuffer.duration);
     
     // Connect: source -> gain -> destination
@@ -3462,6 +3465,13 @@ samplerRootSelect.addEventListener('change', () => {
 
 enableSamplerBtn.addEventListener('click', enableSampler);
 disableSamplerBtn.addEventListener('click', disableSampler);
+
+// Sampler volume slider
+samplerVolumeSlider.addEventListener('input', (e) => {
+    const volume = parseInt(e.target.value);
+    samplerVolume = volume / 100;
+    samplerVolumeValue.textContent = volume + '%';
+});
 
 // Global keyboard event listeners for sampler
 document.addEventListener('keydown', handleKeyDown);
