@@ -1,7 +1,9 @@
 # Browser Jockey (https://browser-jockey.onrender.com/)
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, and professional DJ controls.
 
-**Latest Update (v3.5.5)**: Fixed loop marker UX issue - loop markers now properly reset to start point when toggling loop mode off/on, ensuring consistent and predictable behavior. See [LOOP_MARKER_UX_FIX.md](LOOP_MARKER_UX_FIX.md) for details.
+**Latest Update (v3.6.0)**: Added Dual Track Controls - new buttons to play both tracks simultaneously and to play both tracks while recording. Perfect for live mixing and creating layered recordings! See [DUAL_TRACK_CONTROLS_FEATURE.md](DUAL_TRACK_CONTROLS_FEATURE.md) for details.
+
+**v3.5.5**: Fixed loop marker UX issue - loop markers now properly reset to start point when toggling loop mode off/on, ensuring consistent and predictable behavior. See [LOOP_MARKER_UX_FIX.md](LOOP_MARKER_UX_FIX.md) for details.
 
 **v3.5.4**: Fixed recording blob access bug - download and load-to-track functions now properly access the recording blob by using `recordingState.blob` directly, eliminating "No recording available" errors.
 
@@ -33,6 +35,7 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 ## Features
 
 - 🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneously
+- ▶️▶️ **Dual Track Controls** - Play both tracks at once, or play both and record simultaneously
 - 🎵 **BPM Detection** - Automatic tempo detection for each track
 - 🎹 **Key Detection** - Per-track musical key analysis
 - 🔁 **A-B Loop Markers** - Create precise loops with draggable markers

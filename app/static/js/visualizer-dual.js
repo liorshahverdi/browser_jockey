@@ -168,6 +168,10 @@ const recordingWaveform = document.getElementById('recordingWaveform');
 const recordingWaveformContainer = document.querySelector('.recording-waveform-container');
 const recordedAudio = document.getElementById('recordedAudio');
 
+// Dual Track Control elements
+const playBothBtn = document.getElementById('playBothBtn');
+const playBothRecordBtn = document.getElementById('playBothRecordBtn');
+
 // Microphone elements
 const enableMicBtn = document.getElementById('enableMicBtn');
 const disableMicBtn = document.getElementById('disableMicBtn');
@@ -438,6 +442,9 @@ async function loadRecordingToTrack1() {
         
         console.log('Recording successfully loaded to Track 1');
         alert('Recording loaded to Track 1! Click Play to hear it.');
+        
+        // Check if both tracks are loaded to enable dual buttons
+        checkDualTrackButtonsState();
     } catch (err) {
         console.error('Error loading recording to Track 1:', err);
         alert('Error loading recording to Track 1: ' + err.message);
@@ -535,10 +542,82 @@ async function loadRecordingToTrack2() {
         
         console.log('Recording successfully loaded to Track 2');
         alert('Recording loaded to Track 2! Click Play to hear it.');
+        
+        // Check if both tracks are loaded to enable dual buttons
+        checkDualTrackButtonsState();
     } catch (err) {
         console.error('Error loading recording to Track 2:', err);
         alert('Error loading recording to Track 2: ' + err.message);
     }
+}
+
+// Helper function to check if both tracks are loaded
+function checkDualTrackButtonsState() {
+    const track1Loaded = !playBtn1.disabled;
+    const track2Loaded = !playBtn2.disabled;
+    const bothTracksLoaded = track1Loaded && track2Loaded;
+    
+    playBothBtn.disabled = !bothTracksLoaded;
+    playBothRecordBtn.disabled = !bothTracksLoaded;
+}
+
+// Play both tracks simultaneously
+function playBothTracks() {
+    initAudioContext();
+    audioContext.resume().then(() => {
+        // Start both tracks at the same time
+        audioElement1.play();
+        audioElement2.play();
+        
+        if (!animationId) draw();
+        
+        // Handle reverse animations if needed
+        if (loopState1.reverse && loopState1.enabled) {
+            stopReversePlayback(loopState1);
+            loopState1.lastReverseTime = performance.now();
+            animateReversePlayback(audioElement1, loopState1);
+        }
+        
+        if (loopState2.reverse && loopState2.enabled) {
+            stopReversePlayback(loopState2);
+            loopState2.lastReverseTime = performance.now();
+            animateReversePlayback(audioElement2, loopState2);
+        }
+    });
+}
+
+// Play both tracks and start recording
+function playBothAndRecord() {
+    // Check if recording is already in progress
+    if (recordingState.isRecording) {
+        alert('Recording already in progress!');
+        return;
+    }
+    
+    initAudioContext();
+    audioContext.resume().then(() => {
+        // Start recording first
+        startRecording();
+        
+        // Then start both tracks
+        audioElement1.play();
+        audioElement2.play();
+        
+        if (!animationId) draw();
+        
+        // Handle reverse animations if needed
+        if (loopState1.reverse && loopState1.enabled) {
+            stopReversePlayback(loopState1);
+            loopState1.lastReverseTime = performance.now();
+            animateReversePlayback(audioElement1, loopState1);
+        }
+        
+        if (loopState2.reverse && loopState2.enabled) {
+            stopReversePlayback(loopState2);
+            loopState2.lastReverseTime = performance.now();
+            animateReversePlayback(audioElement2, loopState2);
+        }
+    });
 }
 
 // Enable microphone input
@@ -1730,6 +1809,9 @@ audioFile1.addEventListener('change', async (e) => {
                 console.error('Error creating MediaElementSource for Track 1:', err);
             }
         }
+        
+        // Check if both tracks are loaded to enable dual buttons
+        checkDualTrackButtonsState();
     }
 });
 
@@ -1861,6 +1943,9 @@ audioFile2.addEventListener('change', async (e) => {
                 console.error('Error creating MediaElementSource for Track 2:', err);
             }
         }
+        
+        // Check if both tracks are loaded to enable dual buttons
+        checkDualTrackButtonsState();
     }
 });
 
@@ -2611,6 +2696,10 @@ stopRecordBtn.addEventListener('click', stopRecording);
 downloadBtn.addEventListener('click', downloadRecordingWrapper);
 loadToTrack1Btn.addEventListener('click', loadRecordingToTrack1);
 loadToTrack2Btn.addEventListener('click', loadRecordingToTrack2);
+
+// Dual Track Control button handlers
+playBothBtn.addEventListener('click', playBothTracks);
+playBothRecordBtn.addEventListener('click', playBothAndRecord);
 
 // Microphone button handlers
 enableMicBtn.addEventListener('click', enableMicrophone);

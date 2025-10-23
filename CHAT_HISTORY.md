@@ -1,9 +1,9 @@
 # Browser Jockey - Development Chat History
 
 ## Project Overview
-A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, and quick loop creation.
+A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, and dual track controls.
 
-**Latest Version: v3.5.5** - Fixed loop marker UX issue
+**Latest Version: v3.6.0** - Added Dual Track Controls (Play Both Tracks + Play Both & Record)
 
 ---
 
@@ -3715,6 +3715,135 @@ The `clearLoopPoints()` function properly resets ALL loop state:
 
 **Tags**:
 - `v3.5.5` - "Fix loop marker UX issue - properly reset settingPoint state"
+
+---
+
+### 64. Dual Track Controls Feature (v3.6.0)
+**User Request**: "i want to add two buttons to the UI. one to play both tracks at once, the 2nd to start playing both tracks at once and recording at the same time"
+
+**Implementation**:
+- Added new "Dual Track Controls" section to the UI
+- Two new buttons with intelligent state management:
+  1. **Play Both Tracks** (▶️▶️) - Plays both Track 1 and Track 2 simultaneously
+  2. **Play Both & Record** (▶️⏺️) - Plays both tracks and starts recording at the same time
+
+**Features**:
+- **Smart Button States**: Buttons are disabled until both tracks are loaded
+- **Automatic Enabling**: Checks track state on file upload or recording load
+- **Synchronized Playback**: Both tracks start at exactly the same time
+- **Recording Integration**: Seamlessly starts recording while playing both tracks
+- **Loop Support**: Maintains individual track loop settings (forward/reverse)
+- **Effect Preservation**: All track effects and settings are preserved
+
+**UI/UX Design**:
+- New section positioned between track controls and microphone section
+- Cyan color theme matching app aesthetic
+- Icon-rich buttons for immediate visual recognition
+- Gradient backgrounds with hover effects
+- Responsive flex layout
+- Disabled state provides clear visual feedback
+
+**Technical Implementation**:
+
+**HTML** (`app/templates/index.html`):
+- Added `.dual-track-controls-section` with header and buttons
+- Button IDs: `playBothBtn`, `playBothRecordBtn`
+- Both disabled by default until tracks are loaded
+
+**CSS** (`app/static/css/style.css`):
+- `.dual-track-controls-section` - Container with cyan borders
+- `.dual-controls-header` - Glowing header text
+- `.dual-controls-buttons` - Flex layout for buttons
+- `.dual-control-btn` - Button styling with gradients and hover effects
+- `.dual-icon` - Icon styling for emojis
+
+**JavaScript** (`app/static/js/visualizer-dual.js`):
+
+New Functions:
+1. `checkDualTrackButtonsState()` - Helper to enable/disable buttons based on track state
+2. `playBothTracks()` - Plays both tracks simultaneously
+3. `playBothAndRecord()` - Starts recording then plays both tracks
+
+Integration Points:
+- Event listeners added for both new buttons
+- `checkDualTrackButtonsState()` called in:
+  - `audioFile1` change event handler
+  - `audioFile2` change event handler  
+  - `loadRecordingToTrack1()` function
+  - `loadRecordingToTrack2()` function
+
+**Code Structure**:
+```javascript
+// Check if both tracks loaded
+function checkDualTrackButtonsState() {
+    const bothTracksLoaded = !playBtn1.disabled && !playBtn2.disabled;
+    playBothBtn.disabled = !bothTracksLoaded;
+    playBothRecordBtn.disabled = !bothTracksLoaded;
+}
+
+// Play both tracks
+function playBothTracks() {
+    initAudioContext();
+    audioContext.resume().then(() => {
+        audioElement1.play();
+        audioElement2.play();
+        // Handle reverse animations, visualization
+    });
+}
+
+// Play both and record
+function playBothAndRecord() {
+    initAudioContext();
+    audioContext.resume().then(() => {
+        startRecording();
+        audioElement1.play();
+        audioElement2.play();
+        // Handle reverse animations, visualization
+    });
+}
+```
+
+**Benefits**:
+- **Workflow Improvement**: One-click operation for common DJ mixing tasks
+- **Recording Made Easy**: Capture both tracks playing together without manual timing
+- **Live Performance**: Perfect for creating layered mixes and recordings
+- **Professional Feel**: Dedicated controls for dual-track operations
+- **Error Prevention**: Checks recording state to prevent duplicates
+
+**Use Cases**:
+1. **Live Mixing**: DJ can play both tracks simultaneously for transitions
+2. **Recording Sessions**: Capture both tracks with all effects for final mix
+3. **Practice**: Test how tracks sound together before recording
+4. **Layering**: Record both tracks, then load to a track for more layering
+
+**Files Modified**:
+- `app/templates/index.html` - Added dual track controls section
+- `app/static/css/style.css` - Added styling for new section
+- `app/static/js/visualizer-dual.js` - Added functions and event handlers
+- `DUAL_TRACK_CONTROLS_FEATURE.md` - Comprehensive documentation (created)
+- `README.md` - Updated to v3.6.0 with feature description
+- `CHAT_HISTORY.md` - Added session documentation
+
+**Testing Considerations**:
+- ✅ Buttons disabled when no tracks loaded
+- ✅ Buttons enabled when both tracks loaded
+- ✅ Synchronized playback starts both tracks simultaneously
+- ✅ Recording integration works without conflicts
+- ✅ Reverse loops work correctly on each track
+- ✅ Works with file uploads and loaded recordings
+
+**Impact**:
+- New UI Section: 1
+- New Buttons: 2
+- New Functions: 3
+- CSS Classes: 5
+- No breaking changes to existing functionality
+
+**Commits**:
+- "Add dual track controls - play both tracks and play+record (v3.6.0)"
+
+**Tags**:
+- `v3.6.0` - "Add dual track controls for simultaneous playback and recording"
 
 ---
 

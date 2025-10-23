@@ -826,6 +826,58 @@ h1 {
     transition: all 0.3s ease;
 }
 
+/* Dual Track Controls */
+.dual-track-controls-section {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 2px solid rgba(0, 255, 255, 0.4);
+}
+
+.dual-controls-header {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: rgba(0, 255, 255, 0.9);
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    text-align: center;
+}
+
+.dual-controls-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.dual-control-btn {
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+    font-size: 1.1rem;
+    padding: 15px 25px;
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(138, 43, 226, 0.2));
+    border: 2px solid rgba(0, 255, 255, 0.5);
+}
+
+.dual-control-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.3), rgba(138, 43, 226, 0.3));
+    border-color: rgba(0, 255, 255, 0.8);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+}
+
+.dual-control-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.dual-icon {
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 1.2rem;
+}
+
 .microphone-section {
     margin-top: 20px;
     padding: 20px;
