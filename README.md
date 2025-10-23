@@ -24,7 +24,8 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 - ⚡ **Quick Loops** - Auto-create 1, 2, 4, or 8 bar loops based on BPM
 - 🔍 **Waveform Zoom** - Zoom up to 20x with drag-to-pan
 - 🎚️ **Audio Effects** - Reverb, delay, and filters (low/high/band pass)
-- 💾 **Export** - Export full stems or loop regions as WAV files
+- 💾 **Export** - Export full stems or loop regions as WAV or MP3 files
+- 🎵 **Format Options** - Choose between WAV (lossless) or MP3 (compressed 128kbps) export
 - 🎤 **Microphone Input** - Live mic input with volume control and monitoring
 - 🤖 **Vocoder Effect** - Robot voice effect with 8-32 frequency bands, carrier source selection
 - 🎵 **Auto-Tune Effect** - Real-time pitch correction with key/scale selection, adjustable correction speed
@@ -246,8 +247,14 @@ browser_jockey/
 - **Delay**: Amount and time control
 
 ### Export
-- **Export Stem**: Save full track with effects as WAV
-- **Export Loop**: Save loop region with effects as WAV
+- **Format Selection**: Choose export format for each track
+  - **WAV (lossless)**: Uncompressed, high-quality audio (~30 MB for 3-min track)
+  - **MP3 (compressed)**: 128 kbps encoding (~3 MB for 3-min track)
+- **Export Stem**: Save full track with all effects applied
+- **Export Loop**: Save loop region with all effects applied
+- **Use Cases**:
+  - WAV: Professional production, mastering, further processing
+  - MP3: Sharing online, email, storage optimization, demos
 
 ### Microphone Input
 1. **Enable Microphone**: Click 🎤 Enable Microphone button
@@ -369,7 +376,10 @@ Each key has its own color, creating a unique visual experience for different so
 - **Vocal Effects**: 
   - **Vocoder**: Band-pass filter banks with envelope followers
   - **Auto-Tune**: Autocorrelation pitch detection with delay-based pitch shifting
-- **Export**: OfflineAudioContext, WAV encoding
+- **Export**: 
+  - OfflineAudioContext for rendering with effects
+  - WAV encoding (PCM 16-bit)
+  - MP3 encoding via lamejs (128 kbps)
 - **Recording**: MediaRecorder API (WebM format)
 - **Containerization**: Docker & Docker Compose
 - **Production Server**: Gunicorn
@@ -392,7 +402,8 @@ Each key has its own color, creating a unique visual experience for different so
 
 ## Version History
 
-- **v2.5** (Current) - Load recording to tracks for layering and live looping
+- **v2.6** (Current) - MP3 and WAV export format options with lamejs integration
+- **v2.5** - Load recording to tracks for layering and live looping
 - **v2.4** - Loop playback audio fixes (debouncing, smooth marker dragging)
 - **v2.3** - Dynamic heat map colors in Circle mode visualization
 - **v2.2** - Auto-tune effect with pitch correction
