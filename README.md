@@ -13,7 +13,7 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 
 ![Browser Jockey Screenshot 5](app/screenshots/app_screenshot_2025_10_23_at_02_09_07.png)
 
-![Browser Jockey Screenshot 6 - Keyboard Sampler (v3.0)](app/screenshots/app_screenshot_2025_10_23_at_10_09_24.png)
+![Browser Jockey Screenshot 6 - Keyboard Sampler (v3.0)](app/screenshots/app_screenshot_2025_10_23_at_10_15_40.png)
 *v3.0 Keyboard Sampler Feature - Play tracks/loops on pentatonic scales using keyboard*
 
 

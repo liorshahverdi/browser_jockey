@@ -1692,9 +1692,14 @@ function playSamplerNote(scaleIndex, isUpperOctave = false) {
     noteGain.gain.setValueAtTime(samplerVolume, audioContext.currentTime);
     noteGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + samplerAudioBuffer.duration);
     
-    // Connect: source -> gain -> destination
+    // Connect: source -> gain -> destination (speakers)
     source.connect(noteGain);
     noteGain.connect(audioContext.destination);
+    
+    // Also connect to recording destination if it exists
+    if (recordingDestination) {
+        noteGain.connect(recordingDestination);
+    }
     
     // Play
     source.start(0);
