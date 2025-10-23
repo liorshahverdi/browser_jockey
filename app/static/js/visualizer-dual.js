@@ -2309,6 +2309,8 @@ playBtn1.addEventListener('click', () => {
         if (!animationId) draw();
         // Start reverse animation if in reverse mode
         if (loopState1.reverse && loopState1.enabled) {
+            // Stop any existing animation first to prevent duplicates
+            stopReversePlayback(loopState1);
             loopState1.lastReverseTime = performance.now();
             animateReversePlayback(audioElement1, loopState1);
         }
@@ -2322,6 +2324,8 @@ playBtn2.addEventListener('click', () => {
         if (!animationId) draw();
         // Start reverse animation if in reverse mode
         if (loopState2.reverse && loopState2.enabled) {
+            // Stop any existing animation first to prevent duplicates
+            stopReversePlayback(loopState2);
             loopState2.lastReverseTime = performance.now();
             animateReversePlayback(audioElement2, loopState2);
         }
@@ -2438,6 +2442,8 @@ reverseLoopBtn1.addEventListener('click', () => {
     }
     
     if (loopState1.reverse) {
+        // Stop any existing animation first to prevent duplicates
+        stopReversePlayback(loopState1);
         // DON'T jump to end - let it play from current position for seamless transition
         // Only start reverse animation if playing
         if (!audioElement1.paused) {
@@ -2447,6 +2453,8 @@ reverseLoopBtn1.addEventListener('click', () => {
     } else {
         // Stop reverse animation but keep loop points
         stopReversePlayback(loopState1);
+        // Re-enable normal loop button when turning off reverse
+        loopBtn1.classList.add('active');
         // Loop remains enabled in normal mode
         // DON'T jump playhead - continue from current position
     }
@@ -2477,6 +2485,8 @@ reverseLoopBtn2.addEventListener('click', () => {
     }
     
     if (loopState2.reverse) {
+        // Stop any existing animation first to prevent duplicates
+        stopReversePlayback(loopState2);
         // DON'T jump to end - let it play from current position for seamless transition
         // Only start reverse animation if playing
         if (!audioElement2.paused) {
@@ -2486,6 +2496,8 @@ reverseLoopBtn2.addEventListener('click', () => {
     } else {
         // Stop reverse animation but keep loop points
         stopReversePlayback(loopState2);
+        // Re-enable normal loop button when turning off reverse
+        loopBtn2.classList.add('active');
         // Loop remains enabled in normal mode
         // DON'T jump playhead - continue from current position
     }

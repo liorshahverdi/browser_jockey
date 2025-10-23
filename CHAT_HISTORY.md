@@ -3401,5 +3401,98 @@ Fixed in `/Users/lshahverdi/projects/browser_jockey/app/static/js/visualizer-dua
 
 ---
 
+### 56. Reverse Loop Animation Bug Fix (v3.5.2)
+**Date**: October 23, 2025
+**User Request**: "Reverse looping seems to have a bug again. Please investigate and fix."
+
+**Investigation**:
+The reverse loop feature had multiple issues that could cause problems:
+
+1. **Duplicate Animation Loops**:
+   - When toggling reverse mode ON while already playing, the code would start a new `animateReversePlayback` animation
+   - However, if an animation was already running (from a previous toggle or play button), multiple concurrent animations could be running
+   - This caused erratic behavior as multiple `requestAnimationFrame` loops would compete to update `currentTime`
+
+2. **Inconsistent UI State When Toggling Off**:
+   - When toggling reverse mode OFF, the normal loop remained enabled (`loopState.enabled = true`)
+   - However, the normal loop button (`loopBtn`) was not visually activated
+   - This created confusion as the loop was active but the UI didn't reflect it
+
+3. **No Animation Cleanup on Restart**:
+   - When clicking the play button while in reverse mode, it would start a new animation without stopping any existing one
+   - This could happen if the track was paused and then resumed
+
+**Root Cause**:
+The code didn't guard against starting duplicate `requestAnimationFrame` loops. Each animation loop schedules itself recursively, so starting multiple animations creates multiple concurrent loops all trying to update the same `currentTime`.
+
+**Implementation**:
+
+Fixed in `/Users/lshahverdi/projects/browser_jockey/app/static/js/visualizer-dual.js`:
+
+1. **Reverse Loop Button Handlers** (Track 1: ~lines 2430-2447, Track 2: ~lines 2480-2497):
+   ```javascript
+   if (loopState1.reverse) {
+       // Stop any existing animation first to prevent duplicates
+       stopReversePlayback(loopState1);
+       // DON'T jump to end - let it play from current position for seamless transition
+       // Only start reverse animation if playing
+       if (!audioElement1.paused) {
+           loopState1.lastReverseTime = performance.now();
+           animateReversePlayback(audioElement1, loopState1);
+       }
+   } else {
+       // Stop reverse animation but keep loop points
+       stopReversePlayback(loopState1);
+       // Re-enable normal loop button when turning off reverse
+       loopBtn1.classList.add('active');
+       // Loop remains enabled in normal mode
+       // DON'T jump playhead - continue from current position
+   }
+   ```
+   - Added `stopReversePlayback()` call before starting new animation to prevent duplicates
+   - Added `loopBtn.classList.add('active')` when toggling reverse OFF to restore visual state
+   - Applied same fix to Track 2
+
+2. **Play Button Handlers** (~lines 2305-2329):
+   ```javascript
+   playBtn1.addEventListener('click', () => {
+       initAudioContext();
+       audioContext.resume().then(() => {
+           audioElement1.play();
+           if (!animationId) draw();
+           // Start reverse animation if in reverse mode
+           if (loopState1.reverse && loopState1.enabled) {
+               // Stop any existing animation first to prevent duplicates
+               stopReversePlayback(loopState1);
+               loopState1.lastReverseTime = performance.now();
+               animateReversePlayback(audioElement1, loopState1);
+           }
+       });
+   });
+   ```
+   - Added `stopReversePlayback()` call before starting animation when resuming playback
+   - Applied same fix to Track 2
+
+**How It Works**:
+- `stopReversePlayback()` cancels any existing `requestAnimationFrame` and resets the animation ID
+- This ensures only one animation loop runs at a time
+- When toggling between reverse and normal loop, the UI state now matches the actual state
+- The fix maintains seamless transitions without audio cuts
+
+**Files Modified**:
+- `app/static/js/visualizer-dual.js` - Added animation cleanup calls and UI state restoration
+
+**Testing**:
+- Verified no JavaScript syntax errors
+- Reverse loop now works correctly when toggling multiple times
+- No duplicate animations can be started
+- Normal loop button state is restored when switching from reverse to normal loop
+- Play/pause/resume maintains correct animation state
+
+**Commits**:
+- "Fix reverse loop animation - prevent duplicate animations and restore normal loop button state"
+
+---
+
 **End of Chat History - Last Updated: October 23, 2025**
 
