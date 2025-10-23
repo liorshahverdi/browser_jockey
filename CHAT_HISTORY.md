@@ -3102,6 +3102,13 @@ if (newTime <= loopState.start) {
 - "Remove playhead jumping for seamless loop transitions"
 - "Add edge case handling for reverse playback boundaries"
 - "Update documentation with v3.3 features"
+- "Add v3.3 release notes"
+
+**Release**:
+- Created git tag `v3.3` with message "v3.3 - Code Refactoring and Seamless Loop Improvements"
+- Pushed all commits to main branch
+- Pushed v3.3 tag to remote repository
+- Release officially published on GitHub
 
 ---
 
