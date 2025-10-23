@@ -249,6 +249,41 @@ export function audioBufferToWav(audioBuffer) {
     return buffer;
 }
 
+// Convert AudioBuffer to MP3 using lamejs
+function audioBufferToMp3(audioBuffer) {
+    const mp3encoder = new lamejs.Mp3Encoder(audioBuffer.numberOfChannels, audioBuffer.sampleRate, 128);
+    const samples = [];
+    
+    for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+        const channelData = audioBuffer.getChannelData(i);
+        const int16Array = new Int16Array(channelData.length);
+        for (let j = 0; j < channelData.length; j++) {
+            const s = Math.max(-1, Math.min(1, channelData[j]));
+            int16Array[j] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        samples.push(int16Array);
+    }
+    
+    const mp3Data = [];
+    const sampleBlockSize = 1152;
+    
+    for (let i = 0; i < samples[0].length; i += sampleBlockSize) {
+        const leftChunk = samples[0].subarray(i, i + sampleBlockSize);
+        const rightChunk = audioBuffer.numberOfChannels > 1 ? samples[1].subarray(i, i + sampleBlockSize) : leftChunk;
+        const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+        if (mp3buf.length > 0) {
+            mp3Data.push(mp3buf);
+        }
+    }
+    
+    const mp3buf = mp3encoder.flush();
+    if (mp3buf.length > 0) {
+        mp3Data.push(mp3buf);
+    }
+    
+    return new Blob(mp3Data, { type: 'audio/mp3' });
+}
+
 // Download recording in specified format
 export async function downloadRecording(recordedBlob, format, audioContext) {
     if (!recordedBlob) {
@@ -268,6 +303,19 @@ export async function downloadRecording(recordedBlob, format, audioContext) {
             const wav = audioBufferToWav(audioBuffer);
             blob = new Blob([wav], { type: 'audio/wav' });
             extension = 'wav';
+        } else if (format === 'mp3') {
+            // Check if lamejs is available
+            if (typeof lamejs === 'undefined') {
+                alert('MP3 encoder not loaded. Please use WAV or WebM format.');
+                return false;
+            }
+            const arrayBuffer = await recordedBlob.arrayBuffer();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            blob = audioBufferToMp3(audioBuffer);
+            extension = 'mp3';
+        } else {
+            alert(`Unsupported format: ${format}`);
+            return false;
         }
         
         filename = `mix_recording_${new Date().getTime()}.${extension}`;

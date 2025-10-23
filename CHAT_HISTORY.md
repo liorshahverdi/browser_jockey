@@ -3,6 +3,8 @@
 ## Project Overview
 A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, and quick loop creation.
 
+**Latest Version: v3.5.3** - Fixed recording export functionality with MP3 support
+
 ---
 
 ## Session Timeline
@@ -3491,6 +3493,76 @@ Fixed in `/Users/lshahverdi/projects/browser_jockey/app/static/js/visualizer-dua
 
 **Commits**:
 - "Fix reverse loop animation - prevent duplicate animations and restore normal loop button state"
+
+---
+
+### 88. Recording Export Fix (v3.5.3) - October 23, 2025
+**User Request**: "the export function isn't working. investigate and fix."
+
+**Issue Diagnosed**:
+The `downloadRecording()` function in `recording.js` only handled `webm` and `wav` formats, but the HTML dropdown included an `mp3` option. When MP3 was selected, the function would fail silently because:
+1. The `blob` and `extension` variables remained undefined
+2. No error was shown to the user
+3. The download would not trigger
+
+**Implementation**:
+1. **Added MP3 Encoding Function** (`recording.js` ~line 252):
+   ```javascript
+   function audioBufferToMp3(audioBuffer) {
+       const mp3encoder = new lamejs.Mp3Encoder(
+           audioBuffer.numberOfChannels, 
+           audioBuffer.sampleRate, 
+           128  // bitrate
+       );
+       // Convert float32 audio data to int16
+       // Encode in 1152 sample blocks
+       // Return Blob with audio/mp3 type
+   }
+   ```
+   - Uses `lamejs` library (already included via CDN in HTML)
+   - Converts AudioBuffer to MP3 at 128kbps bitrate
+   - Handles both mono and stereo audio
+   - Processes audio in standard MP3 frame blocks (1152 samples)
+
+2. **Extended downloadRecording() Function** (~line 290):
+   ```javascript
+   } else if (format === 'mp3') {
+       // Check if lamejs is available
+       if (typeof lamejs === 'undefined') {
+           alert('MP3 encoder not loaded. Please use WAV or WebM format.');
+           return false;
+       }
+       const arrayBuffer = await recordedBlob.arrayBuffer();
+       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+       blob = audioBufferToMp3(audioBuffer);
+       extension = 'mp3';
+   } else {
+       alert(`Unsupported format: ${format}`);
+       return false;
+   }
+   ```
+   - Added MP3 format case to handle the third export option
+   - Includes graceful fallback if lamejs library fails to load
+   - Added catch-all for unsupported formats with user feedback
+
+**Export Format Support**:
+- **WebM** - Original recording format (no conversion, fastest)
+- **WAV** - Lossless PCM audio (larger files, maximum quality)
+- **MP3** - Compressed audio at 128kbps (smaller files, good for sharing)
+
+**Files Modified**:
+- `app/static/js/modules/recording.js` - Added MP3 encoding and format handling
+- `README.md` - Updated to v3.5.3 with fix description
+- `CHAT_HISTORY.md` - Added session documentation
+
+**Testing Verified**:
+- Export button now works for all three formats
+- MP3 export produces valid audio files
+- Error handling shows appropriate messages
+- Download triggers correctly with proper filenames
+
+**Commits**:
+- "Fix recording export - add MP3 support and improve error handling (v3.5.3)"
 
 ---
 
