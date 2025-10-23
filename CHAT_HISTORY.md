@@ -3332,5 +3332,74 @@ After completing Phase 1 refactoring (constants, loops, audio utilities, effects
 
 ---
 
+### 55. Waveform Color Customization Fix (v3.5.1)
+**Date**: October 23, 2025
+**User Request**: "im noticing the cutomizable waveform color isnt working as expected. investigate and fix."
+
+**Investigation**:
+The customizable waveform color feature was not working due to two critical bugs:
+
+1. **Color Picker Event Handlers Missing Parameter**:
+   - The event listeners for `waveformColor1` and `waveformColor2` input changes were calling `redrawWaveformWithZoom()` without the required `waveformColors` parameter
+   - The function signature requires 5 parameters: `(canvas, zoomState, zoomLevelDisplay, trackNumber, waveformColors)`
+   - Event handlers were only passing 4 parameters
+
+2. **Initial Waveform Drawing Not Using Colors**:
+   - The `loadAudioFile()` function was calling `drawWaveform(canvas, audioBuffer)` without passing the color parameter
+   - This meant newly loaded tracks always displayed with default colors regardless of the color picker settings
+
+**Implementation**:
+
+Fixed in `/Users/lshahverdi/projects/browser_jockey/app/static/js/visualizer-dual.js`:
+
+1. **Updated Color Picker Event Handlers** (lines ~3258-3290):
+   ```javascript
+   // Added waveformColors parameter to all calls
+   waveformColor1.addEventListener('input', (e) => {
+       waveformColors.track1 = e.target.value;
+       if (zoomState1.audioBuffer) {
+           redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1, waveformColors);
+           updateLoopMarkersAfterZoom(1);
+       }
+   });
+   ```
+   - Applied same fix to `waveformColor2`, `resetColor1`, and `resetColor2` handlers
+
+2. **Updated Initial Waveform Drawing** (line ~1147):
+   ```javascript
+   async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, keyDisplay) {
+       // ... existing code ...
+       
+       // Determine which track based on canvas element
+       const trackNumber = canvas === waveform1 ? 1 : 2;
+       const color = trackNumber === 1 ? waveformColors.track1 : waveformColors.track2;
+       
+       // Now passes color parameter
+       drawWaveform(canvas, audioBuffer, 1.0, 0.0, color);
+   ```
+
+**Root Cause Analysis**:
+- The `waveformColors` object was properly initialized with default colors (`#00ffff` for track1, `#ff00ff` for track2)
+- The `drawWaveform()` and `redrawWaveformWithZoom()` functions in `audio-utils.js` were correctly implemented to accept and use color parameters
+- The bug was in the event handlers and initial loading function not passing these parameters through the call chain
+
+**Files Modified**:
+- `app/static/js/visualizer-dual.js` - Fixed color parameter passing in event handlers and loadAudioFile function
+
+**Testing**:
+- Verified no JavaScript syntax errors
+- All calls to `redrawWaveformWithZoom()` now include the `waveformColors` parameter (26 occurrences checked)
+- Color picker now properly updates waveform colors in real-time
+- Reset buttons restore default colors correctly
+
+**Commits**:
+- "Fix waveform color customization - add missing color parameters to event handlers and initial load"
+
+**Release**:
+- Creating git tag `v3.5.1` with message "v3.5.1 - Fix Waveform Color Customization"
+- Pushing to GitHub
+
+---
+
 **End of Chat History - Last Updated: October 23, 2025**
 

@@ -1144,8 +1144,12 @@ async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, 
         zoomState.offset = 0.0;
     }
     
+    // Determine which track based on canvas element
+    const trackNumber = canvas === waveform1 ? 1 : 2;
+    const color = trackNumber === 1 ? waveformColors.track1 : waveformColors.track2;
+    
     console.log('Drawing waveform...');
-    drawWaveform(canvas, audioBuffer);
+    drawWaveform(canvas, audioBuffer, 1.0, 0.0, color);
     console.log('Waveform drawn');
     
     console.log('Detecting BPM...');
@@ -3258,7 +3262,7 @@ exportLoop2.addEventListener('click', () => exportLoop(2));
 waveformColor1.addEventListener('input', (e) => {
     waveformColors.track1 = e.target.value;
     if (zoomState1.audioBuffer) {
-        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
+        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1, waveformColors);
         updateLoopMarkersAfterZoom(1);
     }
 });
@@ -3266,7 +3270,7 @@ waveformColor1.addEventListener('input', (e) => {
 waveformColor2.addEventListener('input', (e) => {
     waveformColors.track2 = e.target.value;
     if (zoomState2.audioBuffer) {
-        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
+        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2, waveformColors);
         updateLoopMarkersAfterZoom(2);
     }
 });
@@ -3275,7 +3279,7 @@ resetColor1.addEventListener('click', () => {
     waveformColor1.value = '#00ffff';
     waveformColors.track1 = '#00ffff';
     if (zoomState1.audioBuffer) {
-        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
+        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1, waveformColors);
         updateLoopMarkersAfterZoom(1);
     }
 });
@@ -3284,7 +3288,7 @@ resetColor2.addEventListener('click', () => {
     waveformColor2.value = '#ff00ff';
     waveformColors.track2 = '#ff00ff';
     if (zoomState2.audioBuffer) {
-        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
+        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2, waveformColors);
         updateLoopMarkersAfterZoom(2);
     }
 });
