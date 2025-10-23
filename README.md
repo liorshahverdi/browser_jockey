@@ -21,6 +21,7 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 - 🌈 **Dynamic Heat Map Colors** - Circle mode bars change color based on energy (blue→cyan→green→yellow→red)
 - 🎨 **Musical Key Colors** - Visualization colors based on detected key
 - 🎙️ **Recording** - Record your live mix with waveform display
+- 📥 **Load Recording to Tracks** - Load recorded output back into Track 1 or Track 2 for layering and live looping
 - 📱 **Professional Layout** - Side-by-side dual deck DJ interface
 - 🎨 **Customizable Colors** - Personalize waveform colors for each track
 
@@ -299,7 +300,18 @@ browser_jockey/
 4. Click "Start Recording"
 5. Perform your mix
 6. Click "Stop Recording"
-7. Click "Download Recording" to save as .webm
+7. Choose what to do with your recording:
+   - **💾 Download Recording**: Save as .webm file
+   - **📥 Load to Track 1**: Load recording into Track 1 for further mixing
+   - **📥 Load to Track 2**: Load recording into Track 2 for further mixing
+
+**Live Looping Workflow**:
+- Record a loop on Track 1
+- Load it to Track 2
+- Record new content on Track 1 while Track 2 loops
+- Load the new recording to Track 1
+- Build complex, layered arrangements progressively
+- Each loaded recording gets full BPM/key analysis and all track features
 
 ### 3D Visualization
 - **Three Modes**: Circle, Bars, Sphere

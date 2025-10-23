@@ -89,6 +89,8 @@ const modeSphereBtn = document.getElementById('modeSphere');
 const recordBtn = document.getElementById('recordBtn');
 const stopRecordBtn = document.getElementById('stopRecordBtn');
 const downloadBtn = document.getElementById('downloadBtn');
+const loadToTrack1Btn = document.getElementById('loadToTrack1Btn');
+const loadToTrack2Btn = document.getElementById('loadToTrack2Btn');
 const recordingTime = document.getElementById('recordingTime');
 const recordingWaveform = document.getElementById('recordingWaveform');
 const recordingWaveformContainer = document.querySelector('.recording-waveform-container');
@@ -196,6 +198,7 @@ let waveformColors = {
 // Recording state
 let mediaRecorder;
 let recordedChunks = [];
+let recordedBlob = null; // Store the recorded blob for loading into tracks
 let recordingStartTime = 0;
 let recordingInterval;
 let recordingDestination;
@@ -396,6 +399,7 @@ function startRecording() {
     
     mediaRecorder.onstop = () => {
         const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+        recordedBlob = blob; // Store for loading into tracks
         const url = URL.createObjectURL(blob);
         recordedAudio.src = url;
         
@@ -413,9 +417,13 @@ function startRecording() {
         };
         reader.readAsArrayBuffer(blob);
         
-        // Enable download button
+        // Enable download and load buttons
         downloadBtn.disabled = false;
         downloadBtn.style.display = 'inline-block';
+        loadToTrack1Btn.disabled = false;
+        loadToTrack1Btn.style.display = 'inline-block';
+        loadToTrack2Btn.disabled = false;
+        loadToTrack2Btn.style.display = 'inline-block';
     };
     
     mediaRecorder.start();
@@ -532,6 +540,94 @@ function downloadRecording() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }, 100);
+}
+
+// Load recorded audio into Track 1
+async function loadRecordingToTrack1() {
+    if (!recordedBlob) {
+        alert('No recording available to load');
+        return;
+    }
+    
+    try {
+        const url = URL.createObjectURL(recordedBlob);
+        audioElement1.src = url;
+        audioElement1.type = 'audio/webm';
+        fileName1.textContent = `Recording_${new Date().getTime()}.webm`;
+        
+        playBtn1.disabled = false;
+        pauseBtn1.disabled = false;
+        stopBtn1.disabled = false;
+        loopBtn1.disabled = false;
+        clearLoopBtn1.disabled = false;
+        exportStem1.disabled = false;
+        recordBtn.disabled = false;
+        
+        // Convert blob to file for waveform loading
+        const file = new File([recordedBlob], 'recording.webm', { type: 'audio/webm' });
+        await loadAudioFile(file, waveform1, bpm1Display, audioElement1, zoomState1, key1Display);
+        
+        if (!scene) {
+            initThreeJS();
+            createCircleVisualization();
+        }
+        
+        if (placeholder) {
+            placeholder.classList.add('hidden');
+        }
+        
+        // Reset source1 to reconnect
+        source1 = null;
+        
+        console.log('Recording loaded to Track 1');
+    } catch (err) {
+        console.error('Error loading recording to Track 1:', err);
+        alert('Error loading recording to Track 1: ' + err.message);
+    }
+}
+
+// Load recorded audio into Track 2
+async function loadRecordingToTrack2() {
+    if (!recordedBlob) {
+        alert('No recording available to load');
+        return;
+    }
+    
+    try {
+        const url = URL.createObjectURL(recordedBlob);
+        audioElement2.src = url;
+        audioElement2.type = 'audio/webm';
+        fileName2.textContent = `Recording_${new Date().getTime()}.webm`;
+        
+        playBtn2.disabled = false;
+        pauseBtn2.disabled = false;
+        stopBtn2.disabled = false;
+        loopBtn2.disabled = false;
+        clearLoopBtn2.disabled = false;
+        exportStem2.disabled = false;
+        recordBtn.disabled = false;
+        
+        // Convert blob to file for waveform loading
+        const file = new File([recordedBlob], 'recording.webm', { type: 'audio/webm' });
+        await loadAudioFile(file, waveform2, bpm2Display, audioElement2, zoomState2, key2Display);
+        
+        if (!scene) {
+            initThreeJS();
+            createCircleVisualization();
+        }
+        
+        if (placeholder) {
+            placeholder.classList.add('hidden');
+        }
+        
+        // Reset source2 to reconnect
+        source2 = null;
+        
+        console.log('Recording loaded to Track 2');
+    } catch (err) {
+        console.error('Error loading recording to Track 2:', err);
+        alert('Error loading recording to Track 2: ' + err.message);
+    }
 }
 
 // Enable microphone input
@@ -2814,6 +2910,8 @@ document.querySelectorAll('.quick-loop-btn').forEach(btn => {
 recordBtn.addEventListener('click', startRecording);
 stopRecordBtn.addEventListener('click', stopRecording);
 downloadBtn.addEventListener('click', downloadRecording);
+loadToTrack1Btn.addEventListener('click', loadRecordingToTrack1);
+loadToTrack2Btn.addEventListener('click', loadRecordingToTrack2);
 
 // Microphone button handlers
 enableMicBtn.addEventListener('click', enableMicrophone);

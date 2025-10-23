@@ -1085,6 +1085,24 @@ h1 {
     box-shadow: 0 0 20px rgba(0, 255, 100, 0.4);
 }
 
+#loadToTrack1Btn:not(:disabled) {
+    border-color: rgba(0, 255, 255, 0.5);
+}
+
+#loadToTrack1Btn:not(:disabled):hover {
+    background: rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+}
+
+#loadToTrack2Btn:not(:disabled) {
+    border-color: rgba(255, 0, 255, 0.5);
+}
+
+#loadToTrack2Btn:not(:disabled):hover {
+    background: rgba(255, 0, 255, 0.2);
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.4);
+}
+
 .visualizer-container,
 #visualizer-container {
     position: relative;

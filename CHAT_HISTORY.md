@@ -1572,6 +1572,114 @@ if (currentTime < loopStart - loopDuration ||
 
 ---
 
+### Version 2.5 - Load Recording to Tracks
+
+**Timestamp**: Session 6 (continued)
+
+**User Request**: "add a feature to load output track into track 1 or track 2"
+
+**Implementation**: Added the ability to load recorded audio back into either Track 1 or Track 2, enabling layered recording and complex mix creation.
+
+**New Features**:
+
+**1. Load to Track Buttons**:
+- **📥 Load to Track 1** button appears after recording stops
+- **📥 Load to Track 2** button appears after recording stops
+- Buttons appear alongside the Download Recording button
+- Disabled state until a recording is available
+
+**2. Recording Blob Storage**:
+```javascript
+let recordedBlob = null; // Store recorded blob for reuse
+```
+- Recording stored in memory after stopping
+- Can be loaded multiple times into different tracks
+- Persists until new recording is made
+
+**3. Load Functionality**:
+- Converts blob to File object for compatibility
+- Triggers full audio analysis pipeline:
+  - Waveform drawing
+  - BPM detection
+  - Musical key detection
+  - All standard track initialization
+- Enables all track controls (play, pause, loop, effects, export)
+- Sets proper MIME type (audio/webm)
+- Auto-generated filename: `Recording_[timestamp].webm`
+
+**Technical Implementation**:
+
+**Functions Added**:
+```javascript
+async function loadRecordingToTrack1() {
+    // Creates File from blob
+    // Loads into audioElement1
+    // Triggers loadAudioFile for analysis
+    // Enables all Track 1 controls
+}
+
+async function loadRecordingToTrack2() {
+    // Same as Track 1 but for Track 2
+}
+```
+
+**UI Updates**:
+- Added buttons to HTML recording controls section
+- Event listeners for click handling
+- Visual styling matching track colors:
+  - Track 1 button: Cyan glow (rgba(0, 255, 255))
+  - Track 2 button: Magenta glow (rgba(255, 0, 255))
+
+**Workflow Examples**:
+
+1. **Layer Building**:
+   - Record Track 1 + vocals with auto-tune
+   - Load to Track 2
+   - Add new content to Track 1
+   - Record combined mix
+   - Repeat for complex layering
+
+2. **Live Looping**:
+   - Record a 4-bar loop
+   - Load to Track 1
+   - Loop it while recording new parts
+   - Load second recording to Track 2
+   - Create full arrangement
+
+3. **Effect Chaining**:
+   - Record with reverb
+   - Load to track
+   - Apply delay and filters
+   - Re-record with new effects
+   - Progressive effect building
+
+**Files Modified**:
+- `/app/templates/index.html`:
+  - Added `loadToTrack1Btn` button (line ~332)
+  - Added `loadToTrack2Btn` button (line ~335)
+- `/app/static/js/visualizer-dual.js`:
+  - Added DOM element references (lines 93-94)
+  - Added `recordedBlob` variable (line 200)
+  - Updated `mediaRecorder.onstop` to enable load buttons (lines 420-424)
+  - Added `loadRecordingToTrack1()` function (lines 547-585)
+  - Added `loadRecordingToTrack2()` function (lines 587-625)
+  - Added event listeners (lines 2914-2915)
+- `/app/static/css/style.css`:
+  - Added `#loadToTrack1Btn` styling (lines 1088-1097)
+  - Added `#loadToTrack2Btn` styling (lines 1099-1108)
+
+**Browser Compatibility**: All browsers (Chrome/Firefox/Safari/Edge ✅)
+
+**Impact**:
+- Enables multi-layered recording workflow
+- Live looping capability for performance
+- Encourages creative experimentation
+- No need to export/import files manually
+- Seamless integration with existing track features
+- Perfect for building complex arrangements progressively
+
+---
+
 ## Lessons Learned
 
 1. **Playback Rate & Tolerance**: Higher playback rates require larger tolerance for loop detection
@@ -1597,6 +1705,7 @@ if (currentTime < loopStart - loopDuration ||
 21. **Ready State Checks**: Never seek audio when `readyState < 2` - prevents static from seeking when buffers not ready
 22. **Complete State Disabling**: When implementing drag interactions, disable ALL related enforcement, not partial - isDraggingMarker must bypass all loop logic
 23. **Minimize Post-Interaction Seeks**: After user interaction (drag, click), only seek when absolutely necessary - natural playback continuation feels better than automatic correction
+24. **Blob Reusability**: Storing recording blobs in memory enables creative workflows - users can load recordings multiple times into different tracks without file I/O overhead
 
 ---
 
