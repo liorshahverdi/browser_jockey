@@ -420,7 +420,8 @@ Each key has its own color, creating a unique visual experience for different so
 
 ## Version History
 
-- **v3.0** (Current) - Keyboard sampler feature with volume control
+- **v3.1** (Current) - Fixed sampler output routing to recording destination
+- **v3.0** - Keyboard sampler feature with volume control
 - **v2.9** - Improved load recording & seamless track loading (proper MediaElementSource handling)
 - **v2.8** - Load recording to track fix (initial attempt, later improved in v2.9)
 - **v2.7** - Recording export formats (WebM/WAV/MP3) and download button fix

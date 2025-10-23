@@ -2647,6 +2647,64 @@ audioFile1.addEventListener('change', async (e) => {
 
 ---
 
+### 28. Sampler Recording Integration (v3.1)
+**User Request**: "I dont think the sampler output is being routed to the recording yet."
+
+**Problem**: The keyboard sampler output was only connected to the speakers (`audioContext.destination`) but not to the `recordingDestination`, so sampler notes were not being captured when recording.
+
+**Implementation**:
+Modified the `playSamplerNote()` function to connect the sampler's gain node to both output destinations:
+
+```javascript
+// Before:
+source.connect(noteGain);
+noteGain.connect(audioContext.destination);
+
+// After:
+source.connect(noteGain);
+noteGain.connect(audioContext.destination);
+
+// Also connect to recording destination if it exists
+if (recordingDestination) {
+    noteGain.connect(recordingDestination);
+}
+```
+
+**Technical Details**:
+
+1. **Audio Routing Architecture**:
+   - Tracks 1 & 2 → Merger → RecordingDestination ✅
+   - Microphone → RecordingDestination ✅
+   - Sampler → audioContext.destination only ❌ (before fix)
+   - Sampler → Both destinations ✅ (after fix)
+
+2. **Connection Pattern**:
+   - Each sampler note creates its own gain node
+   - Gain node connects to multiple destinations simultaneously
+   - Web Audio API allows one node to connect to multiple outputs
+   - Conditional connection checks if recordingDestination exists
+
+3. **Recording Capability**:
+   - Now captures full mix including sampler performances
+   - Enables recording of live keyboard sampler improvisations
+   - Maintains sampler volume control in recordings
+   - Preserves all pitch-shifted notes accurately
+
+**Files Modified**:
+- `/app/static/js/visualizer-dual.js` (lines ~1697-1702)
+  - Added conditional connection to recordingDestination
+  - Updated comment to clarify dual routing
+
+**Commit**:
+- c1cd98f - "fix: route sampler output to recording destination"
+
+**Key Learnings**:
+41. **Multi-Output Routing**: Web Audio nodes can connect to multiple destinations simultaneously
+42. **Recording Architecture**: All sound sources must explicitly connect to recordingDestination to be captured
+43. **Conditional Connections**: Check for destination existence before connecting prevents errors during initialization
+
+---
+
 ## Version History Summary
 
 - **v1.0** - Initial dual-track DJ system with 3D visualization
@@ -2669,6 +2727,7 @@ audioFile1.addEventListener('change', async (e) => {
 - **v2.8** - Load recording to track fix (initial attempt with disconnect approach)
 - **v2.9** - Improved load recording & seamless track loading (proper fix)
 - **v3.0** - Keyboard sampler feature with volume control (play tracks/loops on pentatonic scales)
+- **v3.1** - Fixed sampler output routing to recording destination
 
 ---
 
