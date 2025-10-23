@@ -1,9 +1,11 @@
 # Browser Jockey (https://browser-jockey.onrender.com/)
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, and professional DJ controls.
 
-**Latest Update (v3.5.1)**: Fixed customizable waveform color functionality - color picker now properly updates waveform colors in real-time for both tracks.
+**Latest Update (v3.5.2)**: Fixed reverse loop animation bug - prevents duplicate animation loops and restores proper UI state when toggling between forward and reverse modes.
 
-**Previous Update (v3.5)**: Added IP geolocation logging with intelligent caching to track visitor locations (city, region, country) from requests. Perfect for monitoring your app's global reach on Render deployment.
+**Previous Update (v3.5.1)**: Fixed customizable waveform color functionality - color picker now properly updates waveform colors in real-time for both tracks.
+
+**v3.5**: Added IP geolocation logging with intelligent caching to track visitor locations (city, region, country) from requests. Perfect for monitoring your app's global reach on Render deployment.
 
 **v3.4**: Complete code refactoring with 9 modular ES6 modules for improved maintainability and reusability. See [MODULES.md](MODULES.md) and [REFACTORING_STATUS.md](REFACTORING_STATUS.md) for details.
 
