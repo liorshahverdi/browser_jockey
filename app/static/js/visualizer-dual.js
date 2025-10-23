@@ -585,17 +585,25 @@ async function downloadRecording() {
 
 // Load recorded audio into Track 1
 async function loadRecordingToTrack1() {
+    console.log('loadRecordingToTrack1 called');
+    console.log('recordedBlob:', recordedBlob);
+    
     if (!recordedBlob) {
         alert('No recording available to load');
         return;
     }
     
     try {
+        console.log('Creating object URL from blob');
         const url = URL.createObjectURL(recordedBlob);
-        audioElement1.src = url;
-        audioElement1.type = 'audio/webm';
-        fileName1.textContent = `Recording_${new Date().getTime()}.webm`;
         
+        console.log('Setting audio element source');
+        audioElement1.src = url;
+        audioElement1.load(); // Explicitly load the audio
+        
+        fileName1.textContent = `Recording_${new Date().toISOString().replace(/[:.]/g, '_')}.webm`;
+        
+        console.log('Enabling track 1 controls');
         playBtn1.disabled = false;
         pauseBtn1.disabled = false;
         stopBtn1.disabled = false;
@@ -605,10 +613,14 @@ async function loadRecordingToTrack1() {
         recordBtn.disabled = false;
         
         // Convert blob to file for waveform loading
+        console.log('Converting blob to file for waveform');
         const file = new File([recordedBlob], 'recording.webm', { type: 'audio/webm' });
+        
+        console.log('Loading audio file for waveform and analysis');
         await loadAudioFile(file, waveform1, bpm1Display, audioElement1, zoomState1, key1Display);
         
         if (!scene) {
+            console.log('Initializing 3D visualization');
             initThreeJS();
             createCircleVisualization();
         }
@@ -617,10 +629,11 @@ async function loadRecordingToTrack1() {
             placeholder.classList.add('hidden');
         }
         
-        // Reset source1 to reconnect
+        // Reset source1 to force reconnection when play is clicked
         source1 = null;
         
-        console.log('Recording loaded to Track 1');
+        console.log('Recording successfully loaded to Track 1');
+        alert('Recording loaded to Track 1!');
     } catch (err) {
         console.error('Error loading recording to Track 1:', err);
         alert('Error loading recording to Track 1: ' + err.message);
@@ -629,17 +642,25 @@ async function loadRecordingToTrack1() {
 
 // Load recorded audio into Track 2
 async function loadRecordingToTrack2() {
+    console.log('loadRecordingToTrack2 called');
+    console.log('recordedBlob:', recordedBlob);
+    
     if (!recordedBlob) {
         alert('No recording available to load');
         return;
     }
     
     try {
+        console.log('Creating object URL from blob');
         const url = URL.createObjectURL(recordedBlob);
-        audioElement2.src = url;
-        audioElement2.type = 'audio/webm';
-        fileName2.textContent = `Recording_${new Date().getTime()}.webm`;
         
+        console.log('Setting audio element source');
+        audioElement2.src = url;
+        audioElement2.load(); // Explicitly load the audio
+        
+        fileName2.textContent = `Recording_${new Date().toISOString().replace(/[:.]/g, '_')}.webm`;
+        
+        console.log('Enabling track 2 controls');
         playBtn2.disabled = false;
         pauseBtn2.disabled = false;
         stopBtn2.disabled = false;
@@ -649,10 +670,14 @@ async function loadRecordingToTrack2() {
         recordBtn.disabled = false;
         
         // Convert blob to file for waveform loading
+        console.log('Converting blob to file for waveform');
         const file = new File([recordedBlob], 'recording.webm', { type: 'audio/webm' });
+        
+        console.log('Loading audio file for waveform and analysis');
         await loadAudioFile(file, waveform2, bpm2Display, audioElement2, zoomState2, key2Display);
         
         if (!scene) {
+            console.log('Initializing 3D visualization');
             initThreeJS();
             createCircleVisualization();
         }
@@ -661,10 +686,11 @@ async function loadRecordingToTrack2() {
             placeholder.classList.add('hidden');
         }
         
-        // Reset source2 to reconnect
+        // Reset source2 to force reconnection when play is clicked
         source2 = null;
         
-        console.log('Recording loaded to Track 2');
+        console.log('Recording successfully loaded to Track 2');
+        alert('Recording loaded to Track 2!');
     } catch (err) {
         console.error('Error loading recording to Track 2:', err);
         alert('Error loading recording to Track 2: ' + err.message);
