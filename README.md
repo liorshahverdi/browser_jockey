@@ -411,7 +411,9 @@ Each key has its own color, creating a unique visual experience for different so
 
 ## Version History
 
-- **v2.7** (Current) - Recording export formats (WebM/WAV/MP3) and download button fix
+- **v2.9** (Current) - Improved load recording & seamless track loading (proper MediaElementSource handling)
+- **v2.8** - Load recording to track fix (initial attempt, later improved in v2.9)
+- **v2.7** - Recording export formats (WebM/WAV/MP3) and download button fix
 - **v2.6** - MP3 and WAV export format options with lamejs integration for tracks
 - **v2.5** - Load recording to tracks for layering and live looping
 - **v2.4** - Loop playback audio fixes (debouncing, smooth marker dragging)
