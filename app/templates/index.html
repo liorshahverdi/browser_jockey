@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Audio Visualizer</title>
+    <title>3D Audio Visualizer - Dual Track</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
@@ -12,28 +12,217 @@
 </head>
 <body>
     <div class="container">
-        <h1>3D Audio Visualizer</h1>
+        <h1>Browser Jockey</h1>
         
         <div class="controls">
-            <div class="upload-section">
-                <label for="audioFile" class="upload-btn">
-                    <span>📁 Choose Audio File</span>
-                    <input type="file" id="audioFile" accept="audio/*,video/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.wma,.aiff,.aif,.opus,.webm,.oga,.mp4,.avi,.mov" hidden>
-                </label>
-                <span id="fileName" class="file-name">No file selected</span>
+            <div class="dual-track-section">
+                <div class="track-upload">
+                    <label>Track 1</label>
+                    
+                    <div class="track-main-content">
+                        <div class="upload-section">
+                            <label for="audioFile1" class="upload-btn">
+                                <span>📁 Choose Audio</span>
+                                <input type="file" id="audioFile1" accept="audio/*,video/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.wma,.aiff,.aif,.opus,.webm,.oga,.mp4,.avi,.mov" hidden>
+                            </label>
+                            <span id="fileName1" class="file-name">No file selected</span>
+                        </div>
+                        <div class="waveform-container">
+                            <canvas id="waveform1" class="waveform-canvas"></canvas>
+                            <div id="waveformProgress1" class="waveform-progress"></div>
+                            <div id="loopMarkerStart1" class="loop-marker loop-marker-start" style="display: none;">A</div>
+                            <div id="loopMarkerEnd1" class="loop-marker loop-marker-end" style="display: none;">B</div>
+                            <div id="loopRegion1" class="loop-region" style="display: none;"></div>
+                        </div>
+                        <div class="waveform-zoom-controls">
+                            <button id="zoomInBtn1" class="zoom-btn" title="Zoom in">🔍+</button>
+                            <button id="zoomOutBtn1" class="zoom-btn" title="Zoom out">🔍−</button>
+                            <button id="zoomResetBtn1" class="zoom-btn" title="Reset zoom">⟲</button>
+                            <span class="zoom-info">Zoom: <span id="zoomLevel1">1.0x</span></span>
+                        </div>
+                        <div class="track-info">
+                            <span class="bpm-display">BPM: <span id="bpm1">--</span></span>
+                            <span class="key-display-inline">Key: <span id="key1">--</span></span>
+                            <span class="duration-display"><span id="currentTime1">0:00</span> / <span id="duration1">0:00</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="track-controls-panel">
+                        <div class="track-controls">
+                            <button id="playBtn1" class="control-btn-small" disabled>▶️</button>
+                            <button id="pauseBtn1" class="control-btn-small" disabled>⏸️</button>
+                            <button id="stopBtn1" class="control-btn-small" disabled>⏹️</button>
+                            <button id="loopBtn1" class="control-btn-small loop-btn" disabled title="Enable loop (click waveform to set A-B points)">🔁</button>
+                            <button id="clearLoopBtn1" class="control-btn-small" disabled title="Clear loop points">❌</button>
+                        </div>
+                        <div class="quick-loop-section" style="display: none;" id="quickLoopSection1">
+                            <label class="quick-loop-label">Quick Loop:</label>
+                            <div class="quick-loop-buttons">
+                                <button class="quick-loop-btn" data-bars="1" data-track="1">1 Bar</button>
+                                <button class="quick-loop-btn" data-bars="2" data-track="1">2 Bars</button>
+                                <button class="quick-loop-btn" data-bars="4" data-track="1">4 Bars</button>
+                                <button class="quick-loop-btn" data-bars="8" data-track="1">8 Bars</button>
+                            </div>
+                            <label class="loop-info-label">
+                                <input type="checkbox" id="autoZoom1" checked>
+                                Auto-zoom to loop
+                            </label>
+                        </div>
+                        <div class="tempo-control-inline">
+                            <label>Tempo: <span id="tempoValue1">1.0x</span></label>
+                            <input type="range" id="tempoSlider1" min="0.25" max="2.0" step="0.05" value="1.0">
+                        </div>
+                        <div class="volume-control-inline">
+                            <label>Volume: <span id="volumeValue1">100%</span></label>
+                            <input type="range" id="volumeSlider1" min="0" max="100" step="1" value="100" class="volume-slider">
+                        </div>
+                        <div class="effects-section">
+                            <div class="effects-header">🎛️ Effects</div>
+                            <div class="effect-control">
+                                <label>Filter: <span id="filterValue1">20kHz</span></label>
+                                <input type="range" id="filterSlider1" min="20" max="20000" step="10" value="20000" class="effect-slider">
+                                <select id="filterType1" class="filter-type-select">
+                                    <option value="lowpass">Low Pass</option>
+                                    <option value="highpass">High Pass</option>
+                                    <option value="bandpass">Band Pass</option>
+                                </select>
+                            </div>
+                            <div class="effect-control">
+                                <label>Reverb: <span id="reverbValue1">0%</span></label>
+                                <input type="range" id="reverbSlider1" min="0" max="100" step="1" value="0" class="effect-slider">
+                            </div>
+                            <div class="effect-control">
+                                <label>Delay: <span id="delayValue1">0%</span></label>
+                                <input type="range" id="delaySlider1" min="0" max="100" step="1" value="0" class="effect-slider">
+                            </div>
+                            <div class="effect-control">
+                                <label>Delay Time: <span id="delayTimeValue1">300ms</span></label>
+                                <input type="range" id="delayTimeSlider1" min="50" max="2000" step="50" value="300" class="effect-slider">
+                            </div>
+                        </div>
+                        <div class="export-section">
+                            <div class="export-header">💾 Export</div>
+                            <button id="exportStem1" class="export-btn" disabled>Export Track</button>
+                            <button id="exportLoop1" class="export-btn" disabled>Export Loop</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="track-upload">
+                    <label>Track 2</label>
+                    
+                    <div class="track-main-content">
+                        <div class="upload-section">
+                            <label for="audioFile2" class="upload-btn">
+                                <span>📁 Choose Audio</span>
+                                <input type="file" id="audioFile2" accept="audio/*,video/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.wma,.aiff,.aif,.opus,.webm,.oga,.mp4,.avi,.mov" hidden>
+                            </label>
+                            <span id="fileName2" class="file-name">No file selected</span>
+                        </div>
+                        <div class="waveform-container">
+                            <canvas id="waveform2" class="waveform-canvas"></canvas>
+                            <div id="waveformProgress2" class="waveform-progress"></div>
+                            <div id="loopMarkerStart2" class="loop-marker loop-marker-start" style="display: none;">A</div>
+                            <div id="loopMarkerEnd2" class="loop-marker loop-marker-end" style="display: none;">B</div>
+                            <div id="loopRegion2" class="loop-region" style="display: none;"></div>
+                        </div>
+                        <div class="waveform-zoom-controls">
+                            <button id="zoomInBtn2" class="zoom-btn" title="Zoom in">🔍+</button>
+                            <button id="zoomOutBtn2" class="zoom-btn" title="Zoom out">🔍−</button>
+                            <button id="zoomResetBtn2" class="zoom-btn" title="Reset zoom">⟲</button>
+                            <span class="zoom-info">Zoom: <span id="zoomLevel2">1.0x</span></span>
+                        </div>
+                        <div class="track-info">
+                            <span class="bpm-display">BPM: <span id="bpm2">--</span></span>
+                            <span class="key-display-inline">Key: <span id="key2">--</span></span>
+                            <span class="duration-display"><span id="currentTime2">0:00</span> / <span id="duration2">0:00</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="track-controls-panel">
+                        <div class="track-controls">
+                            <button id="playBtn2" class="control-btn-small" disabled>▶️</button>
+                            <button id="pauseBtn2" class="control-btn-small" disabled>⏸️</button>
+                            <button id="stopBtn2" class="control-btn-small" disabled>⏹️</button>
+                            <button id="loopBtn2" class="control-btn-small loop-btn" disabled title="Enable loop (click waveform to set A-B points)">🔁</button>
+                            <button id="clearLoopBtn2" class="control-btn-small" disabled title="Clear loop points">❌</button>
+                        </div>
+                        <div class="quick-loop-section" style="display: none;" id="quickLoopSection2">
+                            <label class="quick-loop-label">Quick Loop:</label>
+                            <div class="quick-loop-buttons">
+                                <button class="quick-loop-btn" data-bars="1" data-track="2">1 Bar</button>
+                                <button class="quick-loop-btn" data-bars="2" data-track="2">2 Bars</button>
+                                <button class="quick-loop-btn" data-bars="4" data-track="2">4 Bars</button>
+                                <button class="quick-loop-btn" data-bars="8" data-track="2">8 Bars</button>
+                            </div>
+                            <label class="loop-info-label">
+                                <input type="checkbox" id="autoZoom2" checked>
+                                Auto-zoom to loop
+                            </label>
+                        </div>
+                        <div class="tempo-control-inline">
+                            <label>Tempo: <span id="tempoValue2">1.0x</span></label>
+                            <input type="range" id="tempoSlider2" min="0.25" max="2.0" step="0.05" value="1.0">
+                        </div>
+                        <div class="volume-control-inline">
+                            <label>Volume: <span id="volumeValue2">100%</span></label>
+                            <input type="range" id="volumeSlider2" min="0" max="100" step="1" value="100" class="volume-slider">
+                        </div>
+                        <div class="effects-section">
+                            <div class="effects-header">🎛️ Effects</div>
+                            <div class="effect-control">
+                                <label>Filter: <span id="filterValue2">20kHz</span></label>
+                                <input type="range" id="filterSlider2" min="20" max="20000" step="10" value="20000" class="effect-slider">
+                                <select id="filterType2" class="filter-type-select">
+                                    <option value="lowpass">Low Pass</option>
+                                    <option value="highpass">High Pass</option>
+                                    <option value="bandpass">Band Pass</option>
+                                </select>
+                            </div>
+                            <div class="effect-control">
+                                <label>Reverb: <span id="reverbValue2">0%</span></label>
+                                <input type="range" id="reverbSlider2" min="0" max="100" step="1" value="0" class="effect-slider">
+                            </div>
+                            <div class="effect-control">
+                                <label>Delay: <span id="delayValue2">0%</span></label>
+                                <input type="range" id="delaySlider2" min="0" max="100" step="1" value="0" class="effect-slider">
+                            </div>
+                            <div class="effect-control">
+                                <label>Delay Time: <span id="delayTimeValue2">300ms</span></label>
+                                <input type="range" id="delayTimeSlider2" min="50" max="2000" step="50" value="300" class="effect-slider">
+                            </div>
+                        </div>
+                        <div class="export-section">
+                            <div class="export-header">💾 Export</div>
+                            <button id="exportStem2" class="export-btn" disabled>Export Track</button>
+                            <button id="exportLoop2" class="export-btn" disabled>Export Loop</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <div class="playback-controls">
-                <button id="playBtn" class="control-btn" disabled>▶️ Play</button>
-                <button id="pauseBtn" class="control-btn" disabled>⏸️ Pause</button>
-                <button id="stopBtn" class="control-btn" disabled>⏹️ Stop</button>
+            <div class="recording-section">
+                <div class="recording-controls">
+                    <button id="recordBtn" class="control-btn" disabled>
+                        <span class="record-icon">⏺️</span> Start Recording
+                    </button>
+                    <button id="stopRecordBtn" class="control-btn" disabled style="display: none;">
+                        <span class="record-icon">⏹️</span> Stop Recording
+                    </button>
+                    <button id="downloadBtn" class="control-btn" disabled style="display: none;">
+                        <span class="record-icon">💾</span> Download Recording
+                    </button>
+                    <span id="recordingTime" class="recording-time" style="display: none;">0:00</span>
+                </div>
+                <div class="recording-waveform-container" style="display: none;">
+                    <label>Recorded Output:</label>
+                    <canvas id="recordingWaveform" class="waveform-canvas"></canvas>
+                    <audio id="recordedAudio" controls></audio>
+                </div>
             </div>
-            
-            <div class="tempo-control">
-                <label for="tempoSlider">Tempo: <span id="tempoValue">1.0x</span></label>
-                <input type="range" id="tempoSlider" min="0.25" max="2.0" step="0.05" value="1.0">
-            </div>
-            
+        </div>
+        
+        <div id="visualizer-container" class="visualizer-container">
             <div class="visualization-mode">
                 <label>Mode:</label>
                 <button id="modeCircle" class="mode-btn active">🔵 Circle</button>
@@ -41,23 +230,22 @@
                 <button id="modeSphere" class="mode-btn">🌐 Sphere</button>
             </div>
             
-            <div class="key-display">
-                <label>Detected Key:</label>
-                <span id="currentKey">-</span>
-            </div>
-        </div>
-        
-        <div id="visualizer-container">
-            <div id="placeholder">
-                <p>Upload an audio file to get started</p>
-                <p style="font-size: 0.9rem; margin-top: 10px;">Experience 3D audio visualization with rotating graphics</p>
+            <div id="placeholder" class="placeholder">
+                <p>Upload audio files to get started</p>
+                <p style="font-size: 0.9rem; margin-top: 10px;">Upload two tracks to mix them together!</p>
                 <p style="font-size: 0.8rem; margin-top: 15px; color: rgba(255, 255, 255, 0.5);">
                     Supported formats: MP3, WAV, OGG, M4A, AAC, FLAC, AIFF, OPUS, WEBM
                 </p>
             </div>
         </div>
         
-        <audio id="audioElement" hidden></audio>
+        <audio id="audioElement1" hidden></audio>
+        <audio id="audioElement2" hidden></audio>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/visualizer-dual.js') }}"></script>
+</body>
+</html>
     </div>
     
     <script src="{{ url_for('static', filename='js/visualizer.js') }}"></script>
