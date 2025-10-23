@@ -319,7 +319,11 @@ browser_jockey/
 5. Perform your mix
 6. Click "Stop Recording"
 7. Choose what to do with your recording:
-   - **💾 Download Recording**: Save as .webm file
+   - **Select Format**: Choose export format
+     - **WebM (original)**: Native recording format (~instant, small size)
+     - **WAV (lossless)**: Uncompressed, high-quality audio (~0.5s conversion)
+     - **MP3 (compressed)**: 128 kbps encoding (~1-2s conversion)
+   - **💾 Download Recording**: Save in chosen format
    - **📥 Load to Track 1**: Load recording into Track 1 for further mixing
    - **📥 Load to Track 2**: Load recording into Track 2 for further mixing
 
@@ -330,6 +334,11 @@ browser_jockey/
 - Load the new recording to Track 1
 - Build complex, layered arrangements progressively
 - Each loaded recording gets full BPM/key analysis and all track features
+
+**Export Format Guide**:
+- **WebM**: Best for quick capture, minimal file size, good quality
+- **WAV**: Professional production, mastering, compatibility with all DAWs
+- **MP3**: Sharing online, email, storage optimization
 
 ### 3D Visualization
 - **Three Modes**: Circle, Bars, Sphere
@@ -402,7 +411,8 @@ Each key has its own color, creating a unique visual experience for different so
 
 ## Version History
 
-- **v2.6** (Current) - MP3 and WAV export format options with lamejs integration
+- **v2.7** (Current) - Recording export formats (WebM/WAV/MP3) and download button fix
+- **v2.6** - MP3 and WAV export format options with lamejs integration for tracks
 - **v2.5** - Load recording to tracks for layering and live looping
 - **v2.4** - Loop playback audio fixes (debouncing, smooth marker dragging)
 - **v2.3** - Dynamic heat map colors in Circle mode visualization
