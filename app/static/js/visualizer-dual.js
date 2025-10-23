@@ -594,11 +594,27 @@ async function loadRecordingToTrack1() {
     }
     
     try {
+        console.log('Disconnecting existing audio source for Track 1 if present');
+        // Disconnect and remove old source1 if it exists
+        if (source1) {
+            try {
+                source1.disconnect();
+            } catch (e) {
+                console.log('Error disconnecting source1:', e);
+            }
+            source1 = null;
+        }
+        
+        // Stop any playing audio
+        audioElement1.pause();
+        audioElement1.currentTime = 0;
+        
         console.log('Creating object URL from blob');
         const url = URL.createObjectURL(recordedBlob);
         
         console.log('Setting audio element source');
         audioElement1.src = url;
+        audioElement1.type = 'audio/webm';
         audioElement1.load(); // Explicitly load the audio
         
         fileName1.textContent = `Recording_${new Date().toISOString().replace(/[:.]/g, '_')}.webm`;
@@ -629,11 +645,8 @@ async function loadRecordingToTrack1() {
             placeholder.classList.add('hidden');
         }
         
-        // Reset source1 to force reconnection when play is clicked
-        source1 = null;
-        
         console.log('Recording successfully loaded to Track 1');
-        alert('Recording loaded to Track 1!');
+        alert('Recording loaded to Track 1! Click Play to hear it.');
     } catch (err) {
         console.error('Error loading recording to Track 1:', err);
         alert('Error loading recording to Track 1: ' + err.message);
@@ -651,11 +664,27 @@ async function loadRecordingToTrack2() {
     }
     
     try {
+        console.log('Disconnecting existing audio source for Track 2 if present');
+        // Disconnect and remove old source2 if it exists
+        if (source2) {
+            try {
+                source2.disconnect();
+            } catch (e) {
+                console.log('Error disconnecting source2:', e);
+            }
+            source2 = null;
+        }
+        
+        // Stop any playing audio
+        audioElement2.pause();
+        audioElement2.currentTime = 0;
+        
         console.log('Creating object URL from blob');
         const url = URL.createObjectURL(recordedBlob);
         
         console.log('Setting audio element source');
         audioElement2.src = url;
+        audioElement2.type = 'audio/webm';
         audioElement2.load(); // Explicitly load the audio
         
         fileName2.textContent = `Recording_${new Date().toISOString().replace(/[:.]/g, '_')}.webm`;
@@ -686,11 +715,8 @@ async function loadRecordingToTrack2() {
             placeholder.classList.add('hidden');
         }
         
-        // Reset source2 to force reconnection when play is clicked
-        source2 = null;
-        
         console.log('Recording successfully loaded to Track 2');
-        alert('Recording loaded to Track 2!');
+        alert('Recording loaded to Track 2! Click Play to hear it.');
     } catch (err) {
         console.error('Error loading recording to Track 2:', err);
         alert('Error loading recording to Track 2: ' + err.message);
