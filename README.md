@@ -173,6 +173,33 @@ Available environment variables:
 
 ## Production Deployment
 
+### Deploy to Render (Recommended):
+
+1. **Fork or push this repository to GitHub**
+
+2. **Create a new Web Service on Render:**
+   - Go to [render.com](https://render.com) and sign in
+   - Click "New +" and select "Web Service"
+   - Connect your GitHub repository
+   - Render will automatically detect the `render.yaml` file
+
+3. **Alternatively, manual setup:**
+   - Runtime: Docker
+   - Build Command: (leave empty, uses Dockerfile)
+   - Start Command: (leave empty, uses Dockerfile CMD)
+   - Set environment variables:
+     - `FLASK_ENV=production`
+     - `FLASK_DEBUG=0`
+     - `SECRET_KEY` (generate a strong secret key)
+     - `HOST=0.0.0.0`
+     - `PORT=5001`
+
+4. **Deploy!**
+   - Render will build and deploy your application
+   - Access your app at the provided URL (e.g., `https://browser-jockey.onrender.com`)
+
+**Note**: The free tier on Render may spin down after inactivity and take ~30 seconds to restart.
+
 ### Using Docker:
 
 1. Update `.env` file for production:

@@ -1,0 +1,22 @@
+services:
+  # Web Service
+  - type: web
+    name: browser-jockey
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "5001"
+      - key: SECRET_KEY
+        generateValue: true
+    healthCheckPath: /
