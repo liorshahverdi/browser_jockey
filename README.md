@@ -1,19 +1,18 @@
-# Browser Jockey)
+# Browser Jockey
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, and professional DJ controls.
 
 ## Screenshots
 
 ![Browser Jockey Screenshot 1](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
 
-![Browser Jockey Screenshot 2](app/screenshots/app_screenshot_2025_10_22_at_23_02_05.png)
+![Browser Jockey Screenshot 2](app/screenshots/app_screenshot_2025_10_23_at_02_04_14.png)
 
-![Browser Jockey Screenshot 3](app/screenshots/app_screenshot_2025_10_22_at_23_02_35.png)
+![Browser Jockey Screenshot 3](app/screenshots/app_screenshot_2025_10_23_at_02_04_34.png)
 
-![Browser Jockey Screenshot 4](app/screenshots/app_screenshot_2025_10_22_at_23_03_01.png)
+![Browser Jockey Screenshot 4](app/screenshots/app_screenshot_2025_10_23_at_02_04_51.png)
 
-![Browser Jockey Screenshot 5](app/screenshots/app_screenshot_2025_10_22_at_23_03_27.png)
+![Browser Jockey Screenshot 5](app/screenshots/app_screenshot_2025_10_23_at_02_09_07.png)
 
-![Browser Jockey Screenshot 6](app/screenshots/app_screenshot_2025_10_22_at_23_03_52.png)
 
 
 ## Features
