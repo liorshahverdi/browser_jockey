@@ -3272,5 +3272,65 @@ After completing Phase 1 refactoring (constants, loops, audio utilities, effects
 
 ---
 
+### 71. IP Geolocation Logging (v3.5)
+**Date**: October 23, 2025
+
+**User Request**: "this app is currently deployed in a Render web service. I want to add logging that geocodes the request IP addresses and tells me which cities they are coming from."
+
+**Implementation**:
+- Added IP geolocation logging system to Flask application
+- Integrated ip-api.com free API for geocoding requests
+- Implemented intelligent caching mechanism:
+  - 24-hour cache duration for IP lookups
+  - Thread-safe cache with Lock for concurrent requests
+  - Maximum cache size of 1,000 entries with LRU eviction
+  - Automatic cleanup of expired entries
+  - Prevents API rate limiting (45 req/min on free tier)
+- Created `get_client_ip()` function to handle proxy headers:
+  - Supports X-Forwarded-For (Render's load balancer)
+  - Supports X-Real-IP header
+  - Falls back to remote_addr
+- Created `geocode_ip()` function with caching:
+  - Returns city, region, country, coordinates, and ISP
+  - Handles local IPs gracefully
+  - 2-second timeout to avoid blocking requests
+  - Logs cache hits vs. new API calls
+- Implemented `@app.before_request` middleware:
+  - Logs every incoming request automatically
+  - Includes IP, location, path, method, and user agent
+  - Thread-safe for Gunicorn multi-worker environment
+- Added `geoip2==4.7.0` to requirements.txt
+
+**Files Modified**:
+- `app/__init__.py` - Added geolocation logging middleware
+- `requirements.txt` - Added geoip2 dependency
+
+**Technical Details**:
+- Cache structure: `{ip: (location_data, timestamp)}`
+- Performance: First visit queries API, subsequent visits use cache
+- Memory management: Auto-cleanup prevents unbounded growth
+- Deployment: Works seamlessly with Render's infrastructure
+
+**Example Log Output**:
+```
+2025-10-23 14:30:15 - app - INFO - Request from IP: 123.45.67.89 | City: San Francisco | Region: California | Country: United States | Path: / | Method: GET | User-Agent: Mozilla/5.0...
+```
+
+**Benefits**:
+- Track global visitor distribution
+- Monitor app usage patterns
+- Identify traffic sources
+- Performance-optimized with caching
+- No impact on user experience
+
+**Commits**:
+- "Add IP geolocation logging with intelligent caching for Render deployment"
+
+**Release**:
+- Creating git tag `v3.5` with message "v3.5 - IP Geolocation Logging with Intelligent Caching"
+- Pushing to GitHub
+
+---
+
 **End of Chat History - Last Updated: October 23, 2025**
 
