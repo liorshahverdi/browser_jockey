@@ -3,7 +3,7 @@
 ## Project Overview
 A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, and quick loop creation.
 
-**Latest Version: v3.5.4** - Fixed recording blob access bug
+**Latest Version: v3.5.5** - Fixed loop marker UX issue
 
 ---
 
@@ -3639,6 +3639,82 @@ Modified three functions to use `recordingState.blob` directly (the source of tr
 
 **Commits**:
 - "Fix recording blob access - use recordingState.blob directly for download and load functions"
+
+---
+
+### 90. Loop Marker UX Fix (v3.5.5) - October 23, 2025
+
+**User Request**: "The way loop markers are currently set after they are turned off isnt user friendly. investigate fix document in the markdown files."
+
+**Problem Identified**:
+When users disabled the loop feature and then re-enabled it, the next click on the waveform would unexpectedly set the End point (B) instead of the Start point (A). This created a confusing user experience.
+
+**Root Cause**:
+In `visualizer-dual.js`, when the loop button was toggled off, the code manually cleared loop markers but did NOT reset the `loopState.settingPoint` property:
+```javascript
+// BEFORE - Manual clearing (incomplete)
+if (!loopState1.enabled) {
+    loopState1.start = null;
+    loopState1.end = null;
+    loopRegion1.style.display = 'none';
+    loopMarkerStart1.style.display = 'none';
+    loopMarkerEnd1.style.display = 'none';
+    // ❌ Missing: loopState1.settingPoint = 'start';
+}
+```
+
+This caused `settingPoint` to remain at `'end'` if the user had previously set both markers, making the next loop setup start with setting the end point instead of the start point.
+
+**Solution**:
+Changed both loop button event listeners (Track 1 and Track 2) to use the existing `clearLoopPoints()` utility function:
+```javascript
+// AFTER - Using clearLoopPoints (complete state reset)
+if (!loopState1.enabled) {
+    clearLoopPoints(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1);
+}
+```
+
+The `clearLoopPoints()` function properly resets ALL loop state:
+- `loopState.start = null`
+- `loopState.end = null`
+- `loopState.settingPoint = 'start'` ← The critical fix
+- Hides all visual markers
+
+**Benefits**:
+- **Predictable Behavior**: Loop setup always starts with setting the Start point
+- **DRY Principle**: Reuses existing utility function
+- **Code Quality**: Single source of truth for loop clearing logic
+- **Consistency**: Clear Loop button and Loop Toggle now use same function
+
+**Files Modified**:
+- `app/static/js/visualizer-dual.js` - Fixed loop button handlers for both tracks
+- `LOOP_MARKER_UX_FIX.md` - Comprehensive documentation (created)
+- `README.md` - Updated to v3.5.5 with fix description
+- `CHAT_HISTORY.md` - Added session documentation
+
+**Testing Scenarios**:
+1. ✅ Enable loop → Set A → Set B → Disable → Enable → Next click sets A (not B)
+2. ✅ Multiple toggle cycles maintain consistent behavior
+3. ✅ Works correctly for both Track 1 and Track 2
+
+**Impact**:
+- Lines Changed: 2 (replaced manual clearing with function call)
+- Complexity: Reduced
+- Bug Risk: Reduced (centralized state management)
+
+**Documentation Created**:
+- `LOOP_MARKER_UX_FIX.md` - Full technical documentation with:
+  - Problem description and user workflow
+  - Root cause analysis
+  - Before/after code comparison
+  - Testing scenarios
+  - Benefits and future considerations
+
+**Commits**:
+- "Fix loop marker UX - properly reset settingPoint when toggling loop off (v3.5.5)"
+
+**Tags**:
+- `v3.5.5` - "Fix loop marker UX issue - properly reset settingPoint state"
 
 ---
 

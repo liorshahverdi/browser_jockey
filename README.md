@@ -1,7 +1,9 @@
 # Browser Jockey (https://browser-jockey.onrender.com/)
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, and professional DJ controls.
 
-**Latest Update (v3.5.4)**: Fixed recording blob access bug - download and load-to-track functions now properly access the recording blob by using `recordingState.blob` directly, eliminating "No recording available" errors.
+**Latest Update (v3.5.5)**: Fixed loop marker UX issue - loop markers now properly reset to start point when toggling loop mode off/on, ensuring consistent and predictable behavior. See [LOOP_MARKER_UX_FIX.md](LOOP_MARKER_UX_FIX.md) for details.
+
+**v3.5.4**: Fixed recording blob access bug - download and load-to-track functions now properly access the recording blob by using `recordingState.blob` directly, eliminating "No recording available" errors.
 
 **Previous Update (v3.5.3)**: Fixed recording export functionality - added MP3 export support using lamejs encoder. Export function now properly handles all three formats: WebM (original), WAV (lossless), and MP3 (compressed 128kbps).
 

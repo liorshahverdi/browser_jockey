@@ -2379,12 +2379,8 @@ loopBtn1.addEventListener('click', () => {
     }
     
     if (!loopState1.enabled) {
-        // Clear loop points when disabling
-        loopState1.start = null;
-        loopState1.end = null;
-        loopRegion1.style.display = 'none';
-        loopMarkerStart1.style.display = 'none';
-        loopMarkerEnd1.style.display = 'none';
+        // Clear loop points when disabling - use clearLoopPoints to properly reset state
+        clearLoopPoints(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1);
     }
 });
 
@@ -2402,12 +2398,8 @@ loopBtn2.addEventListener('click', () => {
     }
     
     if (!loopState2.enabled) {
-        // Clear loop points when disabling
-        loopState2.start = null;
-        loopState2.end = null;
-        loopRegion2.style.display = 'none';
-        loopMarkerStart2.style.display = 'none';
-        loopMarkerEnd2.style.display = 'none';
+        // Clear loop points when disabling - use clearLoopPoints to properly reset state
+        clearLoopPoints(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2);
     }
 });
 
