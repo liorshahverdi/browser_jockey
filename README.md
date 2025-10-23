@@ -1,4 +1,4 @@
-# Bro## Browser Jockey
+# Browser Jockey
 
 ![Browser Jockey Screenshot](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
 
@@ -17,8 +17,9 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 - 🎤 **Microphone Input** - Live mic input with volume control and monitoring
 - 🤖 **Vocoder Effect** - Robot voice effect with 8-32 frequency bands, carrier source selection
 - 🎵 **Auto-Tune Effect** - Real-time pitch correction with key/scale selection, adjustable correction speed
-- 🎨 **3D Visualization** - Real-time WebGL visualization with Three.js
-- 🌈 **Musical Key Colors** - Dynamic colors based on detected key
+- 🎨 **3D Visualization** - Real-time WebGL visualization with Three.js (Circle/Bars/Sphere modes)
+- 🌈 **Dynamic Heat Map Colors** - Circle mode bars change color based on energy (blue→cyan→green→yellow→red)
+- 🎨 **Musical Key Colors** - Visualization colors based on detected key
 - 🎙️ **Recording** - Record your live mix with waveform display
 - 📱 **Professional Layout** - Side-by-side dual deck DJ interface
 - 🎨 **Customizable Colors** - Personalize waveform colors for each track
@@ -300,8 +301,17 @@ browser_jockey/
 
 ### 3D Visualization
 - **Three Modes**: Circle, Bars, Sphere
-- **Dynamic Colors**: Based on detected musical key
-- **Real-time**: Responds to merged audio output
+- **Circle Mode Features**:
+  - **Dynamic Heat Map Colors**: Bars change color based on their height/energy
+    - Blue (0-20%): Low energy, quiet passages
+    - Cyan (20-40%): Building energy
+    - Green (40-60%): Medium energy
+    - Yellow (60-80%): High energy
+    - Red (80-100%): Maximum energy, bass drops
+  - **Smooth Transitions**: Colors blend seamlessly as energy changes
+  - **Emissive Glow**: Bars emit light matching their color
+- **Musical Key Colors**: Background colors based on detected key (all modes)
+- **Real-time**: Responds to merged audio output with physics-based animations
 
 **Note**: FLAC files may not play in Safari. For best compatibility across all browsers, use MP3 or WAV formats.
 

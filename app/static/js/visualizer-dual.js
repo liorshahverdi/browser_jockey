@@ -3413,6 +3413,46 @@ function animate() {
                 bar.scale.x = widthScale;
                 bar.scale.z = widthScale;
                 
+                // Dynamic color based on bar height
+                const normalizedHeight = Math.min(1, bar.scale.y / 15); // Normalize to 0-1
+                let hue, saturation, lightness;
+                
+                if (normalizedHeight < 0.2) {
+                    // Very small: Deep blue
+                    hue = 240;
+                    saturation = 80;
+                    lightness = 30 + normalizedHeight * 100; // 30-50%
+                } else if (normalizedHeight < 0.4) {
+                    // Small-Medium: Blue to Cyan
+                    const t = (normalizedHeight - 0.2) / 0.2;
+                    hue = 240 - t * 60; // 240 (blue) to 180 (cyan)
+                    saturation = 80 + t * 20; // 80-100%
+                    lightness = 50 + t * 10; // 50-60%
+                } else if (normalizedHeight < 0.6) {
+                    // Medium: Cyan to Green
+                    const t = (normalizedHeight - 0.4) / 0.2;
+                    hue = 180 - t * 60; // 180 (cyan) to 120 (green)
+                    saturation = 100;
+                    lightness = 60 + t * 10; // 60-70%
+                } else if (normalizedHeight < 0.8) {
+                    // Medium-Large: Green to Yellow
+                    const t = (normalizedHeight - 0.6) / 0.2;
+                    hue = 120 - t * 60; // 120 (green) to 60 (yellow)
+                    saturation = 100;
+                    lightness = 70 + t * 10; // 70-80%
+                } else {
+                    // Large: Yellow to Red
+                    const t = (normalizedHeight - 0.8) / 0.2;
+                    hue = 60 - t * 60; // 60 (yellow) to 0 (red)
+                    saturation = 100;
+                    lightness = 80 + t * 10; // 80-90%
+                }
+                
+                // Apply color with smooth transition
+                const targetColor = new THREE.Color(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+                bar.material.color.lerp(targetColor, 0.15); // Smooth color transition
+                bar.material.emissive.copy(bar.material.color).multiplyScalar(0.3);
+                
                 bar.material.opacity = 0.7 + (audioValue / 255) * 0.3 + Math.sin(Date.now() * 0.002 + bar.userData.randomPhase) * 0.1;
                 
                 if (bar.userData.explosionForce > 0) {
