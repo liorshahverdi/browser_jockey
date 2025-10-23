@@ -342,15 +342,18 @@ function stopRecording() {
 }
 
 async function downloadRecordingWrapper() {
-    await downloadRecording(recordedBlob, recordingExportFormat.value, audioContext);
+    // Use recordingState.blob directly to ensure we have the latest blob
+    const blob = recordingState.blob || recordedBlob;
+    await downloadRecording(blob, recordingExportFormat.value, audioContext);
 }
 
 // Load recorded audio into Track 1
 async function loadRecordingToTrack1() {
     console.log('loadRecordingToTrack1 called');
-    console.log('recordedBlob:', recordedBlob);
+    const blob = recordingState.blob || recordedBlob;
+    console.log('recordedBlob:', blob);
     
-    if (!recordedBlob) {
+    if (!blob) {
         alert('No recording available to load');
         return;
     }
@@ -361,7 +364,7 @@ async function loadRecordingToTrack1() {
         audioElement1.currentTime = 0;
         
         console.log('Creating object URL from blob');
-        const url = URL.createObjectURL(recordedBlob);
+        const url = URL.createObjectURL(blob);
         
         console.log('Setting audio element source');
         audioElement1.src = url;
@@ -382,7 +385,7 @@ async function loadRecordingToTrack1() {
         
         // Convert blob to file for waveform loading
         console.log('Converting blob to file for waveform');
-        const file = new File([recordedBlob], 'recording.webm', { type: 'audio/webm' });
+        const file = new File([blob], 'recording.webm', { type: 'audio/webm' });
         
         console.log('Loading audio file for waveform and analysis');
         await loadAudioFile(file, waveform1, bpm1Display, audioElement1, zoomState1, key1Display);
@@ -444,9 +447,10 @@ async function loadRecordingToTrack1() {
 // Load recorded audio into Track 2
 async function loadRecordingToTrack2() {
     console.log('loadRecordingToTrack2 called');
-    console.log('recordedBlob:', recordedBlob);
+    const blob = recordingState.blob || recordedBlob;
+    console.log('recordedBlob:', blob);
     
-    if (!recordedBlob) {
+    if (!blob) {
         alert('No recording available to load');
         return;
     }
@@ -457,7 +461,7 @@ async function loadRecordingToTrack2() {
         audioElement2.currentTime = 0;
         
         console.log('Creating object URL from blob');
-        const url = URL.createObjectURL(recordedBlob);
+        const url = URL.createObjectURL(blob);
         
         console.log('Setting audio element source');
         audioElement2.src = url;
@@ -478,7 +482,7 @@ async function loadRecordingToTrack2() {
         
         // Convert blob to file for waveform loading
         console.log('Converting blob to file for waveform');
-        const file = new File([recordedBlob], 'recording.webm', { type: 'audio/webm' });
+        const file = new File([blob], 'recording.webm', { type: 'audio/webm' });
         
         console.log('Loading audio file for waveform and analysis');
         await loadAudioFile(file, waveform2, bpm2Display, audioElement2, zoomState2, key2Display);
