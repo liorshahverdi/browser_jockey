@@ -17,6 +17,11 @@ cache_lock = Lock()
 CACHE_DURATION = timedelta(hours=24)  # Cache entries for 24 hours
 MAX_CACHE_SIZE = 1000  # Prevent unlimited memory growth
 
+# Track unique visitor IPs with timestamps
+visitor_log = []  # List of (ip, timestamp) tuples
+visitor_lock = Lock()
+VISITOR_TRACKING_WINDOW = timedelta(hours=6)  # Track visitors from past 6 hours
+
 def get_client_ip():
     """Get the real client IP, considering proxy headers"""
     if request.headers.get('X-Forwarded-For'):
@@ -45,6 +50,45 @@ def clean_old_cache_entries():
             items_to_remove = len(ip_cache) - MAX_CACHE_SIZE
             for ip, _ in sorted_items[:items_to_remove]:
                 del ip_cache[ip]
+
+def clean_old_visitor_entries():
+    """Remove visitor entries older than the tracking window"""
+    now = datetime.now()
+    cutoff_time = now - VISITOR_TRACKING_WINDOW
+    
+    with visitor_lock:
+        # Keep only entries within the tracking window
+        global visitor_log
+        visitor_log = [
+            (ip, timestamp) for ip, timestamp in visitor_log
+            if timestamp > cutoff_time
+        ]
+
+def get_unique_visitor_count(hours=6):
+    """Get count of unique IPs from the past N hours"""
+    now = datetime.now()
+    cutoff_time = now - timedelta(hours=hours)
+    
+    with visitor_lock:
+        # Count unique IPs within the time window
+        unique_ips = set(
+            ip for ip, timestamp in visitor_log
+            if timestamp > cutoff_time
+        )
+        return len(unique_ips)
+
+def record_visitor(ip_address):
+    """Record a visitor IP with timestamp"""
+    if ip_address in ['127.0.0.1', 'localhost', '::1']:
+        return  # Don't track localhost
+    
+    now = datetime.now()
+    with visitor_lock:
+        visitor_log.append((ip_address, now))
+        
+        # Periodically clean old entries (every 50 requests)
+        if len(visitor_log) % 50 == 0:
+            clean_old_visitor_entries()
 
 def geocode_ip(ip_address):
     """Get location information for an IP address using ip-api.com (free service) with caching"""
@@ -105,6 +149,13 @@ def create_app():
         ip_address = get_client_ip()
         location = geocode_ip(ip_address)
         
+        # Record visitor for unique count tracking
+        record_visitor(ip_address)
+        
+        # Get unique visitor counts for different time windows
+        unique_3h = get_unique_visitor_count(3)
+        unique_6h = get_unique_visitor_count(6)
+        
         logger.info(
             f"Request from IP: {ip_address} | "
             f"City: {location.get('city')} | "
@@ -112,6 +163,8 @@ def create_app():
             f"Country: {location.get('country')} | "
             f"Path: {request.path} | "
             f"Method: {request.method} | "
+            f"Unique visitors (3h): {unique_3h} | "
+            f"Unique visitors (6h): {unique_6h} | "
             f"User-Agent: {request.headers.get('User-Agent', 'Unknown')}"
         )
 
