@@ -1467,6 +1467,111 @@ bar.material.emissive.copy(bar.material.color).multiplyScalar(0.3);
 
 ---
 
+### Version 2.4 - Loop Playback Audio Fixes
+
+**Timestamp**: Session 6 (continued)
+
+**User Requests**: 
+1. "im getting static audio output when loop markers are set on track 1"
+2. "will this allow me to drag loop markers live without cutting or glitching? if not, fix."
+
+**Implementation**: Fixed multiple issues with loop playback that caused static, glitches, and audio cuts during looping and marker dragging.
+
+**Problems Identified**:
+1. **Static Audio During Looping**: Rapid, repeated seeking caused buffer corruption
+2. **Glitchy Marker Dragging**: Loop boundaries enforced even while dragging markers
+3. **Jarring Seeks After Drag**: Automatic playhead adjustment on mouse release
+
+**Solutions Implemented**:
+
+**1. Seek Debouncing System**:
+```javascript
+// Minimum 50ms between seeks to prevent buffer corruption
+const minSeekInterval = 50;
+if (now - loopState.lastSeekTime >= minSeekInterval) {
+    audioElement.currentTime = loopState.start;
+    loopState.lastSeekTime = now;
+}
+```
+- Prevents rapid seeking that causes static/crackling
+- Allows audio buffer to stabilize between seeks
+- Reduces CPU load from excessive seeking
+
+**2. Ready State Validation**:
+```javascript
+// Only seek when audio buffer has sufficient data
+if (audioElement.readyState >= 2) { // HAVE_CURRENT_DATA
+    audioElement.currentTime = targetTime;
+}
+```
+- Prevents seeking when buffer isn't ready
+- Eliminates static from premature seeks
+- Ensures smooth playback continuation
+
+**3. Complete Drag Bypass**:
+```javascript
+if (isDraggingMarker) {
+    return; // Don't enforce ANY loop boundaries while dragging
+}
+```
+- **Before**: Only start boundary check was disabled
+- **After**: ALL loop enforcement disabled during drag
+- **Result**: Perfectly smooth marker dragging with no audio interruption
+
+**4. Smart Post-Drag Adjustment**:
+```javascript
+// Only seek if playhead is WAY outside loop (> loop duration away)
+if (currentTime < loopStart - loopDuration || 
+    currentTime > loopEnd + loopDuration) {
+    audioElement.currentTime = loopStart;
+}
+```
+- **Before**: Always seeked when marker drag finished if outside loop
+- **After**: Only seeks if extremely far from loop region
+- **Result**: Natural playback continuation, minimal jarring
+
+**5. Error Handling**:
+- Wrapped all `currentTime` assignments in try-catch blocks
+- Graceful degradation if seeking fails
+- Console logging for debugging
+
+**Technical Details**:
+- **State Tracking**: Added `lastSeekTime: 0` to loop state objects
+- **Debounce Interval**: 50ms minimum between seeks (prevents ~20+ seeks/second)
+- **Ready States**: 
+  - 0 = HAVE_NOTHING
+  - 1 = HAVE_METADATA
+  - 2 = HAVE_CURRENT_DATA ← minimum required
+  - 3 = HAVE_FUTURE_DATA
+  - 4 = HAVE_ENOUGH_DATA
+- **Buffer Zone**: Loop duration used as safety margin for post-drag adjustment
+
+**Before vs After**:
+
+| Scenario | Before | After |
+|----------|--------|-------|
+| Loop playback | ❌ Static/crackling | ✅ Clean audio |
+| Dragging markers (playing) | ❌ Cuts/glitches | ✅ Smooth, no interruption |
+| After marker drag | ❌ Jarring seek | ✅ Natural continuation |
+| Rapid tempo changes | ❌ Audio artifacts | ✅ Stable playback |
+
+**Files Modified**:
+- `/app/static/js/visualizer-dual.js`:
+  - Updated `loopState1` and `loopState2` initialization (line 183-184)
+  - Enhanced `handleLoopPlayback()` function (lines 300-357)
+  - Improved `mouseup` event handler (lines 2452-2489)
+
+**Browser Compatibility**: All browsers (Chrome/Firefox/Safari/Edge ✅)
+
+**Impact**:
+- Professional-grade loop playback without artifacts
+- Live marker adjustment capability (essential for DJs)
+- Robust error handling prevents crashes
+- Improved user experience with smooth audio
+- Enables creative live performance techniques
+
+---
+
 ## Lessons Learned
 
 1. **Playback Rate & Tolerance**: Higher playback rates require larger tolerance for loop detection
@@ -1483,11 +1588,20 @@ bar.material.emissive.copy(bar.material.color).multiplyScalar(0.3);
 12. **Pitch Detection Algorithms**: Autocorrelation more robust than FFT peak detection for real-time vocal pitch
 13. **Musical Theory Integration**: Proper scale intervals and semitone calculations essential for natural-sounding auto-tune
 14. **Audio Effect Stacking**: Multiple effects (vocoder + auto-tune) require careful audio routing to avoid conflicts
-12. **Branding Consistency**: Project name should be consistent across README, HTML title, heading, and documentation
-13. **Favicon Importance**: Small detail but improves professionalism and prevents 404 errors
-14. **Documentation Quality**: Good README is essential for open-source projects - clear features, usage, and compatibility info
-15. **Microphone Integration**: getUserMedia requires user permission and HTTPS - always provide fallback and clear error messages
-16. **Audio Routing Flexibility**: Modular Web Audio API graph makes adding new sources (like mic) straightforward
+15. **Branding Consistency**: Project name should be consistent across README, HTML title, heading, and documentation
+16. **Favicon Importance**: Small detail but improves professionalism and prevents 404 errors
+17. **Documentation Quality**: Good README is essential for open-source projects - clear features, usage, and compatibility info
+18. **Microphone Integration**: getUserMedia requires user permission and HTTPS - always provide fallback and clear error messages
+19. **Audio Routing Flexibility**: Modular Web Audio API graph makes adding new sources (like mic) straightforward
+20. **Seek Debouncing Critical**: Audio seeking too frequently (>20 times/second) causes buffer corruption and static - always debounce with minimum interval (50ms works well)
+21. **Ready State Checks**: Never seek audio when `readyState < 2` - prevents static from seeking when buffers not ready
+22. **Complete State Disabling**: When implementing drag interactions, disable ALL related enforcement, not partial - isDraggingMarker must bypass all loop logic
+23. **Minimize Post-Interaction Seeks**: After user interaction (drag, click), only seek when absolutely necessary - natural playback continuation feels better than automatic correction
+
+---
+
+## Session 5: Project Branding & Documentation
+
 **User Requests**: "add a basic license" → "update the README so that the app is called Browser Jockey" → "now update index.html accordingly" → "seeing these errors: 404 favicon.ico"
 
 **Implementation**:

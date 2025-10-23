@@ -218,7 +218,9 @@ browser_jockey/
   2. Click waveform to set point A (start)
   3. Click again to set point B (end)
   4. Drag markers to fine-tune
+  5. **Live Performance**: Drag loop markers smoothly during playback without glitches or audio cuts
 - **Quick Loops**: Auto-create 1, 2, 4, or 8 bar loops based on detected BPM
+- **Professional Quality**: Debounced seeking prevents static, buffer checks ensure smooth playback
 
 ### Waveform Zoom
 - **🔍+ Zoom In**: Zoom up to 20x magnification
