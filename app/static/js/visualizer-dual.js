@@ -93,6 +93,8 @@ const stopRecordBtn = document.getElementById('stopRecordBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const loadToTrack1Btn = document.getElementById('loadToTrack1Btn');
 const loadToTrack2Btn = document.getElementById('loadToTrack2Btn');
+const recordingExportGroup = document.getElementById('recordingExportGroup');
+const recordingExportFormat = document.getElementById('recordingExportFormat');
 const recordingTime = document.getElementById('recordingTime');
 const recordingWaveform = document.getElementById('recordingWaveform');
 const recordingWaveformContainer = document.querySelector('.recording-waveform-container');
@@ -382,6 +384,10 @@ function startRecording() {
     console.log('Audio context state:', audioContext.state);
     
     recordedChunks = [];
+    recordedBlob = null; // Clear previous recording
+    
+    // Hide export group until recording is stopped
+    recordingExportGroup.style.display = 'none';
     
     // Create MediaRecorder from the destination stream
     const options = { mimeType: 'audio/webm' };
@@ -419,13 +425,8 @@ function startRecording() {
         };
         reader.readAsArrayBuffer(blob);
         
-        // Enable download and load buttons
-        downloadBtn.disabled = false;
-        downloadBtn.style.display = 'inline-block';
-        loadToTrack1Btn.disabled = false;
-        loadToTrack1Btn.style.display = 'inline-block';
-        loadToTrack2Btn.disabled = false;
-        loadToTrack2Btn.style.display = 'inline-block';
+        // Show export group with all buttons
+        recordingExportGroup.style.display = 'flex';
     };
     
     mediaRecorder.start();
@@ -527,21 +528,59 @@ function drawRecordingWaveform() {
 }
 
 // Download recorded audio
-function downloadRecording() {
-    if (recordedChunks.length === 0) return;
+async function downloadRecording() {
+    if (!recordedBlob) {
+        alert('No recording available');
+        return;
+    }
     
-    const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = `mix_recording_${new Date().getTime()}.webm`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 100);
+    const format = recordingExportFormat.value;
+    
+    try {
+        let blob, extension, filename;
+        
+        if (format === 'webm') {
+            // Original WebM format - direct download
+            blob = recordedBlob;
+            extension = 'webm';
+            filename = `mix_recording_${new Date().getTime()}.webm`;
+        } else {
+            // Convert to WAV or MP3
+            // First decode the WebM audio to AudioBuffer
+            const arrayBuffer = await recordedBlob.arrayBuffer();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            
+            if (format === 'wav') {
+                const wav = audioBufferToWav(audioBuffer);
+                blob = new Blob([wav], { type: 'audio/wav' });
+                extension = 'wav';
+            } else if (format === 'mp3') {
+                const mp3Data = audioBufferToMp3(audioBuffer);
+                blob = new Blob([mp3Data], { type: 'audio/mp3' });
+                extension = 'mp3';
+            }
+            
+            filename = `mix_recording_${new Date().getTime()}.${extension}`;
+        }
+        
+        // Download the file
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        console.log(`Recording downloaded as ${extension.toUpperCase()}`);
+    } catch (error) {
+        console.error('Error downloading recording:', error);
+        alert('Error downloading recording. Please try again.');
+    }
 }
 
 // Load recorded audio into Track 1

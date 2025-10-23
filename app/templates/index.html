@@ -337,15 +337,25 @@
                     <button id="stopRecordBtn" class="control-btn" disabled style="display: none;">
                         <span class="record-icon">⏹️</span> Stop Recording
                     </button>
-                    <button id="downloadBtn" class="control-btn" disabled style="display: none;">
-                        <span class="record-icon">💾</span> Download Recording
-                    </button>
-                    <button id="loadToTrack1Btn" class="control-btn" disabled style="display: none;">
-                        <span class="record-icon">📥</span> Load to Track 1
-                    </button>
-                    <button id="loadToTrack2Btn" class="control-btn" disabled style="display: none;">
-                        <span class="record-icon">📥</span> Load to Track 2
-                    </button>
+                    <div class="recording-export-group" style="display: none;" id="recordingExportGroup">
+                        <div class="recording-format-selector">
+                            <label>Format:</label>
+                            <select id="recordingExportFormat" class="recording-format-select">
+                                <option value="webm" selected>WebM (original)</option>
+                                <option value="wav">WAV (lossless)</option>
+                                <option value="mp3">MP3 (compressed)</option>
+                            </select>
+                        </div>
+                        <button id="downloadBtn" class="control-btn">
+                            <span class="record-icon">💾</span> Download Recording
+                        </button>
+                        <button id="loadToTrack1Btn" class="control-btn">
+                            <span class="record-icon">📥</span> Load to Track 1
+                        </button>
+                        <button id="loadToTrack2Btn" class="control-btn">
+                            <span class="record-icon">📥</span> Load to Track 2
+                        </button>
+                    </div>
                     <span id="recordingTime" class="recording-time" style="display: none;">0:00</span>
                 </div>
                 <div class="recording-waveform-container" style="display: none;">

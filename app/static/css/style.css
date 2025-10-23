@@ -1057,6 +1057,58 @@ h1 {
     margin-bottom: 15px;
 }
 
+.recording-export-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 0, 100, 0.3);
+}
+
+.recording-format-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recording-format-selector label {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    white-space: nowrap;
+}
+
+.recording-format-select {
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 0, 100, 0.4);
+    border-radius: 5px;
+    color: white;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 140px;
+}
+
+.recording-format-select:hover {
+    background: rgba(255, 0, 100, 0.1);
+    border-color: rgba(255, 0, 100, 0.6);
+}
+
+.recording-format-select:focus {
+    outline: none;
+    border-color: rgba(255, 0, 100, 0.8);
+    box-shadow: 0 0 8px rgba(255, 0, 100, 0.4);
+}
+
+.recording-format-select option {
+    background: #1a1a1a;
+    color: white;
+}
+
 .recording-time {
     font-size: 1.2rem;
     font-weight: bold;
