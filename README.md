@@ -1,17 +1,21 @@
-# 3D Audio Visualizer
+# Browser Jockey
 
-A Flask-based web application that provides real-time 3D audio visualization with musical key detection and color-coded displays.
+A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, and professional DJ controls.
 
 ## Features
 
-- 🎵 **Real-time Audio Visualization** - Upload and visualize audio files in 3D
-- 🎨 **Musical Key Detection** - Automatically detects the musical key and adjusts colors
-- 🔄 **Three Visualization Modes**:
-  - Circle: Rotating circular bars
-  - Bars: Classic 3D equalizer bars
-  - Sphere: Pulsating sphere pattern
-- 🌈 **Dynamic Color Coding** - Colors change based on detected musical key
-- 📱 **Responsive Design** - Works on desktop and mobile devices
+- �️ **Dual Track DJ System** - Load and mix two audio tracks simultaneously
+- � **BPM Detection** - Automatic tempo detection for each track
+- 🎹 **Key Detection** - Per-track musical key analysis
+- 🔁 **A-B Loop Markers** - Create precise loops with draggable markers
+- ⚡ **Quick Loops** - Auto-create 1, 2, 4, or 8 bar loops based on BPM
+- 🔍 **Waveform Zoom** - Zoom up to 20x with drag-to-pan
+- 🎚️ **Audio Effects** - Reverb, delay, and filters (low/high/band pass)
+- 💾 **Export** - Export full stems or loop regions as WAV files
+- 🎨 **3D Visualization** - Real-time WebGL visualization with Three.js
+- 🌈 **Musical Key Colors** - Dynamic colors based on detected key
+- 🎙️ **Recording** - Record your live mix with waveform display
+- 📱 **Professional Layout** - Side-by-side dual deck DJ interface
 
 ## Prerequisites
 
@@ -61,7 +65,7 @@ docker run -p 5001:5001 audio-visualizer
 
 ```bash
 git clone <repository-url>
-cd flask-audio-visualizer
+cd browser_jockey
 ```
 
 ### 2. Create a Virtual Environment with uv
@@ -132,45 +136,93 @@ gunicorn -w 4 -b 0.0.0.0:5001 run:app
 ## Project Structure
 
 ```
-flask-audio-visualizer/
+browser_jockey/
 ├── app/
 │   ├── __init__.py          # Flask app initialization
 │   ├── routes.py            # Application routes
 │   ├── static/
 │   │   ├── css/
-│   │   │   └── style.css    # Styles
+│   │   │   └── style.css    # All styling
 │   │   └── js/
-│   │       └── visualizer.js # 3D visualization logic
+│   │       ├── visualizer.js       # Original single-track (deprecated)
+│   │       └── visualizer-dual.js  # Main dual-track DJ engine
 │   └── templates/
-│       └── index.html       # Main HTML template
-├── content/                 # Sample audio files
+│       └── index.html       # Main UI
 ├── config.py               # Configuration
 ├── run.py                  # Application entry point
 ├── requirements.txt        # Python dependencies
 ├── Dockerfile             # Docker configuration
 ├── docker-compose.yml     # Docker Compose configuration
+├── CHAT_HISTORY.md        # Development history
+├── LICENSE                # MIT License
 └── README.md              # This file
 ```
 
 ## Usage
 
-1. **Upload Audio**: Click "Choose Audio File" and select an audio file
-   - **Supported formats**: MP3, WAV, OGG, M4A, AAC, FLAC, AIFF, OPUS, WEBM, and more
-2. **Play**: Click the Play button to start playback and visualization
-3. **Switch Modes**: Try different visualization modes (Circle, Bars, Sphere)
-4. **Watch**: The colors will automatically adjust based on the detected musical key
+### Loading Tracks
+1. **Track 1 & Track 2**: Drag and drop or click to upload audio files
+   - **Supported formats**: MP3, WAV, OGG, FLAC (browser-dependent), AIFF
+   - **Best compatibility**: MP3 or WAV
 
-**Note**: Some formats like AIFF may need browser codec support. For best compatibility, use MP3, WAV, or OGG formats.
+### Playback Controls
+- **Play/Pause/Stop**: Independent controls for each track
+- **Tempo Slider**: Adjust playback speed (0.25x - 2.0x)
+- **Volume Faders**: Mix levels for each track (0-100%)
+
+### Looping
+- **Manual Loops**: 
+  1. Click 🔁 to enable loop mode
+  2. Click waveform to set point A (start)
+  3. Click again to set point B (end)
+  4. Drag markers to fine-tune
+- **Quick Loops**: Auto-create 1, 2, 4, or 8 bar loops based on detected BPM
+
+### Waveform Zoom
+- **🔍+ Zoom In**: Zoom up to 20x magnification
+- **🔍− Zoom Out**: Decrease zoom level
+- **⟲ Reset**: Return to 1x zoom
+- **Drag**: Pan across the waveform when zoomed
+
+### Audio Effects
+- **Filter**: Low pass, high pass, or band pass with frequency control
+- **Reverb**: Wet/dry mix control (0-100%)
+- **Delay**: Amount and time control
+
+### Export
+- **Export Stem**: Save full track with effects as WAV
+- **Export Loop**: Save loop region with effects as WAV
+
+### Recording
+1. Set up your mix (volume, tempo, loops, effects)
+2. Click "Start Recording"
+3. Perform your mix
+4. Click "Stop Recording"
+5. Click "Download Recording" to save as .webm
+
+### 3D Visualization
+- **Three Modes**: Circle, Bars, Sphere
+- **Dynamic Colors**: Based on detected musical key
+- **Real-time**: Responds to merged audio output
+
+**Note**: FLAC files may not play in Safari. For best compatibility across all browsers, use MP3 or WAV formats.
 
 ## Musical Key Detection
 
-The app analyzes the dominant frequencies in real-time and maps them to musical notes:
+The app analyzes each track's audio buffer to detect the musical key, and uses real-time frequency analysis for visualization colors:
 
+**Key → Color Mapping**:
 - **C** → Red
+- **C#** → Orange
 - **D** → Yellow
+- **D#** → Lime
 - **E** → Green
-- **F#** → Cyan
+- **F** → Cyan
+- **F#** → Teal
+- **G** → Blue
+- **G#** → Indigo
 - **A** → Purple
+- **A#** → Magenta
 - **B** → Pink
 
 Each key has its own color, creating a unique visual experience for different songs!
@@ -178,11 +230,24 @@ Each key has its own color, creating a unique visual experience for different so
 ## Technologies Used
 
 - **Backend**: Flask 3.0
-- **Frontend**: Three.js for 3D rendering
-- **Audio**: Web Audio API
+- **Frontend**: Three.js r128 for 3D WebGL rendering
+- **Audio**: Web Audio API (AnalyserNode, GainNode, BiquadFilterNode, ConvolverNode, DelayNode)
+- **Export**: OfflineAudioContext, WAV encoding
+- **Recording**: MediaRecorder API
 - **Containerization**: Docker & Docker Compose
 - **Production Server**: Gunicorn
 - **Package Management**: uv (for local development)
+
+## Browser Compatibility
+
+| Feature | Chrome | Firefox | Safari | Edge |
+|---------|--------|---------|--------|------|
+| Core functionality | ✅ | ✅ | ✅ | ✅ |
+| MP3/WAV playback | ✅ | ✅ | ✅ | ✅ |
+| FLAC playback | ✅ | ✅ | ❌ | ✅ |
+| Recording | ✅ | ✅ | ⚠️* | ✅ |
+
+*Safari may require MediaRecorder polyfill
 
 ## Contributing
 
