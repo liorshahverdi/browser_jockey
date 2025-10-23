@@ -2253,6 +2253,10 @@ function createSphereVisualization() {
 audioFile1.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
+        // Remember if track was playing
+        const wasPlaying = !audioElement1.paused;
+        const currentTime = audioElement1.currentTime;
+        
         const url = URL.createObjectURL(file);
         audioElement1.src = url;
         fileName1.textContent = file.name;
@@ -2328,8 +2332,41 @@ audioFile1.addEventListener('change', async (e) => {
             placeholder.classList.add('hidden');
         }
         
-        // Reset source1 to reconnect
-        source1 = null;
+        // Don't set source1 to null - it will be created/reused automatically when play is clicked
+        // If audioContext exists but source1 doesn't, create it now
+        if (audioContext && !source1 && audioElement1.src) {
+            console.log('Creating MediaElementSource for Track 1 after file load');
+            try {
+                source1 = audioContext.createMediaElementSource(audioElement1);
+                
+                // Connect to the effects chain
+                source1.connect(gain1);
+                gain1.connect(filter1);
+                
+                filter1.connect(reverb1.convolver);
+                reverb1.convolver.connect(reverb1.wet);
+                filter1.connect(reverb1.dry);
+                
+                const reverbMix1 = audioContext.createGain();
+                reverb1.wet.connect(reverbMix1);
+                reverb1.dry.connect(reverbMix1);
+                
+                reverbMix1.connect(delay1.node);
+                delay1.node.connect(delay1.wet);
+                reverbMix1.connect(delay1.dry);
+                
+                const finalMix1 = audioContext.createGain();
+                delay1.wet.connect(finalMix1);
+                delay1.dry.connect(finalMix1);
+                
+                finalMix1.connect(merger, 0, 0);
+                finalMix1.connect(merger, 0, 1);
+                
+                console.log('Track 1 audio source connected successfully');
+            } catch (err) {
+                console.error('Error creating MediaElementSource for Track 1:', err);
+            }
+        }
     }
 });
 
@@ -2420,8 +2457,41 @@ audioFile2.addEventListener('change', async (e) => {
             placeholder.classList.add('hidden');
         }
         
-        // Reset source2 to reconnect
-        source2 = null;
+        // Don't set source2 to null - it will be created/reused automatically when play is clicked
+        // If audioContext exists but source2 doesn't, create it now
+        if (audioContext && !source2 && audioElement2.src) {
+            console.log('Creating MediaElementSource for Track 2 after file load');
+            try {
+                source2 = audioContext.createMediaElementSource(audioElement2);
+                
+                // Connect to the effects chain
+                source2.connect(gain2);
+                gain2.connect(filter2);
+                
+                filter2.connect(reverb2.convolver);
+                reverb2.convolver.connect(reverb2.wet);
+                filter2.connect(reverb2.dry);
+                
+                const reverbMix2 = audioContext.createGain();
+                reverb2.wet.connect(reverbMix2);
+                reverb2.dry.connect(reverbMix2);
+                
+                reverbMix2.connect(delay2.node);
+                delay2.node.connect(delay2.wet);
+                reverbMix2.connect(delay2.dry);
+                
+                const finalMix2 = audioContext.createGain();
+                delay2.wet.connect(finalMix2);
+                delay2.dry.connect(finalMix2);
+                
+                finalMix2.connect(merger, 0, 0);
+                finalMix2.connect(merger, 0, 1);
+                
+                console.log('Track 2 audio source connected successfully');
+            } catch (err) {
+                console.error('Error creating MediaElementSource for Track 2:', err);
+            }
+        }
     }
 });
 
