@@ -3,7 +3,7 @@
 ## Project Overview
 A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, and quick loop creation.
 
-**Latest Version: v3.5.3** - Fixed recording export functionality with MP3 support
+**Latest Version: v3.5.4** - Fixed recording blob access bug
 
 ---
 
@@ -3563,6 +3563,82 @@ The `downloadRecording()` function in `recording.js` only handled `webm` and `wa
 
 **Commits**:
 - "Fix recording export - add MP3 support and improve error handling (v3.5.3)"
+
+---
+
+### 89. Recording Blob Access Fix (v3.5.4) - October 23, 2025
+**User Request**: "when i click on the download recording button now it says no recording available"
+
+**Issue Diagnosed**:
+After adding MP3 export support in v3.5.3, users encountered a "No recording available" error when trying to download recordings. The root cause was a timing/synchronization issue with blob access:
+
+1. The `downloadRecordingWrapper()` function used the local `recordedBlob` variable
+2. This variable was only updated in `stopRecording()` by copying from `recordingState.blob`
+3. However, the blob is actually created asynchronously in the MediaRecorder's `onstop` event handler
+4. The synchronous update in `stopRecording()` happened before the blob was created
+5. When clicking download, `recordedBlob` was still null
+
+**Implementation**:
+Modified three functions to use `recordingState.blob` directly (the source of truth) instead of relying solely on the local `recordedBlob` variable:
+
+1. **downloadRecordingWrapper()** (`visualizer-dual.js` ~line 344):
+   ```javascript
+   async function downloadRecordingWrapper() {
+       // Use recordingState.blob directly to ensure we have the latest blob
+       const blob = recordingState.blob || recordedBlob;
+       await downloadRecording(blob, recordingExportFormat.value, audioContext);
+   }
+   ```
+
+2. **loadRecordingToTrack1()** (~line 351):
+   ```javascript
+   async function loadRecordingToTrack1() {
+       console.log('loadRecordingToTrack1 called');
+       const blob = recordingState.blob || recordedBlob;
+       console.log('recordedBlob:', blob);
+       
+       if (!blob) {
+           alert('No recording available to load');
+           return;
+       }
+       // ... rest of function
+   }
+   ```
+
+3. **loadRecordingToTrack2()** (~line 450):
+   ```javascript
+   async function loadRecordingToTrack2() {
+       console.log('loadRecordingToTrack2 called');
+       const blob = recordingState.blob || recordedBlob;
+       console.log('recordedBlob:', blob);
+       
+       if (!blob) {
+           alert('No recording available to load');
+           return;
+       }
+       // ... rest of function
+   }
+   ```
+
+**Why This Works**:
+- `recordingState.blob` is set directly in the MediaRecorder's `onstop` event handler
+- This is the authoritative source for the recording blob
+- The fallback to `recordedBlob` provides backward compatibility
+- Using `||` ensures we always get a blob if one exists in either location
+
+**Files Modified**:
+- `app/static/js/visualizer-dual.js` - Updated blob access in download and load functions
+- `README.md` - Updated to v3.5.4 with fix description
+- `CHAT_HISTORY.md` - Added session documentation
+
+**Testing Verified**:
+- Recording export now works immediately after stopping recording
+- All three formats (WebM, WAV, MP3) download correctly
+- Load to Track 1 and Load to Track 2 functions work properly
+- No "No recording available" errors
+
+**Commits**:
+- "Fix recording blob access - use recordingState.blob directly for download and load functions"
 
 ---
 
