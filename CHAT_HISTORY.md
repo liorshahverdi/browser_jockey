@@ -501,6 +501,72 @@ Track 1/2: Source → Gain → Filter → Reverb (wet/dry) → Delay (wet/dry) �
 
 ---
 
+### 20. FLAC File Playback Error Handling
+**User Report**: "i tried uploading a flac file to track 2 but it wont play"
+
+**Problem Identified**:
+- **Root Cause**: FLAC files not universally supported by HTML5 `<audio>` element
+  - Web Audio API can decode FLAC files successfully (for waveform visualization)
+  - But `<audio>` element playback depends on browser codec support
+  - Safari and some browsers lack native FLAC playback support
+  - File loaded successfully and waveform displayed, but audio wouldn't play
+
+**Solution Implemented**:
+- **Error Handling**: Added error event listeners to both audio elements
+- **User Feedback**: Console error logging with clear explanation
+- **Graceful Degradation**: 
+  - Shows error message: "Audio playback failed. FLAC files may not be supported in this browser. Try MP3, WAV, or OGG."
+  - Waveform and analysis still work (Web Audio API decoding succeeds)
+  - User knows why playback failed and what to do
+
+**Code Changes** (`visualizer-dual.js`):
+```javascript
+// Track 1 error handling
+audio1.addEventListener('error', (e) => {
+    console.error('Track 1 audio playback error:', e);
+    console.error('Audio playback failed. FLAC files may not be supported in this browser. Try MP3, WAV, or OGG.');
+});
+
+// Track 2 error handling  
+audio2.addEventListener('error', (e) => {
+    console.error('Track 2 audio playback error:', e);
+    console.error('Audio playback failed. FLAC files may not be supported in this browser. Try MP3, WAV, or OGG.');
+});
+```
+
+**Updated Placeholders**:
+- Changed from generic "Drag audio file here or click to upload"
+- Now includes format guidance: "Supports MP3, WAV, OGG, FLAC (browser-dependent)"
+- Sets user expectations about FLAC compatibility
+
+**Browser Compatibility**:
+| Format | Chrome | Firefox | Safari | Edge |
+|--------|--------|---------|--------|------|
+| MP3    | ✅     | ✅      | ✅     | ✅   |
+| WAV    | ✅     | ✅      | ✅     | ✅   |
+| OGG    | ✅     | ✅      | ⚠️     | ✅   |
+| FLAC   | ✅     | ✅      | ❌     | ✅   |
+| AIFF   | ⚠️     | ⚠️      | ✅     | ⚠️   |
+
+**Recommendation to Users**:
+- **Best compatibility**: Use MP3 or WAV files
+- **High quality**: WAV (lossless, universal support)
+- **Smaller files**: MP3 (lossy but widely supported)
+- **FLAC**: Works in Chrome/Firefox/Edge, not Safari
+- **OGG**: Works except Safari
+
+**Files Modified**:
+- `/app/static/js/visualizer-dual.js`: Added error event listeners
+- `/app/templates/index.html`: Updated placeholder text with format info
+
+**Impact**:
+- Users get clear feedback when format isn't supported
+- No silent failures
+- Waveform analysis still works even if playback doesn't
+- Better UX with format guidance upfront
+
+---
+
 ## Technical Architecture
 
 ### Backend
@@ -786,7 +852,8 @@ const keyColors = {
 - **v1.5**: Quick loop feature
 - **v1.6**: Audio effects & export
 - **v1.6.1**: Bug fixes (waveform progress, loop dragging, Track 2 buttons)
-- **v1.7**: Per-track key detection, click-to-move markers, side-by-side layout ← **Current**
+- **v1.7**: Per-track key detection, click-to-move markers, side-by-side layout
+- **v1.7.1**: FLAC file playback error handling ← **Current**
 
 ---
 

@@ -1214,6 +1214,58 @@ audioFile1.addEventListener('change', async (e) => {
         const url = URL.createObjectURL(file);
         audioElement1.src = url;
         fileName1.textContent = file.name;
+        
+        // Set MIME type for better browser compatibility
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const mimeTypes = {
+            'mp3': 'audio/mpeg',
+            'wav': 'audio/wav',
+            'ogg': 'audio/ogg',
+            'oga': 'audio/ogg',
+            'm4a': 'audio/mp4',
+            'aac': 'audio/aac',
+            'flac': 'audio/flac',
+            'aiff': 'audio/aiff',
+            'aif': 'audio/aiff',
+            'opus': 'audio/opus',
+            'webm': 'audio/webm',
+            'wma': 'audio/x-ms-wma',
+            'mp4': 'video/mp4'
+        };
+        
+        if (mimeTypes[fileExtension]) {
+            audioElement1.type = mimeTypes[fileExtension];
+        }
+        
+        // Add error handler for unsupported formats
+        audioElement1.addEventListener('error', function(e) {
+            let errorMessage = 'Error loading audio file for playback. ';
+            if (audioElement1.error) {
+                switch (audioElement1.error.code) {
+                    case audioElement1.error.MEDIA_ERR_DECODE:
+                        errorMessage += 'The audio file format is not supported by your browser for playback.\n\n';
+                        errorMessage += 'FLAC files may not play in Safari or some browsers.\n';
+                        errorMessage += 'Try converting to MP3, WAV, or OGG format for better compatibility.';
+                        break;
+                    case audioElement1.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                        errorMessage += 'The audio format or MIME type is not supported.\n\n';
+                        errorMessage += 'Try converting to MP3, WAV, or OGG format.';
+                        break;
+                    case audioElement1.error.MEDIA_ERR_NETWORK:
+                        errorMessage += 'Network error occurred.';
+                        break;
+                    case audioElement1.error.MEDIA_ERR_ABORTED:
+                        errorMessage += 'Playback was aborted.';
+                        break;
+                    default:
+                        errorMessage += 'An unknown error occurred.';
+                        break;
+                }
+            }
+            alert('⚠️ Track 1: ' + errorMessage);
+            console.error('Track 1 audio error:', audioElement1.error);
+        }, { once: true });
+        
         playBtn1.disabled = false;
         pauseBtn1.disabled = false;
         stopBtn1.disabled = false;
@@ -1247,6 +1299,57 @@ audioFile2.addEventListener('change', async (e) => {
         const url = URL.createObjectURL(file);
         audioElement2.src = url;
         fileName2.textContent = file.name;
+        
+        // Set MIME type for better browser compatibility
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const mimeTypes = {
+            'mp3': 'audio/mpeg',
+            'wav': 'audio/wav',
+            'ogg': 'audio/ogg',
+            'oga': 'audio/ogg',
+            'm4a': 'audio/mp4',
+            'aac': 'audio/aac',
+            'flac': 'audio/flac',
+            'aiff': 'audio/aiff',
+            'aif': 'audio/aiff',
+            'opus': 'audio/opus',
+            'webm': 'audio/webm',
+            'wma': 'audio/x-ms-wma',
+            'mp4': 'video/mp4'
+        };
+        
+        if (mimeTypes[fileExtension]) {
+            audioElement2.type = mimeTypes[fileExtension];
+        }
+        
+        // Add error handler for unsupported formats
+        audioElement2.addEventListener('error', function(e) {
+            let errorMessage = 'Error loading audio file for playback. ';
+            if (audioElement2.error) {
+                switch (audioElement2.error.code) {
+                    case audioElement2.error.MEDIA_ERR_DECODE:
+                        errorMessage += 'The audio file format is not supported by your browser for playback.\n\n';
+                        errorMessage += 'FLAC files may not play in Safari or some browsers.\n';
+                        errorMessage += 'Try converting to MP3, WAV, or OGG format for better compatibility.';
+                        break;
+                    case audioElement2.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                        errorMessage += 'The audio format or MIME type is not supported.\n\n';
+                        errorMessage += 'Try converting to MP3, WAV, or OGG format.';
+                        break;
+                    case audioElement2.error.MEDIA_ERR_NETWORK:
+                        errorMessage += 'Network error occurred.';
+                        break;
+                    case audioElement2.error.MEDIA_ERR_ABORTED:
+                        errorMessage += 'Playback was aborted.';
+                        break;
+                    default:
+                        errorMessage += 'An unknown error occurred.';
+                        break;
+                }
+            }
+            alert('⚠️ Track 2: ' + errorMessage);
+            console.error('Track 2 audio error:', audioElement2.error);
+        }, { once: true });
         
         // Enable all buttons
         console.log('Enabling Track 2 buttons...');
