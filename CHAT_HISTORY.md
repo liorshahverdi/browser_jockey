@@ -1788,10 +1788,40 @@ async function loadRecordingToTrack2() {
 12. **Pitch Detection Algorithms**: Autocorrelation more robust than FFT peak detection for real-time vocal pitch
 13. **Musical Theory Integration**: Proper scale intervals and semitone calculations essential for natural-sounding auto-tune
 14. **Audio Effect Stacking**: Multiple effects (vocoder + auto-tune) require careful audio routing to avoid conflicts
-15. **Color Psychology in Visualization**: Heat map colors (blue→red) provide intuitive energy representation
-16. **Smooth Visual Transitions**: Linear interpolation prevents jarring color changes, maintains professional appearance
+15. **Branding Consistency**: Project name should be consistent across README, HTML title, heading, and documentation
+16. **Favicon Importance**: Small detail but improves professionalism and prevents 404 errors
+17. **Documentation Quality**: Good README is essential for open-source projects - clear features, usage, and compatibility info
+18. **Microphone Integration**: getUserMedia requires user permission and HTTPS - always provide fallback and clear error messages
+19. **Audio Routing Flexibility**: Modular Web Audio API graph makes adding new sources (like mic) straightforward
+20. **Seek Debouncing Critical**: Audio seeking too frequently (>20 times/second) causes buffer corruption and static - always debounce with minimum interval (50ms works well)
+21. **Ready State Checks**: Never seek audio when `readyState < 2` - prevents static from seeking when buffers not ready
+22. **Complete State Disabling**: When implementing drag interactions, disable ALL related enforcement, not partial - isDraggingMarker must bypass all loop logic
+23. **Minimize Post-Interaction Seeks**: After user interaction (drag, click), only seek when absolutely necessary - natural playback continuation feels better than automatic correction
+24. **Blob Reusability**: Storing recording blobs in memory enables creative workflows - users can load recordings multiple times into different tracks without file I/O overhead
+25. **Color Psychology in Visualization**: Heat map colors (blue→red) provide intuitive energy representation - users naturally understand energy levels
+26. **Smooth Visual Transitions**: Linear interpolation prevents jarring color changes, maintains professional appearance and smooth user experience
 
 ---
 
-**End of Chat History**
+## Version History Summary
+
+- **v1.0** - Initial dual-track DJ system with 3D visualization
+- **v1.1** - Added BPM detection and waveform display
+- **v1.2** - A-B loop markers with drag functionality
+- **v1.3** - Waveform zoom and pan capabilities
+- **v1.4** - Quick loop creation (1, 2, 4, 8 bars)
+- **v1.5** - Audio effects (reverb, delay, filters)
+- **v1.6** - Export functionality (stems and loops)
+- **v1.7** - Recording with waveform visualization
+- **v1.8** - Microphone input with monitoring
+- **v2.0** - Vocoder effect (8-32 bands)
+- **v2.1** - Microphone as vocoder carrier
+- **v2.2** - Auto-tune effect with pitch correction
+- **v2.3** - Dynamic heat map colors in Circle mode
+- **v2.4** - Loop playback audio fixes (debouncing, smooth dragging)
+- **v2.5** - Load recording to tracks (layering and live looping)
+
+---
+
+**End of Chat History - Last Updated: October 23, 2025**
 

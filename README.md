@@ -390,6 +390,26 @@ Each key has its own color, creating a unique visual experience for different so
 *Safari may require MediaRecorder polyfill  
 **Safari requires HTTPS for getUserMedia (microphone access)
 
+## Version History
+
+- **v2.5** (Current) - Load recording to tracks for layering and live looping
+- **v2.4** - Loop playback audio fixes (debouncing, smooth marker dragging)
+- **v2.3** - Dynamic heat map colors in Circle mode visualization
+- **v2.2** - Auto-tune effect with pitch correction
+- **v2.1** - Microphone as vocoder carrier option
+- **v2.0** - Vocoder effect (8-32 frequency bands)
+- **v1.8** - Microphone input with monitoring and waveform display
+- **v1.7** - Recording with live waveform visualization
+- **v1.6** - Export functionality (stems and loops as WAV)
+- **v1.5** - Audio effects (reverb, delay, filters)
+- **v1.4** - Quick loop creation (1, 2, 4, 8 bars)
+- **v1.3** - Waveform zoom and pan (up to 20x)
+- **v1.2** - A-B loop markers with drag functionality
+- **v1.1** - BPM detection and static waveform display
+- **v1.0** - Initial dual-track DJ system with 3D visualization
+
+See [CHAT_HISTORY.md](CHAT_HISTORY.md) for detailed development history.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
