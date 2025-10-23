@@ -35,6 +35,7 @@ const delayTimeSlider1 = document.getElementById('delayTimeSlider1');
 const delayTimeValue1 = document.getElementById('delayTimeValue1');
 const exportStem1 = document.getElementById('exportStem1');
 const exportLoop1 = document.getElementById('exportLoop1');
+const exportFormat1 = document.getElementById('exportFormat1');
 const waveformColor1 = document.getElementById('waveformColor1');
 const resetColor1 = document.getElementById('resetColor1');
 
@@ -75,6 +76,7 @@ const delayTimeSlider2 = document.getElementById('delayTimeSlider2');
 const delayTimeValue2 = document.getElementById('delayTimeValue2');
 const exportStem2 = document.getElementById('exportStem2');
 const exportLoop2 = document.getElementById('exportLoop2');
+const exportFormat2 = document.getElementById('exportFormat2');
 const waveformColor2 = document.getElementById('waveformColor2');
 const resetColor2 = document.getElementById('resetColor2');
 
@@ -3243,17 +3245,32 @@ async function exportStem(trackNumber) {
         source.start(0);
         const renderedBuffer = await offlineContext.startRendering();
         
-        // Convert to WAV and download
-        const wav = audioBufferToWav(renderedBuffer);
-        const blob = new Blob([wav], { type: 'audio/wav' });
+        // Get selected export format
+        const format = trackNumber === 1 ? exportFormat1.value : exportFormat2.value;
+        
+        // Convert to selected format and download
+        let blob, extension, mimeType;
+        
+        if (format === 'mp3') {
+            const mp3Data = audioBufferToMp3(renderedBuffer);
+            blob = new Blob([mp3Data], { type: 'audio/mp3' });
+            extension = 'mp3';
+            mimeType = 'audio/mp3';
+        } else {
+            const wav = audioBufferToWav(renderedBuffer);
+            blob = new Blob([wav], { type: 'audio/wav' });
+            extension = 'wav';
+            mimeType = 'audio/wav';
+        }
+        
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Track${trackNumber}_with_effects.wav`;
+        a.download = `Track${trackNumber}_with_effects.${extension}`;
         a.click();
         URL.revokeObjectURL(url);
         
-        console.log('Stem exported successfully!');
+        console.log(`Stem exported successfully as ${extension.toUpperCase()}!`);
     } catch (error) {
         console.error('Error exporting stem:', error);
         alert('Error exporting stem. Please try again.');
@@ -3372,17 +3389,32 @@ async function exportLoop(trackNumber) {
         source.start(0);
         const renderedBuffer = await offlineContext.startRendering();
         
-        // Convert to WAV and download
-        const wav = audioBufferToWav(renderedBuffer);
-        const blob = new Blob([wav], { type: 'audio/wav' });
+        // Get selected export format
+        const format = trackNumber === 1 ? exportFormat1.value : exportFormat2.value;
+        
+        // Convert to selected format and download
+        let blob, extension, mimeType;
+        
+        if (format === 'mp3') {
+            const mp3Data = audioBufferToMp3(renderedBuffer);
+            blob = new Blob([mp3Data], { type: 'audio/mp3' });
+            extension = 'mp3';
+            mimeType = 'audio/mp3';
+        } else {
+            const wav = audioBufferToWav(renderedBuffer);
+            blob = new Blob([wav], { type: 'audio/wav' });
+            extension = 'wav';
+            mimeType = 'audio/wav';
+        }
+        
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Track${trackNumber}_loop_${formatTime(loopState.start)}-${formatTime(loopState.end)}.wav`;
+        a.download = `Track${trackNumber}_loop_${formatTime(loopState.start)}-${formatTime(loopState.end)}.${extension}`;
         a.click();
         URL.revokeObjectURL(url);
         
-        console.log('Loop exported successfully!');
+        console.log(`Loop exported successfully as ${extension.toUpperCase()}!`);
     } catch (error) {
         console.error('Error exporting loop:', error);
         alert('Error exporting loop. Please try again.');
@@ -3441,6 +3473,63 @@ function writeString(view, offset, string) {
     for (let i = 0; i < string.length; i++) {
         view.setUint8(offset + i, string.charCodeAt(i));
     }
+}
+
+// Convert AudioBuffer to MP3 format using lamejs
+function audioBufferToMp3(buffer) {
+    const channels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const mp3Encoder = new lamejs.Mp3Encoder(channels, sampleRate, 128); // 128 kbps
+    
+    const samples = [];
+    for (let i = 0; i < buffer.length; i++) {
+        for (let channel = 0; channel < channels; channel++) {
+            const sample = buffer.getChannelData(channel)[i];
+            // Convert float to 16-bit PCM
+            samples.push(sample < 0 ? sample * 0x8000 : sample * 0x7FFF);
+        }
+    }
+    
+    const mp3Data = [];
+    const sampleBlockSize = 1152; // Must be 1152 for MPEG1 Layer III
+    
+    // Encode in chunks
+    for (let i = 0; i < samples.length; i += sampleBlockSize * channels) {
+        const leftChannel = [];
+        const rightChannel = [];
+        
+        for (let j = 0; j < sampleBlockSize && (i + j * channels) < samples.length; j++) {
+            leftChannel.push(samples[i + j * channels] || 0);
+            if (channels === 2) {
+                rightChannel.push(samples[i + j * channels + 1] || 0);
+            }
+        }
+        
+        const mp3buf = channels === 2 
+            ? mp3Encoder.encodeBuffer(new Int16Array(leftChannel), new Int16Array(rightChannel))
+            : mp3Encoder.encodeBuffer(new Int16Array(leftChannel));
+        
+        if (mp3buf.length > 0) {
+            mp3Data.push(mp3buf);
+        }
+    }
+    
+    // Flush remaining data
+    const mp3buf = mp3Encoder.flush();
+    if (mp3buf.length > 0) {
+        mp3Data.push(mp3buf);
+    }
+    
+    // Combine all MP3 chunks
+    const totalLength = mp3Data.reduce((acc, buf) => acc + buf.length, 0);
+    const mp3File = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const buf of mp3Data) {
+        mp3File.set(buf, offset);
+        offset += buf.length;
+    }
+    
+    return mp3File;
 }
 
 // Export button handlers
