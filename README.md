@@ -1,4 +1,10 @@
-# Bro## Features
+# Bro## Browser Jockey
+
+![Browser Jockey Screenshot](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
+
+A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, and professional DJ controls.
+
+## Features
 
 - 🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneously
 - 🎵 **BPM Detection** - Automatic tempo detection for each track
@@ -9,10 +15,31 @@
 - 🎚️ **Audio Effects** - Reverb, delay, and filters (low/high/band pass)
 - 💾 **Export** - Export full stems or loop regions as WAV files
 - 🎤 **Microphone Input** - Live mic input with volume control and monitoring
+- 🤖 **Vocoder Effect** - Robot voice effect with 8-32 frequency bands, carrier source selection
+- 🎵 **Auto-Tune Effect** - Real-time pitch correction with key/scale selection, adjustable correction speed
 - 🎨 **3D Visualization** - Real-time WebGL visualization with Three.js
 - 🌈 **Musical Key Colors** - Dynamic colors based on detected key
 - 🎙️ **Recording** - Record your live mix with waveform display
-- 📱 **Professional Layout** - Side-by-side dual deck DJ interfaceBrowser Jockey Screenshot](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
+- 📱 **Professional Layout** - Side-by-side dual deck DJ interface
+- 🎨 **Customizable Colors** - Personalize waveform colors for each track
+
+## Prerequisites
+
+- Docker and Docker Compose (recommended)
+- OR Python 3.10+ and `uv` (for local development)
+
+Install `uv` if you haven't already:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+## Quick Start with Docker
+
+### 1. Build and run with Docker Compose:
+
+```bash
+docker-compose up --build
+```Browser Jockey Screenshot](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
 
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, and professional DJ controls.
 
@@ -217,13 +244,59 @@ browser_jockey/
 
 **Use Cases**: DJ commentary, live vocals, karaoke, beatboxing, podcast recording, instrument input
 
+### Vocoder Effect (🤖)
+**Requires**: Microphone enabled
+
+**Classic robot voice effect** - Uses your voice to modulate music tracks:
+
+1. **Enable Vocoder**: Click "Enable Vocoder" button
+2. **Choose Carrier Source**:
+   - **Track 1**: Modulate Track 1 audio with your voice
+   - **Track 2**: Modulate Track 2 audio with your voice
+   - **Both Tracks (Mix)**: Modulate the mixed output
+   - **Microphone (Feedback)**: Self-modulation for experimental effects
+3. **Adjust Settings**:
+   - **Dry/Wet Mix**: Blend vocoded signal (0-100%)
+   - **Bands**: Number of frequency bands (8-32)
+     - 8-12 bands: Classic robotic sound
+     - 24-32 bands: Natural, intelligible vocoded speech
+4. **Perform**: Sing or speak into the mic while music plays
+
+**Use Cases**: Robot voice effects, talk box simulation (funk/disco), creative sound design, live DJ sets
+
+### Auto-Tune Effect (🎵)
+**Requires**: Microphone enabled
+
+**Professional pitch correction** - Real-time auto-tune for vocals:
+
+1. **Enable Auto-Tune**: Click "Enable Auto-Tune" button
+2. **Select Musical Key**: Choose root key (C, C#, D, etc.) - default: A
+3. **Select Scale**:
+   - **Major**: Happy/bright sound
+   - **Minor**: Sad/dark sound
+   - **Chromatic**: All 12 notes (minimal correction)
+4. **Adjust Settings**:
+   - **Correction Speed**: 0-200ms
+     - 0-20ms: Instant "T-Pain" effect (hard auto-tune)
+     - 50-100ms: Natural pitch correction
+     - 100-200ms: Subtle, musical correction
+   - **Strength**: 0-100% dry/wet mix
+     - 0%: Original voice only
+     - 100%: Fully auto-tuned
+5. **Perform**: Sing into the mic and hear real-time pitch correction
+
+**Use Cases**: Classic auto-tune effect, subtle pitch correction, karaoke enhancement, live performance, music production demos
+
+**Advanced**: Combine vocoder + auto-tune for complex vocal processing!
+
 ### Recording
 1. Set up your mix (volume, tempo, loops, effects)
 2. (Optional) Enable microphone for voice/instrument input
-3. Click "Start Recording"
-4. Perform your mix
-5. Click "Stop Recording"
-6. Click "Download Recording" to save as .webm
+3. (Optional) Enable vocoder and/or auto-tune effects
+4. Click "Start Recording"
+5. Perform your mix
+6. Click "Stop Recording"
+7. Click "Download Recording" to save as .webm
 
 ### 3D Visualization
 - **Three Modes**: Circle, Bars, Sphere
@@ -256,9 +329,13 @@ Each key has its own color, creating a unique visual experience for different so
 
 - **Backend**: Flask 3.0
 - **Frontend**: Three.js r128 for 3D WebGL rendering
-- **Audio**: Web Audio API (AnalyserNode, GainNode, BiquadFilterNode, ConvolverNode, DelayNode)
+- **Audio**: Web Audio API (AnalyserNode, GainNode, BiquadFilterNode, ConvolverNode, DelayNode, MediaStreamSource)
+- **Microphone**: getUserMedia API for audio input capture
+- **Vocal Effects**: 
+  - **Vocoder**: Band-pass filter banks with envelope followers
+  - **Auto-Tune**: Autocorrelation pitch detection with delay-based pitch shifting
 - **Export**: OfflineAudioContext, WAV encoding
-- **Recording**: MediaRecorder API
+- **Recording**: MediaRecorder API (WebM format)
 - **Containerization**: Docker & Docker Compose
 - **Production Server**: Gunicorn
 - **Package Management**: uv (for local development)
@@ -271,8 +348,12 @@ Each key has its own color, creating a unique visual experience for different so
 | MP3/WAV playback | ✅ | ✅ | ✅ | ✅ |
 | FLAC playback | ✅ | ✅ | ❌ | ✅ |
 | Recording | ✅ | ✅ | ⚠️* | ✅ |
+| Microphone input | ✅ | ✅ | ✅** | ✅ |
+| Vocoder effect | ✅ | ✅ | ✅** | ✅ |
+| Auto-Tune effect | ✅ | ✅ | ✅** | ✅ |
 
-*Safari may require MediaRecorder polyfill
+*Safari may require MediaRecorder polyfill  
+**Safari requires HTTPS for getUserMedia (microphone access)
 
 ## Contributing
 

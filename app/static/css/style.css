@@ -181,6 +181,66 @@ h1 {
     flex-wrap: wrap;
 }
 
+.track-controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-btn-small {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1.8rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+    min-width: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn-small::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.control-btn-small:hover:not(:disabled)::before {
+    width: 300px;
+    height: 300px;
+}
+
+.control-btn-small:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 1), rgba(118, 75, 162, 1));
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5),
+                0 0 20px rgba(118, 75, 162, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.control-btn-small:active:not(:disabled) {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
 .control-btn {
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -199,19 +259,40 @@ h1 {
 }
 
 .control-btn-small:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
+    background: rgba(60, 60, 60, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
 }
 
 .loop-btn.active {
     background: linear-gradient(135deg, #00ffff, #ff00ff);
-    border-color: rgba(0, 255, 255, 0.5);
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-    transform: scale(1.05);
+    border-color: rgba(0, 255, 255, 0.8);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.6),
+                0 0 30px rgba(255, 0, 255, 0.4),
+                0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: loopPulse 2s ease-in-out infinite;
 }
 
-.loop-btn.active:hover {
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+@keyframes loopPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.6),
+                    0 0 30px rgba(255, 0, 255, 0.4),
+                    0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.8),
+                    0 0 40px rgba(255, 0, 255, 0.6),
+                    0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+}
+
+.loop-btn.active:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 0 35px rgba(0, 255, 255, 0.9),
+                0 0 50px rgba(255, 0, 255, 0.7),
+                0 8px 25px rgba(0, 0, 0, 0.5);
 }
 
 .tempo-control-inline {
@@ -721,6 +802,204 @@ h1 {
     font-size: 1.1rem;
 }
 
+.vocoder-section {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(0, 150, 255, 0.1);
+    border-radius: 10px;
+    border: 2px solid rgba(0, 150, 255, 0.4);
+}
+
+.vocoder-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: rgba(0, 200, 255, 0.9);
+    margin-bottom: 12px;
+    text-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
+}
+
+.vocoder-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vocoder-btn {
+    background: linear-gradient(135deg, rgba(0, 150, 255, 0.8), rgba(0, 200, 255, 0.8));
+    border: 2px solid rgba(0, 200, 255, 0.5);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0, 150, 255, 0.3);
+}
+
+.vocoder-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(0, 150, 255, 1), rgba(0, 200, 255, 1));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 150, 255, 0.5);
+}
+
+.vocoder-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: rgba(60, 60, 60, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+}
+
+.vocoder-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.vocoder-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.vocoder-control label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    min-width: 120px;
+}
+
+.vocoder-select {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(0, 200, 255, 0.3);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.vocoder-select:hover {
+    border-color: rgba(0, 200, 255, 0.6);
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.vocoder-select:focus {
+    border-color: rgba(0, 200, 255, 0.8);
+    box-shadow: 0 0 10px rgba(0, 200, 255, 0.4);
+}
+
+.vocoder-select option {
+    background: #1a1a1a;
+    color: white;
+}
+
+/* Auto-Tune Section Styling */
+.autotune-section {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 2px solid rgba(150, 0, 255, 0.3);
+}
+
+.autotune-header {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: rgba(200, 100, 255, 0.9);
+    text-shadow: 0 0 10px rgba(150, 0, 255, 0.5);
+}
+
+.autotune-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.autotune-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, rgba(150, 0, 255, 0.6), rgba(200, 100, 255, 0.6));
+    color: white;
+    border: 2px solid rgba(150, 0, 255, 0.5);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(150, 0, 255, 0.3);
+}
+
+.autotune-btn:hover {
+    background: linear-gradient(135deg, rgba(150, 0, 255, 0.8), rgba(200, 100, 255, 0.8));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(150, 0, 255, 0.5);
+}
+
+.autotune-btn:active {
+    transform: translateY(0);
+}
+
+.autotune-btn:disabled {
+    background: rgba(100, 100, 100, 0.3);
+    border-color: rgba(100, 100, 100, 0.5);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.autotune-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.autotune-control {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.autotune-control label {
+    font-size: 0.9rem;
+    color: rgba(200, 100, 255, 0.8);
+}
+
+.autotune-select {
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(150, 0, 255, 0.4);
+    border-radius: 6px;
+    color: white;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.autotune-select:hover {
+    border-color: rgba(200, 100, 255, 0.6);
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.autotune-select:focus {
+    border-color: rgba(200, 100, 255, 0.8);
+    box-shadow: 0 0 10px rgba(150, 0, 255, 0.4);
+}
+
+.autotune-select option {
+    background: #1a1a1a;
+    color: white;
+}
+
 .recording-section {
     margin-top: 20px;
     padding: 20px;
@@ -1031,4 +1310,75 @@ h1 {
 .duration-display {
     font-weight: 600;
     color: rgba(255, 255, 255, 0.8);
+}
+
+.waveform-color-picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.waveform-color-picker label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+}
+
+.waveform-color-picker input[type="color"] {
+    width: 50px;
+    height: 35px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.waveform-color-picker input[type="color"]:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.waveform-color-picker input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 2px;
+    border-radius: 4px;
+}
+
+.waveform-color-picker input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 3px;
+}
+
+.waveform-color-picker input[type="color"]::-moz-color-swatch {
+    border: none;
+    border-radius: 3px;
+}
+
+.reset-color-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    font-weight: 700;
+}
+
+.reset-color-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: rotate(180deg) scale(1.1);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+.reset-color-btn:active {
+    transform: rotate(180deg) scale(1.05);
 }

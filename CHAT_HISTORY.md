@@ -855,7 +855,181 @@ const keyColors = {
 - **v1.7**: Per-track key detection, click-to-move markers, side-by-side layout
 - **v1.7.1**: FLAC file playback error handling
 - **v1.7.2**: Branding update, MIT License, README enhancement, favicon
-- **v1.8**: Microphone input with live monitoring ← **Current**
+- **v1.8**: Microphone input with live monitoring
+- **v1.8.1**: Enhanced playback button UI
+- **v1.9**: Customizable waveform colors ← **Current**
+
+---
+
+### 24. Customizable Waveform Colors
+**User Request**: "now lets adds customizable colors for waveforms"
+
+**Implementation**:
+
+**Color Picker UI**:
+- **HTML5 Color Input**: Native browser color picker for each track
+- **Track 1 Default**: Cyan (#00ffff)
+- **Track 2 Default**: Magenta (#ff00ff)
+- **Reset Button**: Circular arrow (↺) that spins on hover
+- **Compact Layout**: Fits seamlessly below track info
+
+**Styling**:
+- **Color Picker**:
+  - 50px width, 35px height
+  - Rounded corners (6px)
+  - Border: 2px solid with transparency
+  - Hover effects: scale 1.05x + glow
+  - Dark background with smooth transitions
+- **Reset Button**:
+  - Minimal design with circular arrow icon
+  - 180° rotation animation on hover
+  - Scale effect on hover (1.1x)
+  - Press effect on click
+  - Glowing border on hover
+- **Container**:
+  - Dark semi-transparent background
+  - Rounded corners matching other UI elements
+  - Flexbox layout with 10px gap
+  - Consistent padding (8px 12px)
+
+**Functionality**:
+- **Real-time Color Update**: Waveform redraws instantly on color change
+- **State Management**: Color stored in `waveformColors` object
+- **Track Independence**: Each track has its own color
+- **Integration**: Works with all zoom levels and loop markers
+- **Reset Functionality**: One-click return to defaults
+  - Track 1: Resets to cyan
+  - Track 2: Resets to magenta
+
+**Technical Implementation**:
+- **Modified `drawWaveform()` function**:
+  - Added `color` parameter (default for backwards compatibility)
+  - Accepts any CSS color value (hex, rgb, rgba, hsl, etc.)
+  - Applied to `ctx.strokeStyle`
+- **Modified `redrawWaveformWithZoom()` function**:
+  - Added `trackNumber` parameter
+  - Automatically selects correct color from state
+  - Updated all 10 function calls across codebase
+- **Event Listeners**:
+  - `waveformColor1/2.addEventListener('input')` - Live color updates
+  - `resetColor1/2.addEventListener('click')` - Reset to default
+  - Both trigger waveform redraw and loop marker update
+
+**Updated Locations**:
+- Zoom in/out/reset buttons (6 calls)
+- Waveform drag handlers (2 calls)
+- Zoom-to-loop function (1 call)
+- Color picker change handlers (1 call)
+
+**Files Modified**:
+- `/app/templates/index.html`: Added color picker UI for both tracks
+- `/app/static/css/style.css`: Added `.waveform-color-picker` and `.reset-color-btn` styles
+- `/app/static/js/visualizer-dual.js`: 
+  - Added `waveformColors` state object
+  - Updated `drawWaveform()` to accept color parameter
+  - Updated `redrawWaveformWithZoom()` to use track-specific colors
+  - Added color picker event listeners
+  - Updated all 10 redrawWaveformWithZoom calls
+
+**Use Cases**:
+- **Personal Preference**: Match waveform colors to personal taste
+- **Visual Accessibility**: Choose higher contrast colors for better visibility
+- **Track Identification**: Use distinct colors to easily differentiate tracks
+- **Theme Matching**: Coordinate colors with visualization modes
+- **Creative Expression**: Customize the DJ interface appearance
+- **Color-blind Friendly**: Select colors that work better for color vision deficiency
+
+**Browser Compatibility**:
+- Chrome/Edge: ✅ Full native color picker support
+- Firefox: ✅ Full native color picker support
+- Safari: ✅ Full native color picker support
+- Mobile: ✅ Adaptive color picker (OS-specific)
+
+**Impact**:
+- Enhanced personalization and customization
+- Better track differentiation at a glance
+- Improved accessibility options
+- Professional-looking color coordination
+- User preference persistence through sessions
+- Fun, interactive UI element
+
+---
+
+### 23. Enhanced Playback Button UI
+**User Request**: "lets make the playback and loop buttons larger and prettier"
+
+**Implementation**:
+
+**Button Size Increase**:
+- **Font Size**: Increased from default to 1.8rem for better visibility
+- **Padding**: Expanded to 16px vertical, 24px horizontal
+- **Min Width**: Set to 70px for consistent button sizing
+- **Display**: Flexbox centering for perfect emoji alignment
+
+**Visual Enhancements**:
+- **Gradient Background**: Purple gradient (matching app theme)
+  - Normal: `rgba(102, 126, 234, 0.8)` → `rgba(118, 75, 162, 0.8)`
+  - Hover: Full opacity gradient with enhanced colors
+- **Border Styling**: 2px solid border with transparency changes
+- **Border Radius**: Rounded corners (12px) for modern look
+- **Box Shadow**: Multi-layer shadows for depth
+  - Default: `0 4px 15px rgba(0, 0, 0, 0.3)`
+  - Hover: `0 8px 25px` with colored glow effects
+
+**Interactive Effects**:
+- **Ripple Effect**: Expanding white circle on click/hover
+  - Uses `::before` pseudo-element
+  - Smooth cubic-bezier transition
+  - 300px diameter expansion
+- **Hover Animation**:
+  - Lifts button with `translateY(-3px)`
+  - Scales to 1.05x size
+  - Adds purple/pink glow shadows
+  - Border brightens to 50% opacity
+- **Active State**: Smaller transform for tactile feedback
+- **Disabled State**: 
+  - Reduced opacity (0.4)
+  - Gray background
+  - Dimmed border
+  - No shadow or interactions
+
+**Loop Button Special Styling**:
+- **Active State Gradient**: Cyan to magenta (`#00ffff` → `#ff00ff`)
+- **Pulsing Animation**: `loopPulse` keyframe animation
+  - 2-second duration
+  - Infinite loop
+  - Ease-in-out timing
+  - Alternating glow intensity
+- **Multi-color Glow**:
+  - Cyan glow: `0 0 20px rgba(0, 255, 255, 0.6)`
+  - Magenta glow: `0 0 30px rgba(255, 0, 255, 0.4)`
+  - Depth shadow: `0 4px 15px rgba(0, 0, 0, 0.3)`
+- **Enhanced Hover**: Even stronger glow on hover
+
+**Container Styling**:
+- **Track Controls Container**: 
+  - Dark background: `rgba(0, 0, 0, 0.3)`
+  - Rounded: 12px border radius
+  - Subtle border: `rgba(255, 255, 255, 0.1)`
+  - Padding: 15px
+  - Gap between buttons: 12px
+
+**Technical Details**:
+- **CSS Transitions**: Smooth 0.3s cubic-bezier animations
+- **Z-index Management**: Ripple effect behind button content
+- **Overflow Hidden**: Prevents ripple from extending beyond borders
+- **Flexbox Layout**: Ensures buttons stay centered and aligned
+
+**Files Modified**:
+- `/app/static/css/style.css`: Added/updated button styling classes
+
+**Impact**:
+- Much easier to see and click playback controls
+- Professional, modern button design
+- Clear visual feedback on all interactions
+- Loop button stands out with distinctive animation
+- Better accessibility for touch devices
+- More engaging user experience
 
 ---
 
@@ -954,6 +1128,285 @@ Microphone → MicGainNode ────────────┴→ ChannelMer
 
 ---
 
+### Version 2.0 - Vocoder Effects for Microphone
+
+**Timestamp**: Session 6 (continued)
+
+**User Request**: "lets add vocoder effects for the microphone input"
+
+**Implementation**: Added a professional vocoder effect that uses the microphone input as the modulator and DJ tracks as the carrier signal. The vocoder splits both signals into multiple frequency bands, extracts amplitude envelopes from the microphone, and uses them to modulate the carrier, creating the classic "robot voice" or "talk box" effect.
+
+**Features**:
+- **Enable/Disable Toggle**: Turn vocoder on/off while mic is active
+- **Carrier Source Selection**: Choose between Track 1, Track 2, or both tracks mixed
+- **Adjustable Band Count**: 8-32 frequency bands (default: 16)
+  - Fewer bands (8-12): Classic robotic sound
+  - More bands (24-32): Natural, intelligible vocoded speech
+- **Dry/Wet Mix Control**: Blend vocoded signal (0-100%)
+- **Frequency Range**: 200Hz - 5kHz (optimized for voice)
+- **Band Distribution**: Logarithmic spacing for perceptually even coverage
+
+**Audio Graph Architecture**:
+```
+                          ┌─────────────────────────────┐
+                          │   Carrier Source Selector   │
+                          │  (Track 1/Track 2/Mix)     │
+                          └─────────────┬───────────────┘
+                                        │
+                          ┌─────────────▼───────────────┐
+                          │   Carrier Gain Node         │
+                          └─────────────┬───────────────┘
+                                        │
+                    ┌───────────────────┼───────────────────┐
+                    │                   │                   │
+         ┌──────────▼─────────┐  ┌─────▼─────────┐  ┌─────▼─────────┐
+         │ Bandpass Filter 1  │  │ Bandpass 2    │  │ Bandpass N    │
+         │  (200 Hz)          │  │  (300 Hz)     │  │  (5000 Hz)    │
+         └──────────┬─────────┘  └─────┬─────────┘  └─────┬─────────┘
+                    │                   │                   │
+         ┌──────────▼─────────┐  ┌─────▼─────────┐  ┌─────▼─────────┐
+         │   Band Gain 1      │  │ Band Gain 2   │  │ Band Gain N   │
+         │   (modulated)      │  │ (modulated)   │  │ (modulated)   │
+         └──────────┬─────────┘  └─────┬─────────┘  └─────┬─────────┘
+                    │                   │                   │
+                    └───────────────────┼───────────────────┘
+                                        │
+                          ┌─────────────▼───────────────┐
+                          │   Vocoder Output Gain       │
+                          │   (wet/dry mix)            │
+                          └─────────────┬───────────────┘
+                                        │
+                          ┌─────────────▼───────────────┐
+                          │      Channel Merger         │
+                          │    (to speakers/recording)  │
+                          └─────────────────────────────┘
+
+     Microphone (Modulator):
+     
+         ┌──────────────────┐
+         │  Mic Source      │
+         └────────┬─────────┘
+                  │
+         ┌────────▼─────────┐
+         │ Modulator Gain   │
+         └────────┬─────────┘
+                  │
+    ┌─────────────┼─────────────┐
+    │             │             │
+┌───▼──────┐ ┌───▼──────┐ ┌───▼──────┐
+│Bandpass 1│ │Bandpass 2│ │Bandpass N│
+│(200 Hz)  │ │(300 Hz)  │ │(5000 Hz) │
+└───┬──────┘ └───┬──────┘ └───┬──────┘
+    │            │            │
+┌───▼──────┐ ┌───▼──────┐ ┌───▼──────┐
+│Envelope  │ │Envelope  │ │Envelope  │
+│Follower 1│ │Follower 2│ │Follower N│
+└───┬──────┘ └───┬──────┘ └───┬──────┘
+    │            │            │
+    └────────────┼────────────┘
+                 │
+          (Controls Band Gains Above)
+```
+
+**Technical Details**:
+- **Band-Pass Filters**: BiquadFilterNode with 15% bandwidth (Q = freq/bandwidth)
+- **Envelope Followers**: WaveShaper nodes with absolute value curve for amplitude extraction
+- **Modulation**: Envelope follower output connected to band gain's `gain` parameter
+- **Logarithmic Band Distribution**: `freq = minFreq * pow(maxFreq/minFreq, i/(numBands-1))`
+
+**UI Design**:
+- Blue gradient theme matching other effects sections
+- Shows only when microphone is enabled
+- Styled buttons with hover effects
+- Real-time band count and mix level display
+- Carrier source dropdown with clear labels
+
+**Code Structure**:
+- **`enableVocoder()`**: Creates filter banks, envelope followers, routing
+- **`disableVocoder()`**: Cleanup and restore direct mic routing
+- **`getVocoderCarrierSource()`**: Returns appropriate gain node based on selection
+- **`updateVocoderCarrier()`**: Rebuild vocoder with new carrier
+- **`updateVocoderMix(value)`**: Adjust wet signal level
+- **`updateVocoderBands(value)`**: Rebuild with new band count
+
+**Files Modified**:
+- `/app/templates/index.html`: Added vocoder section UI (lines 228-252)
+- `/app/static/css/style.css`: Added vocoder styling with blue theme (lines 804-894)
+- `/app/static/js/visualizer-dual.js`: Added vocoder functions and event listeners
+
+**Use Cases**:
+- **Robot Voice Effect**: Use music tracks as carrier for electronic vocal sound
+- **Talk Box Simulation**: Classic effect heard in funk/disco (e.g., "California Love")
+- **Creative Sound Design**: Modulate synth pads or effects with voice
+- **Live Performance**: Real-time vocal processing for DJ sets
+- **Music Production**: Layer vocoded vocals over beats
+
+**Browser Compatibility**:
+- Chrome/Edge: ✅ Full support
+- Firefox: ✅ Full support
+- Safari: ✅ Full support (requires HTTPS)
+- Mobile: ⚠️ Limited (requires microphone access)
+
+**Impact**:
+- Professional-grade vocal effects
+- Creative sound design capabilities
+- Real-time performance enhancement
+- Seamless integration with existing audio routing
+- Industry-standard vocoder architecture
+
+---
+
+### Version 2.1 - Microphone as Vocoder Carrier
+
+**Timestamp**: Session 6 (continued)
+
+**User Request**: "add the mic as another carrier source"
+
+**Implementation**: Added the microphone as a selectable carrier source for the vocoder, creating self-modulating feedback effects.
+
+**Features**:
+- New carrier option: "Microphone (Feedback)"
+- Mic signal can modulate itself for experimental effects
+- Updated validation to allow mic-only vocoder mode
+- No track required when using mic as carrier
+
+**Technical Details**:
+- Updated `getVocoderCarrierSource()` to return `micGain` for mic carrier
+- Modified `enableVocoder()` validation to skip track requirement for mic carrier
+- Self-modulating creates harmonic and rhythmic effects
+
+**Use Cases**:
+- **Experimental Sound Design**: Abstract audio processing
+- **Pitch Shifting Effects**: Unusual timbral changes
+- **Creative Performance**: Unique self-modulation sounds
+
+**Files Modified**:
+- `/app/templates/index.html`: Added mic option to carrier dropdown
+- `/app/static/js/visualizer-dual.js`: Updated carrier source logic
+
+**Browser Compatibility**: Same as vocoder (Chrome/Edge/Firefox/Safari ✅)
+
+**Impact**:
+- Expanded creative possibilities
+- Experimental sound design capability
+- No external tracks needed for vocoder effects
+
+---
+
+### Version 2.2 - Auto-Tune Effect for Microphone
+
+**Timestamp**: Session 6 (continued)
+
+**User Request**: "add autotuning to the microphone effect controls"
+
+**Implementation**: Added professional auto-tune/pitch correction effect for the microphone input with real-time pitch detection and correction.
+
+**Features**:
+- **Enable/Disable Toggle**: Turn auto-tune on/off while mic is active
+- **Key Selection**: Choose root key (C, C#, D, D#, E, F, F#, G, G#, A, A#, B) - default: A
+- **Scale Selection**: Choose musical scale type:
+  - **Major**: Happy/bright sound (natural major scale)
+  - **Minor**: Sad/dark sound (natural minor scale)
+  - **Chromatic**: All 12 notes (minimal correction, closest semitone)
+- **Correction Speed**: 0-200ms adjustment (default: 50ms)
+  - 0-20ms: Instant "T-Pain" effect (hard auto-tune)
+  - 50-100ms: Natural pitch correction
+  - 100-200ms: Subtle, musical correction
+- **Strength Control**: 0-100% dry/wet mix (default: 100%)
+  - 0%: Original voice only
+  - 50%: Blend of corrected and original
+  - 100%: Fully auto-tuned
+
+**Audio Graph Architecture**:
+```
+     Microphone Input (micGain)
+             │
+    ┌────────┼────────┐
+    │        │        │
+    │    ┌───▼───┐    │
+    │    │Analyser│   │
+    │    │(Pitch  │   │
+    │    │Detect) │   │
+    │    └───────┘    │
+    │                 │
+┌───▼───┐      ┌──────▼───────┐
+│ Dry   │      │  12 Pitch    │
+│ Gain  │      │  Shifters    │
+│       │      │ (Delay-based)│
+└───┬───┘      └──────┬───────┘
+    │                 │
+    │          ┌──────▼───────┐
+    │          │   Wet Gain   │
+    │          └──────┬───────┘
+    │                 │
+    └────────┬────────┘
+             │
+      ┌──────▼──────┐
+      │   Merger    │
+      │  (Output)   │
+      └─────────────┘
+```
+
+**Technical Details**:
+- **Pitch Detection**: Autocorrelation algorithm (4096 FFT size)
+  - 50Hz update rate (20ms intervals)
+  - RMS threshold: 0.01 for signal detection
+  - Correlation threshold: 0.9 for valid pitch
+- **Pitch Correction**:
+  - 12 delay-based pitch shifters (formant preservation)
+  - Logarithmic frequency spacing across octave
+  - Smooth parameter transitions via `setTargetAtTime()`
+- **Musical Intelligence**:
+  - Snaps to nearest note in selected key/scale
+  - Semitone-to-frequency conversion: `f = rootFreq * 2^(semitones/12)`
+  - Scale interval matching with distance minimization
+- **Real-time Processing**: Non-blocking continuous pitch correction loop
+
+**UI Design**:
+- Purple gradient theme (#9600FF) distinguishing from vocoder (blue)
+- Shows only when microphone is enabled
+- Real-time value displays for speed and strength
+- Styled dropdowns for key and scale selection
+- Smooth hover effects and transitions
+
+**Code Structure**:
+- **`enableAutotune()`**: Creates analyser, pitch shifters, dry/wet routing, starts correction loop
+- **`disableAutotune()`**: Cleanup and restore direct mic routing
+- **`correctPitch()`**: Main pitch correction loop with autocorrelation detection
+- **`autoCorrelate()`**: Pitch detection algorithm using time-domain analysis
+- **`getNearestNoteFrequency()`**: Musical intelligence for scale-based pitch snapping
+- **`updateAutotuneSpeed()`**: Adjust correction smoothing time
+- **`updateAutotuneStrength()`**: Adjust dry/wet mix ratio
+
+**Files Modified**:
+- `/app/templates/index.html`: Added auto-tune section UI (lines 273-319)
+- `/app/static/css/style.css`: Added auto-tune styling with purple theme (lines 905-1001)
+- `/app/static/js/visualizer-dual.js`: Added pitch detection, correction algorithms, event listeners
+
+**Use Cases**:
+- **Vocal Effects**: Classic "T-Pain" hard auto-tune (0-20ms speed, 100% strength)
+- **Pitch Correction**: Subtle vocal tuning (100-150ms speed, 70% strength)
+- **Karaoke Enhancement**: Help singers stay in key
+- **Live Performance**: Real-time vocal processing for DJ sets
+- **Music Production**: Demo vocal recording with instant pitch correction
+- **Creative Sound Design**: Experimental pitch manipulation
+
+**Browser Compatibility**:
+- Chrome/Edge: ✅ Full support
+- Firefox: ✅ Full support
+- Safari: ✅ Full support (requires HTTPS)
+- Mobile: ⚠️ Limited (requires microphone access, may have latency)
+
+**Impact**:
+- Industry-standard auto-tune capability
+- Professional vocal processing tools
+- Real-time pitch correction for live performance
+- Educational tool for understanding pitch and scales
+- Combines with vocoder for complex vocal effects
+- Zero-latency processing pipeline
+
+---
+
 ## Lessons Learned
 
 1. **Playback Rate & Tolerance**: Higher playback rates require larger tolerance for loop detection
@@ -967,6 +1420,9 @@ Microphone → MicGainNode ────────────┴→ ChannelMer
 9. **Per-Track Analysis**: Detecting BPM/key per track (not merged) provides better DJ workflow and individual track info
 10. **Multiple Interaction Methods**: Providing both drag and click-to-move for markers gives users flexibility - precise vs. quick adjustments
 11. **Layout Matters**: Side-by-side dual deck layout matches professional DJ software expectations and improves usability
+12. **Pitch Detection Algorithms**: Autocorrelation more robust than FFT peak detection for real-time vocal pitch
+13. **Musical Theory Integration**: Proper scale intervals and semitone calculations essential for natural-sounding auto-tune
+14. **Audio Effect Stacking**: Multiple effects (vocoder + auto-tune) require careful audio routing to avoid conflicts
 12. **Branding Consistency**: Project name should be consistent across README, HTML title, heading, and documentation
 13. **Favicon Importance**: Small detail but improves professionalism and prevents 404 errors
 14. **Documentation Quality**: Good README is essential for open-source projects - clear features, usage, and compatibility info

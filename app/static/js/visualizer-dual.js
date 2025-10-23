@@ -35,6 +35,8 @@ const delayTimeSlider1 = document.getElementById('delayTimeSlider1');
 const delayTimeValue1 = document.getElementById('delayTimeValue1');
 const exportStem1 = document.getElementById('exportStem1');
 const exportLoop1 = document.getElementById('exportLoop1');
+const waveformColor1 = document.getElementById('waveformColor1');
+const resetColor1 = document.getElementById('resetColor1');
 
 // Get DOM elements for Track 2
 const audioFile2 = document.getElementById('audioFile2');
@@ -73,6 +75,8 @@ const delayTimeSlider2 = document.getElementById('delayTimeSlider2');
 const delayTimeValue2 = document.getElementById('delayTimeValue2');
 const exportStem2 = document.getElementById('exportStem2');
 const exportLoop2 = document.getElementById('exportLoop2');
+const waveformColor2 = document.getElementById('waveformColor2');
+const resetColor2 = document.getElementById('resetColor2');
 
 // Shared visualizer elements
 const container = document.getElementById('visualizer-container');
@@ -101,6 +105,29 @@ const micMonitorCheckbox = document.getElementById('micMonitorCheckbox');
 const micWaveform = document.getElementById('micWaveform');
 const micWaveformContainer = document.getElementById('micWaveformContainer');
 
+// Vocoder elements
+const vocoderSection = document.getElementById('vocoderSection');
+const enableVocoderBtn = document.getElementById('enableVocoderBtn');
+const disableVocoderBtn = document.getElementById('disableVocoderBtn');
+const vocoderSettings = document.getElementById('vocoderSettings');
+const vocoderCarrier = document.getElementById('vocoderCarrier');
+const vocoderMixSlider = document.getElementById('vocoderMixSlider');
+const vocoderMixValue = document.getElementById('vocoderMixValue');
+const vocoderBandsSlider = document.getElementById('vocoderBandsSlider');
+const vocoderBandsValue = document.getElementById('vocoderBandsValue');
+
+// Auto-Tune elements
+const autotuneSection = document.getElementById('autotuneSection');
+const enableAutotuneBtn = document.getElementById('enableAutotuneBtn');
+const disableAutotuneBtn = document.getElementById('disableAutotuneBtn');
+const autotuneSettings = document.getElementById('autotuneSettings');
+const autotuneKey = document.getElementById('autotuneKey');
+const autotuneScale = document.getElementById('autotuneScale');
+const autotuneSpeedSlider = document.getElementById('autotuneSpeedSlider');
+const autotuneSpeedValue = document.getElementById('autotuneSpeedValue');
+const autotuneStrengthSlider = document.getElementById('autotuneStrengthSlider');
+const autotuneStrengthValue = document.getElementById('autotuneStrengthValue');
+
 // Audio context and analysers
 let audioContext;
 let analyser;
@@ -117,6 +144,22 @@ let micGain = null;
 let micAnalyser = null;
 let micAnimationId = null;
 let micEnabled = false;
+
+// Vocoder state
+let vocoderEnabled = false;
+let vocoderBands = [];
+let vocoderCarrierGain = null;
+let vocoderModulatorGain = null;
+let vocoderOutputGain = null;
+const NUM_VOCODER_BANDS = 16;
+
+// Auto-Tune state
+let autotuneEnabled = false;
+let autotuneProcessor = null;
+let autotuneAnalyser = null;
+let autotuneScriptNode = null;
+let pitchShifters = [];
+let currentPitch = 0;
 
 // Audio effects nodes for Track 1
 let gain1, reverb1, delay1, filter1;
@@ -143,6 +186,12 @@ let loopState2 = { enabled: false, start: null, end: null, settingPoint: 'start'
 // Zoom state for both tracks
 let zoomState1 = { level: 1.0, offset: 0.0, audioBuffer: null, isDragging: false, dragStartX: 0, dragStartOffset: 0 };
 let zoomState2 = { level: 1.0, offset: 0.0, audioBuffer: null, isDragging: false, dragStartX: 0, dragStartOffset: 0 };
+
+// Waveform color state
+let waveformColors = {
+    track1: '#00ffff',  // Cyan default
+    track2: '#ff00ff'   // Magenta default
+};
 
 // Recording state
 let mediaRecorder;
@@ -498,6 +547,8 @@ async function enableMicrophone() {
         micVolumeControl.style.display = 'flex';
         micMonitoring.style.display = 'block';
         micWaveformContainer.style.display = 'block';
+        vocoderSection.style.display = 'block';
+        autotuneSection.style.display = 'block';
         
         // Start waveform visualization
         drawMicWaveform();
@@ -538,12 +589,19 @@ function disableMicrophone() {
     
     micEnabled = false;
     
+    // Disable autotune if enabled
+    if (autotuneEnabled) {
+        disableAutotune();
+    }
+    
     // Update UI
     enableMicBtn.style.display = 'inline-block';
     disableMicBtn.style.display = 'none';
     micVolumeControl.style.display = 'none';
     micMonitoring.style.display = 'none';
     micWaveformContainer.style.display = 'none';
+    vocoderSection.style.display = 'none';
+    autotuneSection.style.display = 'none';
     micMonitorCheckbox.checked = false;
     
     console.log('Microphone disabled');
@@ -663,8 +721,489 @@ function toggleMicMonitoring(enabled) {
     }
 }
 
+// Enable vocoder effect
+function enableVocoder() {
+    if (!micSource || !audioContext) {
+        alert('Please enable microphone first!');
+        return;
+    }
+    
+    // Check if carrier source is available (allow mic as carrier for feedback effects)
+    const carrier = vocoderCarrier.value;
+    if (carrier !== 'mic' && !source1 && !source2) {
+        alert('Please load at least one audio track to use as carrier!');
+        return;
+    }
+    
+    try {
+        // Create vocoder bands
+        const numBands = parseInt(vocoderBandsSlider.value);
+        vocoderBands = [];
+        
+        // Frequency range for vocoder bands (200Hz to 5000Hz typical for voice)
+        const minFreq = 200;
+        const maxFreq = 5000;
+        
+        // Create gain nodes for carrier and modulator input
+        vocoderCarrierGain = audioContext.createGain();
+        vocoderModulatorGain = audioContext.createGain();
+        vocoderOutputGain = audioContext.createGain();
+        
+        // Get carrier source based on selection
+        const carrierSource = getVocoderCarrierSource();
+        if (carrierSource) {
+            carrierSource.connect(vocoderCarrierGain);
+        }
+        
+        // Connect microphone (modulator) to vocoder
+        micSource.connect(vocoderModulatorGain);
+        
+        // Create vocoder bands
+        for (let i = 0; i < numBands; i++) {
+            // Calculate band frequency (logarithmic distribution)
+            const freqRatio = Math.pow(maxFreq / minFreq, i / (numBands - 1));
+            const frequency = minFreq * freqRatio;
+            const bandwidth = frequency * 0.15; // 15% bandwidth
+            
+            // Create filters for carrier (bandpass)
+            const carrierFilter = audioContext.createBiquadFilter();
+            carrierFilter.type = 'bandpass';
+            carrierFilter.frequency.value = frequency;
+            carrierFilter.Q.value = frequency / bandwidth;
+            
+            // Create filters for modulator (bandpass)
+            const modulatorFilter = audioContext.createBiquadFilter();
+            modulatorFilter.type = 'bandpass';
+            modulatorFilter.frequency.value = frequency;
+            modulatorFilter.Q.value = frequency / bandwidth;
+            
+            // Create envelope follower using waveshaper
+            const envelopeFollower = audioContext.createWaveShaper();
+            const curve = new Float32Array(256);
+            for (let j = 0; j < 256; j++) {
+                curve[j] = Math.abs(j / 128 - 1); // Absolute value for envelope
+            }
+            envelopeFollower.curve = curve;
+            
+            // Create gain node for this band
+            const bandGain = audioContext.createGain();
+            bandGain.gain.value = 1.0;
+            
+            // Connect the vocoder band
+            vocoderCarrierGain.connect(carrierFilter);
+            vocoderModulatorGain.connect(modulatorFilter);
+            modulatorFilter.connect(envelopeFollower);
+            envelopeFollower.connect(bandGain.gain); // Modulate the gain
+            carrierFilter.connect(bandGain);
+            bandGain.connect(vocoderOutputGain);
+            
+            vocoderBands.push({
+                carrierFilter,
+                modulatorFilter,
+                envelopeFollower,
+                bandGain,
+                frequency
+            });
+        }
+        
+        // Disconnect mic from direct output
+        try {
+            micGain.disconnect(merger);
+        } catch (e) {
+            // Already disconnected
+        }
+        
+        // Connect vocoder output to merger
+        vocoderOutputGain.connect(merger);
+        
+        // Set initial mix level
+        const mixValue = parseInt(vocoderMixSlider.value) / 100;
+        vocoderOutputGain.gain.value = mixValue;
+        
+        vocoderEnabled = true;
+        
+        // Update UI
+        enableVocoderBtn.style.display = 'none';
+        disableVocoderBtn.disabled = false;
+        disableVocoderBtn.style.display = 'inline-block';
+        vocoderSettings.style.display = 'flex';
+        
+        console.log(`Vocoder enabled with ${numBands} bands`);
+    } catch (error) {
+        console.error('Error enabling vocoder:', error);
+        alert('Error enabling vocoder. Please try again.');
+    }
+}
+
+// Disable vocoder effect
+function disableVocoder() {
+    if (!vocoderEnabled) return;
+    
+    try {
+        // Disconnect and clean up vocoder nodes
+        if (vocoderCarrierGain) {
+            vocoderCarrierGain.disconnect();
+            vocoderCarrierGain = null;
+        }
+        
+        if (vocoderModulatorGain) {
+            vocoderModulatorGain.disconnect();
+            vocoderModulatorGain = null;
+        }
+        
+        if (vocoderOutputGain) {
+            vocoderOutputGain.disconnect();
+            vocoderOutputGain = null;
+        }
+        
+        // Clean up all band nodes
+        vocoderBands.forEach(band => {
+            band.carrierFilter.disconnect();
+            band.modulatorFilter.disconnect();
+            band.envelopeFollower.disconnect();
+            band.bandGain.disconnect();
+        });
+        vocoderBands = [];
+        
+        // Reconnect mic directly to merger
+        if (micGain && merger) {
+            micGain.connect(merger);
+        }
+        
+        vocoderEnabled = false;
+        
+        // Update UI
+        enableVocoderBtn.style.display = 'inline-block';
+        disableVocoderBtn.style.display = 'none';
+        vocoderSettings.style.display = 'none';
+        
+        console.log('Vocoder disabled');
+    } catch (error) {
+        console.error('Error disabling vocoder:', error);
+    }
+}
+
+// Get carrier source for vocoder
+function getVocoderCarrierSource() {
+    const carrier = vocoderCarrier.value;
+    
+    if (carrier === 'track1' && gain1) {
+        return gain1;
+    } else if (carrier === 'track2' && gain2) {
+        return gain2;
+    } else if (carrier === 'mix' && merger) {
+        return merger;
+    } else if (carrier === 'mic' && micGain) {
+        return micGain;
+    }
+    
+    return null;
+}
+
+// Update vocoder carrier source
+function updateVocoderCarrier() {
+    if (!vocoderEnabled) return;
+    
+    // Disable and re-enable to rebuild with new carrier
+    disableVocoder();
+    setTimeout(() => enableVocoder(), 100);
+}
+
+// Update vocoder mix (dry/wet)
+function updateVocoderMix(value) {
+    if (vocoderOutputGain) {
+        vocoderOutputGain.gain.value = value / 100;
+        vocoderMixValue.textContent = `${value}%`;
+    }
+}
+
+// Update number of vocoder bands
+function updateVocoderBands(value) {
+    vocoderBandsValue.textContent = value;
+    
+    if (vocoderEnabled) {
+        // Rebuild vocoder with new band count
+        disableVocoder();
+        setTimeout(() => enableVocoder(), 100);
+    }
+}
+
+// Musical scales for auto-tune
+const musicScales = {
+    major: [0, 2, 4, 5, 7, 9, 11],
+    minor: [0, 2, 3, 5, 7, 8, 10],
+    chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+};
+
+// Enable auto-tune effect
+function enableAutotune() {
+    if (!micSource || !audioContext) {
+        alert('Please enable microphone first!');
+        return;
+    }
+    
+    try {
+        // Create analyser for pitch detection
+        autotuneAnalyser = audioContext.createAnalyser();
+        autotuneAnalyser.fftSize = 4096;
+        
+        // Create gain nodes for wet/dry mix
+        const dryGain = audioContext.createGain();
+        const wetGain = audioContext.createGain();
+        
+        // Get strength value
+        const strength = parseInt(autotuneStrengthSlider.value) / 100;
+        dryGain.gain.value = 1 - strength;
+        wetGain.gain.value = strength;
+        
+        // Create pitch shifters using multiple delay nodes
+        // This is a simplified pitch correction using formant shifting
+        pitchShifters = [];
+        for (let i = 0; i < 12; i++) {
+            const shifter = {
+                delay: audioContext.createDelay(1.0),
+                gain: audioContext.createGain(),
+                filter: audioContext.createBiquadFilter()
+            };
+            
+            shifter.delay.delayTime.value = 0.02; // 20ms base delay
+            shifter.gain.gain.value = 0;
+            shifter.filter.type = 'allpass';
+            shifter.filter.frequency.value = 1000;
+            
+            pitchShifters.push(shifter);
+        }
+        
+        // Store reference to auto-tune processor
+        autotuneProcessor = {
+            dryGain,
+            wetGain,
+            pitchShifters
+        };
+        
+        // Connect audio graph for pitch detection
+        micGain.connect(autotuneAnalyser);
+        
+        // Connect dry signal
+        micGain.connect(dryGain);
+        
+        // Connect wet signal through pitch shifters
+        pitchShifters.forEach(shifter => {
+            micGain.connect(shifter.filter);
+            shifter.filter.connect(shifter.delay);
+            shifter.delay.connect(shifter.gain);
+            shifter.gain.connect(wetGain);
+        });
+        
+        // Disconnect mic from direct path
+        try {
+            if (!vocoderEnabled) {
+                micGain.disconnect(merger);
+            }
+        } catch (e) {
+            // Already disconnected
+        }
+        
+        // Connect to output
+        dryGain.connect(merger);
+        wetGain.connect(merger);
+        
+        autotuneEnabled = true;
+        
+        // Start pitch correction loop
+        correctPitch();
+        
+        // Update UI
+        enableAutotuneBtn.style.display = 'none';
+        disableAutotuneBtn.disabled = false;
+        disableAutotuneBtn.style.display = 'inline-block';
+        autotuneSettings.style.display = 'flex';
+        
+        console.log('Auto-tune enabled');
+    } catch (error) {
+        console.error('Error enabling auto-tune:', error);
+        alert('Error enabling auto-tune. Please try again.');
+    }
+}
+
+// Disable auto-tune effect
+function disableAutotune() {
+    if (!autotuneEnabled) return;
+    
+    try {
+        // Disconnect and clean up
+        if (autotuneProcessor) {
+            autotuneProcessor.dryGain.disconnect();
+            autotuneProcessor.wetGain.disconnect();
+            
+            pitchShifters.forEach(shifter => {
+                shifter.filter.disconnect();
+                shifter.delay.disconnect();
+                shifter.gain.disconnect();
+            });
+            
+            autotuneProcessor = null;
+            pitchShifters = [];
+        }
+        
+        if (autotuneAnalyser) {
+            autotuneAnalyser.disconnect();
+            autotuneAnalyser = null;
+        }
+        
+        // Reconnect mic directly
+        if (micGain && merger && !vocoderEnabled) {
+            micGain.connect(merger);
+        }
+        
+        autotuneEnabled = false;
+        
+        // Update UI
+        enableAutotuneBtn.style.display = 'inline-block';
+        disableAutotuneBtn.style.display = 'none';
+        autotuneSettings.style.display = 'none';
+        
+        console.log('Auto-tune disabled');
+    } catch (error) {
+        console.error('Error disabling auto-tune:', error);
+    }
+}
+
+// Pitch correction loop
+function correctPitch() {
+    if (!autotuneEnabled || !autotuneAnalyser) return;
+    
+    const bufferLength = autotuneAnalyser.frequencyBinCount;
+    const dataArray = new Float32Array(bufferLength);
+    autotuneAnalyser.getFloatTimeDomainData(dataArray);
+    
+    // Detect pitch using autocorrelation
+    const detectedFreq = autoCorrelate(dataArray, audioContext.sampleRate);
+    
+    if (detectedFreq > 0) {
+        // Get target note based on key and scale
+        const targetFreq = getNearestNoteFrequency(detectedFreq);
+        const pitchShift = Math.log2(targetFreq / detectedFreq);
+        
+        // Apply pitch shift to all shifters (simplified)
+        const speed = parseInt(autotuneSpeedSlider.value);
+        const smoothing = speed / 1000; // Convert to seconds
+        
+        pitchShifters.forEach((shifter, i) => {
+            const semitoneOffset = (i - 6) / 12; // Spread shifters across octave
+            const shiftAmount = pitchShift + semitoneOffset;
+            
+            // Use delay time modulation for pitch shifting
+            const delayTime = 0.02 * Math.pow(2, -shiftAmount);
+            shifter.delay.delayTime.setTargetAtTime(
+                Math.max(0.001, Math.min(0.5, delayTime)),
+                audioContext.currentTime,
+                smoothing
+            );
+            
+            // Adjust gain for formant preservation
+            const gainValue = Math.exp(-Math.abs(semitoneOffset) * 2) / pitchShifters.length;
+            shifter.gain.gain.setTargetAtTime(gainValue, audioContext.currentTime, smoothing);
+        });
+    }
+    
+    // Continue loop
+    setTimeout(() => correctPitch(), 20); // 50Hz update rate
+}
+
+// Autocorrelation for pitch detection
+function autoCorrelate(buffer, sampleRate) {
+    const SIZE = buffer.length;
+    const MAX_SAMPLES = Math.floor(SIZE / 2);
+    let best_offset = -1;
+    let best_correlation = 0;
+    let rms = 0;
+    
+    // Calculate RMS
+    for (let i = 0; i < SIZE; i++) {
+        rms += buffer[i] * buffer[i];
+    }
+    rms = Math.sqrt(rms / SIZE);
+    
+    // Not enough signal
+    if (rms < 0.01) return -1;
+    
+    // Find the best correlation
+    let lastCorrelation = 1;
+    for (let offset = 1; offset < MAX_SAMPLES; offset++) {
+        let correlation = 0;
+        
+        for (let i = 0; i < MAX_SAMPLES; i++) {
+            correlation += Math.abs(buffer[i] - buffer[i + offset]);
+        }
+        
+        correlation = 1 - (correlation / MAX_SAMPLES);
+        
+        if (correlation > 0.9 && correlation > lastCorrelation) {
+            const foundGoodCorrelation = correlation > best_correlation;
+            if (foundGoodCorrelation) {
+                best_correlation = correlation;
+                best_offset = offset;
+            }
+        }
+        
+        lastCorrelation = correlation;
+    }
+    
+    if (best_offset === -1) return -1;
+    
+    return sampleRate / best_offset;
+}
+
+// Get nearest note frequency based on key and scale
+function getNearestNoteFrequency(frequency) {
+    const key = autotuneKey.value;
+    const scale = autotuneScale.value;
+    const scaleIntervals = musicScales[scale];
+    
+    // Get root note frequency (noteFrequencies has .freq property)
+    const rootFreq = noteFrequencies[key].freq;
+    
+    // Find nearest note in scale
+    const semitones = 12 * Math.log2(frequency / rootFreq);
+    const octave = Math.floor(semitones / 12);
+    const noteInOctave = Math.round(semitones) % 12;
+    
+    // Snap to scale
+    let closestInterval = scaleIntervals[0];
+    let minDistance = Math.abs(noteInOctave - closestInterval);
+    
+    scaleIntervals.forEach(interval => {
+        const distance = Math.abs(noteInOctave - interval);
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestInterval = interval;
+        }
+    });
+    
+    // Calculate target frequency
+    const targetSemitones = octave * 12 + closestInterval;
+    return rootFreq * Math.pow(2, targetSemitones / 12);
+}
+
+// Update auto-tune correction speed
+function updateAutotuneSpeed(value) {
+    autotuneSpeedValue.textContent = `${value}ms`;
+}
+
+// Update auto-tune strength
+function updateAutotuneStrength(value) {
+    autotuneStrengthValue.textContent = `${value}%`;
+    
+    if (autotuneProcessor) {
+        const strength = value / 100;
+        autotuneProcessor.dryGain.gain.value = 1 - strength;
+        autotuneProcessor.wetGain.gain.value = strength;
+    }
+}
+
 // Draw waveform on canvas with zoom support
-function drawWaveform(canvas, audioBuffer, zoomLevel = 1.0, zoomOffset = 0.0) {
+function drawWaveform(canvas, audioBuffer, zoomLevel = 1.0, zoomOffset = 0.0, color = 'rgba(0, 255, 255, 0.8)') {
     const ctx = canvas.getContext('2d');
     const width = canvas.width = canvas.offsetWidth * window.devicePixelRatio;
     const height = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
@@ -684,7 +1223,7 @@ function drawWaveform(canvas, audioBuffer, zoomLevel = 1.0, zoomOffset = 0.0) {
     const amp = height / 2;
     
     ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)';
+    ctx.strokeStyle = color;
     ctx.beginPath();
     
     for (let i = 0; i < width; i++) {
@@ -708,10 +1247,11 @@ function drawWaveform(canvas, audioBuffer, zoomLevel = 1.0, zoomOffset = 0.0) {
 }
 
 // Redraw waveform with zoom
-function redrawWaveformWithZoom(canvas, zoomState, zoomLevelDisplay) {
+function redrawWaveformWithZoom(canvas, zoomState, zoomLevelDisplay, trackNumber) {
     if (!zoomState.audioBuffer) return;
     
-    drawWaveform(canvas, zoomState.audioBuffer, zoomState.level, zoomState.offset);
+    const color = trackNumber === 1 ? waveformColors.track1 : waveformColors.track2;
+    drawWaveform(canvas, zoomState.audioBuffer, zoomState.level, zoomState.offset, color);
     zoomLevelDisplay.textContent = zoomState.level.toFixed(1) + 'x';
 }
 
@@ -1695,7 +2235,7 @@ waveform1.parentElement.addEventListener('mousemove', (e) => {
         const deltaPercent = -(deltaX / rect.width) / zoomState1.level;
         
         zoomState1.offset = Math.max(0, Math.min(1 - (1 / zoomState1.level), zoomState1.dragStartOffset + deltaPercent));
-        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display);
+        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
         updateLoopMarkersAfterZoom(1);
     }
 });
@@ -1798,7 +2338,7 @@ waveform2.parentElement.addEventListener('mousemove', (e) => {
         const deltaPercent = -(deltaX / rect.width) / zoomState2.level;
         
         zoomState2.offset = Math.max(0, Math.min(1 - (1 / zoomState2.level), zoomState2.dragStartOffset + deltaPercent));
-        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display);
+        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
         updateLoopMarkersAfterZoom(2);
     }
 });
@@ -2205,7 +2745,7 @@ function zoomToLoop(trackNumber) {
     zoomState.offset = targetOffset;
     
     // Redraw waveform
-    redrawWaveformWithZoom(waveform, zoomState, zoomLevelDisplay);
+    redrawWaveformWithZoom(waveform, zoomState, zoomLevelDisplay, trackNumber);
     updateLoopMarkersAfterZoom(trackNumber);
     
     // Update cursor style
@@ -2236,6 +2776,40 @@ micVolumeSlider.addEventListener('input', (e) => {
 
 micMonitorCheckbox.addEventListener('change', (e) => {
     toggleMicMonitoring(e.target.checked);
+});
+
+// Vocoder button handlers
+enableVocoderBtn.addEventListener('click', enableVocoder);
+disableVocoderBtn.addEventListener('click', disableVocoder);
+
+vocoderCarrier.addEventListener('change', updateVocoderCarrier);
+
+vocoderMixSlider.addEventListener('input', (e) => {
+    updateVocoderMix(parseInt(e.target.value));
+});
+
+vocoderBandsSlider.addEventListener('input', (e) => {
+    updateVocoderBands(parseInt(e.target.value));
+});
+
+// Auto-Tune button handlers
+enableAutotuneBtn.addEventListener('click', enableAutotune);
+disableAutotuneBtn.addEventListener('click', disableAutotune);
+
+autotuneKey.addEventListener('change', () => {
+    // Key or scale change doesn't require restart, just affects pitch correction
+});
+
+autotuneScale.addEventListener('change', () => {
+    // Key or scale change doesn't require restart, just affects pitch correction
+});
+
+autotuneSpeedSlider.addEventListener('input', (e) => {
+    updateAutotuneSpeed(parseInt(e.target.value));
+});
+
+autotuneStrengthSlider.addEventListener('input', (e) => {
+    updateAutotuneStrength(parseInt(e.target.value));
 });
 
 // Tempo sliders
@@ -2366,7 +2940,7 @@ zoomInBtn1.addEventListener('click', () => {
         const centerTime = zoomState1.offset + (0.5 / zoomState1.level);
         zoomState1.level = Math.min(20, zoomState1.level * 2);
         zoomState1.offset = Math.max(0, Math.min(1 - (1 / zoomState1.level), centerTime - (0.5 / zoomState1.level)));
-        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display);
+        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
         updateLoopMarkersAfterZoom(1);
         waveform1.parentElement.style.cursor = 'grab';
     }
@@ -2377,7 +2951,7 @@ zoomOutBtn1.addEventListener('click', () => {
         const centerTime = zoomState1.offset + (0.5 / zoomState1.level);
         zoomState1.level = Math.max(1, zoomState1.level / 2);
         zoomState1.offset = Math.max(0, Math.min(1 - (1 / zoomState1.level), centerTime - (0.5 / zoomState1.level)));
-        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display);
+        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
         updateLoopMarkersAfterZoom(1);
         waveform1.parentElement.style.cursor = zoomState1.level > 1 ? 'grab' : 'pointer';
     }
@@ -2386,7 +2960,7 @@ zoomOutBtn1.addEventListener('click', () => {
 zoomResetBtn1.addEventListener('click', () => {
     zoomState1.level = 1.0;
     zoomState1.offset = 0.0;
-    redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display);
+    redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
     updateLoopMarkersAfterZoom(1);
     waveform1.parentElement.style.cursor = 'pointer';
 });
@@ -2397,7 +2971,7 @@ zoomInBtn2.addEventListener('click', () => {
         const centerTime = zoomState2.offset + (0.5 / zoomState2.level);
         zoomState2.level = Math.min(20, zoomState2.level * 2);
         zoomState2.offset = Math.max(0, Math.min(1 - (1 / zoomState2.level), centerTime - (0.5 / zoomState2.level)));
-        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display);
+        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
         updateLoopMarkersAfterZoom(2);
         waveform2.parentElement.style.cursor = 'grab';
     }
@@ -2408,7 +2982,7 @@ zoomOutBtn2.addEventListener('click', () => {
         const centerTime = zoomState2.offset + (0.5 / zoomState2.level);
         zoomState2.level = Math.max(1, zoomState2.level / 2);
         zoomState2.offset = Math.max(0, Math.min(1 - (1 / zoomState2.level), centerTime - (0.5 / zoomState2.level)));
-        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display);
+        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
         updateLoopMarkersAfterZoom(2);
         waveform2.parentElement.style.cursor = zoomState2.level > 1 ? 'grab' : 'pointer';
     }
@@ -2417,7 +2991,7 @@ zoomOutBtn2.addEventListener('click', () => {
 zoomResetBtn2.addEventListener('click', () => {
     zoomState2.level = 1.0;
     zoomState2.offset = 0.0;
-    redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display);
+    redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
     updateLoopMarkersAfterZoom(2);
     waveform2.parentElement.style.cursor = 'pointer';
 });
@@ -2727,6 +3301,41 @@ exportStem1.addEventListener('click', () => exportStem(1));
 exportLoop1.addEventListener('click', () => exportLoop(1));
 exportStem2.addEventListener('click', () => exportStem(2));
 exportLoop2.addEventListener('click', () => exportLoop(2));
+
+// Waveform color picker handlers
+waveformColor1.addEventListener('input', (e) => {
+    waveformColors.track1 = e.target.value;
+    if (zoomState1.audioBuffer) {
+        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
+        updateLoopMarkersAfterZoom(1);
+    }
+});
+
+waveformColor2.addEventListener('input', (e) => {
+    waveformColors.track2 = e.target.value;
+    if (zoomState2.audioBuffer) {
+        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
+        updateLoopMarkersAfterZoom(2);
+    }
+});
+
+resetColor1.addEventListener('click', () => {
+    waveformColor1.value = '#00ffff';
+    waveformColors.track1 = '#00ffff';
+    if (zoomState1.audioBuffer) {
+        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1);
+        updateLoopMarkersAfterZoom(1);
+    }
+});
+
+resetColor2.addEventListener('click', () => {
+    waveformColor2.value = '#ff00ff';
+    waveformColors.track2 = '#ff00ff';
+    if (zoomState2.audioBuffer) {
+        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2);
+        updateLoopMarkersAfterZoom(2);
+    }
+});
 
 // Mode buttons
 modeCircleBtn.addEventListener('click', () => {

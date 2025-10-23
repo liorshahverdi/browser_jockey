@@ -46,6 +46,11 @@
                             <span class="key-display-inline">Key: <span id="key1">--</span></span>
                             <span class="duration-display"><span id="currentTime1">0:00</span> / <span id="duration1">0:00</span></span>
                         </div>
+                        <div class="waveform-color-picker">
+                            <label for="waveformColor1">Waveform Color:</label>
+                            <input type="color" id="waveformColor1" value="#00ffff" title="Choose waveform color">
+                            <button id="resetColor1" class="reset-color-btn" title="Reset to default">↺</button>
+                        </div>
                     </div>
                     
                     <div class="track-controls-panel">
@@ -138,6 +143,11 @@
                             <span class="key-display-inline">Key: <span id="key2">--</span></span>
                             <span class="duration-display"><span id="currentTime2">0:00</span> / <span id="duration2">0:00</span></span>
                         </div>
+                        <div class="waveform-color-picker">
+                            <label for="waveformColor2">Waveform Color:</label>
+                            <input type="color" id="waveformColor2" value="#ff00ff" title="Choose waveform color">
+                            <button id="resetColor2" class="reset-color-btn" title="Reset to default">↺</button>
+                        </div>
                     </div>
                     
                     <div class="track-controls-panel">
@@ -220,6 +230,82 @@
                             <input type="checkbox" id="micMonitorCheckbox">
                             Monitor (hear yourself)
                         </label>
+                    </div>
+                </div>
+                <div class="vocoder-section" style="display: none;" id="vocoderSection">
+                    <div class="vocoder-header">🤖 Vocoder Effect</div>
+                    <div class="vocoder-controls">
+                        <button id="enableVocoderBtn" class="vocoder-btn">
+                            Enable Vocoder
+                        </button>
+                        <button id="disableVocoderBtn" class="vocoder-btn" disabled style="display: none;">
+                            Disable Vocoder
+                        </button>
+                        <div class="vocoder-settings" style="display: none;" id="vocoderSettings">
+                            <div class="vocoder-control">
+                                <label>Carrier Source:</label>
+                                <select id="vocoderCarrier" class="vocoder-select">
+                                    <option value="track1">Track 1</option>
+                                    <option value="track2">Track 2</option>
+                                    <option value="mix" selected>Both Tracks (Mix)</option>
+                                    <option value="mic">Microphone (Feedback)</option>
+                                </select>
+                            </div>
+                            <div class="vocoder-control">
+                                <label>Dry/Wet Mix: <span id="vocoderMixValue">100%</span></label>
+                                <input type="range" id="vocoderMixSlider" min="0" max="100" step="1" value="100" class="effect-slider">
+                            </div>
+                            <div class="vocoder-control">
+                                <label>Bands: <span id="vocoderBandsValue">16</span></label>
+                                <input type="range" id="vocoderBandsSlider" min="8" max="32" step="8" value="16" class="effect-slider">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="autotune-section" style="display: none;" id="autotuneSection">
+                    <div class="autotune-header">🎵 Auto-Tune Effect</div>
+                    <div class="autotune-controls">
+                        <button id="enableAutotuneBtn" class="autotune-btn">
+                            Enable Auto-Tune
+                        </button>
+                        <button id="disableAutotuneBtn" class="autotune-btn" disabled style="display: none;">
+                            Disable Auto-Tune
+                        </button>
+                        <div class="autotune-settings" style="display: none;" id="autotuneSettings">
+                            <div class="autotune-control">
+                                <label>Key:</label>
+                                <select id="autotuneKey" class="autotune-select">
+                                    <option value="C">C</option>
+                                    <option value="C#">C#</option>
+                                    <option value="D">D</option>
+                                    <option value="D#">D#</option>
+                                    <option value="E">E</option>
+                                    <option value="F">F</option>
+                                    <option value="F#">F#</option>
+                                    <option value="G">G</option>
+                                    <option value="G#">G#</option>
+                                    <option value="A" selected>A</option>
+                                    <option value="A#">A#</option>
+                                    <option value="B">B</option>
+                                </select>
+                            </div>
+                            <div class="autotune-control">
+                                <label>Scale:</label>
+                                <select id="autotuneScale" class="autotune-select">
+                                    <option value="major" selected>Major</option>
+                                    <option value="minor">Minor</option>
+                                    <option value="chromatic">Chromatic</option>
+                                </select>
+                            </div>
+                            <div class="autotune-control">
+                                <label>Correction Speed: <span id="autotuneSpeedValue">50ms</span></label>
+                                <input type="range" id="autotuneSpeedSlider" min="0" max="200" step="10" value="50" class="effect-slider">
+                            </div>
+                            <div class="autotune-control">
+                                <label>Strength: <span id="autotuneStrengthValue">100%</span></label>
+                                <input type="range" id="autotuneStrengthSlider" min="0" max="100" step="5" value="100" class="effect-slider">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="mic-waveform-container" style="display: none;" id="micWaveformContainer">
