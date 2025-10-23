@@ -2493,6 +2493,160 @@ audioFile1.addEventListener('change', async (e) => {
 
 ---
 
+### 27. Keyboard Sampler Feature (v3.0)
+**User Request**: "add a feature to take a track/clip and play it on a pentatonic scale using the keyboard"
+
+**Problem**: Users wanted the ability to play loaded tracks, loop regions, or recordings melodically using their computer keyboard, similar to an MPC or sampler in a production environment.
+
+**Implementation**:
+1. **Sample Source Selection**:
+   - Can load from Track 1 or Track 2 (full track or loop region only)
+   - Can load from recordings
+   - Extracts audio buffer from selected source using OfflineAudioContext when needed
+   - Reuses existing audio buffers when available
+
+2. **Musical Scales**:
+   - Pentatonic Major: [0, 2, 4, 7, 9] semitones (classic, melodic)
+   - Pentatonic Minor: [0, 3, 5, 7, 10] semitones (bluesy, darker)
+   - Chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] semitones (all notes)
+   - Transposable to any root note (C through B)
+
+3. **Keyboard Layout** (2 octaves):
+   - Lower octave: Q W E R T Y U I (8 keys)
+   - Upper octave: A S D F G H J K (8 keys)
+   - Visual keyboard display showing key mappings
+   - Active key highlighting with animations
+
+4. **Pitch Shifting Algorithm**:
+   - Formula: `playbackRate = 2^(semitones/12)`
+   - Each semitone = 12th root of 2 ratio
+   - Preserves timbre while changing pitch
+   - Uses Web Audio API's playbackRate property
+
+5. **Audio Implementation**:
+   ```javascript
+   // Create new buffer source for each note
+   const source = audioContext.createBufferSource();
+   source.buffer = samplerAudioBuffer;
+   source.playbackRate.value = Math.pow(2, semitoneOffset / 12);
+   
+   // Apply volume control
+   const noteGain = audioContext.createGain();
+   noteGain.gain.setValueAtTime(samplerVolume, audioContext.currentTime);
+   
+   // Connect to output
+   source.connect(noteGain).connect(audioContext.destination);
+   source.start(0);
+   ```
+
+6. **Key Repeat Prevention**:
+   - Uses `Set` to track active keys
+   - Prevents multiple notes from same key while held down
+   - Clean note-off on key release
+
+7. **UI Components**:
+   - Sample source selector dropdown
+   - Scale type selector (pentatonic major/minor, chromatic)
+   - Root note selector (C-B with sharps)
+   - Enable/Disable buttons
+   - Visual keyboard display with hover effects
+   - Purple theme matching overall design
+
+**Follow-up Request**: "great! add a volume fader for the sampler channel in case it gets too loud"
+
+**Volume Control Addition**:
+1. **UI Control**:
+   - Range slider (0-100%)
+   - Default: 60% for headroom
+   - Real-time value display
+   - Purple-themed slider with custom styling
+
+2. **Implementation**:
+   ```javascript
+   let samplerVolume = 0.6; // Default 60%
+   
+   samplerVolumeSlider.addEventListener('input', (e) => {
+       const volume = parseInt(e.target.value);
+       samplerVolume = volume / 100;
+       samplerVolumeValue.textContent = volume + '%';
+   });
+   ```
+
+3. **CSS Styling**:
+   - Custom webkit and Mozilla slider thumb styling
+   - Hover effects with glow and scale transform
+   - Matches purple theme (rgba(138, 43, 226))
+   - Smooth transitions
+
+**Technical Details**:
+
+1. **Buffer Extraction Methods**:
+   - From tracks: Use existing `audioBuffer1`/`audioBuffer2`
+   - From loops: Create OfflineAudioContext, render loop region only
+   - From recording: Decode recorded blob to audio buffer
+
+2. **Scale Note Calculation**:
+   ```javascript
+   // Get scale interval (e.g., 0, 2, 4, 7, 9 for pentatonic major)
+   let semitoneOffset = scaleIntervals[scaleIndex];
+   
+   // Add octave if upper keyboard row
+   if (isUpperOctave) semitoneOffset += 12;
+   
+   // Transpose to root note
+   const rootNoteIndex = noteNames.indexOf(samplerRoot);
+   semitoneOffset += rootNoteIndex;
+   ```
+
+3. **Event Handling**:
+   - Global keydown/keyup listeners
+   - Only active when sampler is enabled
+   - Prevents interference with other keyboard shortcuts
+   - Visual feedback on keyboard display
+
+4. **Performance Considerations**:
+   - New AudioBufferSourceNode for each note (required by Web Audio API)
+   - Automatic garbage collection of completed sources
+   - Lightweight gain nodes per note
+   - No audio processing overhead when disabled
+
+**Files Modified**:
+1. `/app/templates/index.html`:
+   - Added keyboard-sampler-section (lines 369-436)
+   - Sample source, scale, root note selectors
+   - Visual keyboard display
+   - Volume control slider
+
+2. `/app/static/css/style.css`:
+   - Keyboard sampler section styling (purple theme)
+   - Visual keyboard with active state animations
+   - Volume slider custom styling
+   - Hover effects and transitions
+
+3. `/app/static/js/visualizer-dual.js`:
+   - Sampler state variables
+   - DOM element references
+   - `loadSamplerSource()` - Extract audio buffers
+   - `enableSampler()` / `disableSampler()`
+   - `playSamplerNote()` - Pitch shifting and playback
+   - `handleKeyDown()` / `handleKeyUp()` - Keyboard events
+   - Event listeners for all controls
+   - Volume control integration
+
+**Commits**:
+1. 77ef8f0 - "Add keyboard sampler feature to play tracks/loops on pentatonic scales"
+2. faa8ff3 - "Add volume fader control for keyboard sampler"
+
+**Key Learnings**:
+35. **Pitch Shifting Math**: Playback rate follows exponential relationship: 2^(semitones/12) for musical intervals
+36. **Key Repeat Handling**: Set data structure prevents duplicate note triggers from held keys
+37. **AudioBufferSource Limitations**: Must create new source for each note - cannot reuse
+38. **Musical Scales**: Pentatonic scales use subset of chromatic scale - more melodic, easier to improvise
+39. **Volume Headroom**: Default to 60% prevents clipping when mixing sampler with existing tracks
+40. **Offline Rendering**: OfflineAudioContext allows extracting portions of audio (like loop regions) as buffers
+
+---
+
 ## Version History Summary
 
 - **v1.0** - Initial dual-track DJ system with 3D visualization
@@ -2514,6 +2668,7 @@ audioFile1.addEventListener('change', async (e) => {
 - **v2.7** - Recording export formats (WebM/WAV/MP3) and download button fix
 - **v2.8** - Load recording to track fix (initial attempt with disconnect approach)
 - **v2.9** - Improved load recording & seamless track loading (proper fix)
+- **v3.0** - Keyboard sampler feature with volume control (play tracks/loops on pentatonic scales)
 
 ---
 

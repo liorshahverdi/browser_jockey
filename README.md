@@ -34,6 +34,12 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 - 🎨 **Musical Key Colors** - Visualization colors based on detected key
 - 🎙️ **Recording** - Record your live mix with waveform display
 - 📥 **Load Recording to Tracks** - Load recorded output back into Track 1 or Track 2 for layering and live looping
+- 🎹 **Keyboard Sampler** - Play tracks/loops/recordings on pentatonic scales using keyboard (Q-I, A-K keys)
+  - 🎼 Multiple scales: Pentatonic Major/Minor, Chromatic
+  - 🎵 Transposable to any root note (C through B)
+  - 🎚️ Independent volume control for mixing with tracks
+  - 🎯 2-octave range with pitch shifting
+  - 📦 Sample from any track, loop region, or recording
 - 📱 **Professional Layout** - Side-by-side dual deck DJ interface
 - 🎨 **Customizable Colors** - Personalize waveform colors for each track
 
@@ -411,7 +417,8 @@ Each key has its own color, creating a unique visual experience for different so
 
 ## Version History
 
-- **v2.9** (Current) - Improved load recording & seamless track loading (proper MediaElementSource handling)
+- **v3.0** (Current) - Keyboard sampler feature with volume control
+- **v2.9** - Improved load recording & seamless track loading (proper MediaElementSource handling)
 - **v2.8** - Load recording to track fix (initial attempt, later improved in v2.9)
 - **v2.7** - Recording export formats (WebM/WAV/MP3) and download button fix
 - **v2.6** - MP3 and WAV export format options with lamejs integration for tracks
