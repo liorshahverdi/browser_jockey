@@ -1,4 +1,5 @@
 # Browser Jockey
+![Browser Jockey Screenshot](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
 
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, and professional DJ controls.
 
