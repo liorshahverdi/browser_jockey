@@ -853,7 +853,89 @@ const keyColors = {
 - **v1.6**: Audio effects & export
 - **v1.6.1**: Bug fixes (waveform progress, loop dragging, Track 2 buttons)
 - **v1.7**: Per-track key detection, click-to-move markers, side-by-side layout
-- **v1.7.1**: FLAC file playback error handling ← **Current**
+- **v1.7.1**: FLAC file playback error handling
+- **v1.7.2**: Branding update, MIT License, README enhancement, favicon ← **Current**
+
+---
+
+### 21. Project Branding & Documentation
+**User Requests**: "add a basic license" → "update the README so that the app is called Browser Jockey" → "now update index.html accordingly" → "seeing these errors: 404 favicon.ico"
+
+**Implementation**:
+
+**MIT License Added**:
+- Created `/LICENSE` file with standard MIT License text
+- Copyright 2025 Browser Jockey
+- Permissive open-source license allowing commercial use, modification, and distribution
+- Only requirement: keep license and copyright notice
+
+**README.md Complete Rewrite**:
+- **Title**: Changed from "3D Audio Visualizer" to "Browser Jockey"
+- **Description**: Updated to "dual-track DJ mixing web application"
+- **Feature List**: Comprehensive list of all DJ features
+  - Dual-track system, BPM/key detection, loops, zoom, effects, export
+  - Quick loops, recording, 3D visualization
+  - Professional layout
+- **Enhanced Usage Section**: 
+  - Loading tracks with format recommendations
+  - Playback controls documentation
+  - Manual and quick loop workflows
+  - Waveform zoom instructions
+  - Audio effects guide
+  - Export stem/loop instructions
+  - Recording workflow
+  - 3D visualization modes
+- **Complete Key Color Mapping**: All 12 chromatic notes (C through B)
+- **Technologies Section**: Detailed Web Audio API nodes listed
+- **Browser Compatibility Table**: Shows FLAC support by browser
+- **Project Structure**: Updated with current file names
+- **Professional Tone**: Reflects dual-track DJ mixer, not simple visualizer
+
+**HTML Title & Favicon**:
+- **Page Title**: "🎧 Browser Jockey - Dual Track DJ Mixer"
+- **H1 Heading**: "Browser Jockey" (already updated)
+- **Favicon**: Added 🎧 emoji as SVG data URL favicon
+  - Displays headphones icon in browser tab
+  - Inline SVG (no separate file needed)
+  - Fixes 404 error for `/favicon.ico`
+
+**HTML Cleanup**:
+- Removed duplicate closing tags (`</div>`, `</body>`, `</html>`)
+- Removed reference to deprecated `visualizer.js` file
+- Proper HTML structure validation
+
+**Files Modified**:
+- `/LICENSE` - Created
+- `/README.md` - Complete rewrite with Browser Jockey branding
+- `/app/templates/index.html` - Title, favicon, duplicate tag cleanup
+- `/CHAT_HISTORY.md` - This file
+
+**Impact**:
+- Professional branding throughout project
+- Clear licensing for open-source distribution
+- Comprehensive documentation for new users
+- No more 404 favicon errors
+- Clean, valid HTML structure
+- Browser tab shows project identity
+
+---
+
+## Lessons Learned
+
+1. **Playback Rate & Tolerance**: Higher playback rates require larger tolerance for loop detection
+2. **Zoom Coordinate Systems**: Need separate calculations for absolute time vs. viewport percentage - applies to progress bars, markers, and all UI overlays
+3. **Audio Seeking**: Can pause playback, requires resume logic
+4. **BPM Detection**: RMS energy more reliable than simple peak detection
+5. **State Management**: Clean separation of zoom/loop/playback state essential - context awareness crucial for UX (e.g., isDraggingMarker)
+6. **Visual Feedback**: Users need clear indicators for zoom level, loop region, playback position - increase line widths and contrast for better visibility
+7. **HTML ID Uniqueness**: Critical for JavaScript element selection - duplicate IDs cause getElementById to return wrong elements
+8. **File Validation**: Manual edits can corrupt HTML structure - always validate against duplicates and proper tag nesting
+9. **Per-Track Analysis**: Detecting BPM/key per track (not merged) provides better DJ workflow and individual track info
+10. **Multiple Interaction Methods**: Providing both drag and click-to-move for markers gives users flexibility - precise vs. quick adjustments
+11. **Layout Matters**: Side-by-side dual deck layout matches professional DJ software expectations and improves usability
+12. **Branding Consistency**: Project name should be consistent across README, HTML title, heading, and documentation
+13. **Favicon Importance**: Small detail but improves professionalism and prevents 404 errors
+14. **Documentation Quality**: Good README is essential for open-source projects - clear features, usage, and compatibility info
 
 ---
 
