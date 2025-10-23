@@ -24,6 +24,7 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 - 🎵 **BPM Detection** - Automatic tempo detection for each track
 - 🎹 **Key Detection** - Per-track musical key analysis
 - 🔁 **A-B Loop Markers** - Create precise loops with draggable markers
+- ⏪ **Reverse Loop** - Play loops backwards with reverse playback button
 - ⚡ **Quick Loops** - Auto-create 1, 2, 4, or 8 bar loops based on BPM
 - 🔍 **Waveform Zoom** - Zoom up to 20x with drag-to-pan
 - 🎚️ **Audio Effects** - Reverb, delay, and filters (low/high/band pass)
@@ -447,7 +448,8 @@ Each key has its own color, creating a unique visual experience for different so
 
 ## Version History
 
-- **v3.1** (Current) - Fixed sampler output routing to recording destination
+- **v3.2** (Current) - Reverse loop playback feature
+- **v3.1** - Fixed sampler output routing to recording destination
 - **v3.0** - Keyboard sampler feature with volume control
 - **v2.9** - Improved load recording & seamless track loading (proper MediaElementSource handling)
 - **v2.8** - Load recording to track fix (initial attempt, later improved in v2.9)

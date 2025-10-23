@@ -2705,6 +2705,133 @@ if (recordingDestination) {
 
 ---
 
+### 29. Reverse Loop Playback (v3.2)
+**User Request**: "add a loop option feature to play the loop in reverse"
+
+**Problem**: Users wanted the ability to play loops backwards for creative DJ effects like rewind effects, reverse drops, or experimental sound design.
+
+**Implementation**:
+
+1. **UI Addition**:
+   - Added reverse loop buttons (🔁⏪) next to normal loop buttons for both tracks
+   - Buttons disabled until loop points are set
+   - Mutually exclusive with normal loop button (only one can be active)
+
+2. **Loop State Update**:
+   ```javascript
+   // Added reverse flag to loop state
+   let loopState1 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0, reverse: false };
+   let loopState2 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0, reverse: false };
+   ```
+
+3. **Reverse Playback Logic**:
+   - Uses negative playback rate: `audioElement.playbackRate = -1.0`
+   - Automatically positions playhead at loop end when activated
+   - Plays from end → start, then loops back to end
+   - Restores positive playback rate when disabled
+
+4. **Enhanced enforceLoop() Function**:
+   ```javascript
+   if (loopState.reverse) {
+       // Reverse loop: play from end to start
+       if (audioElement.currentTime <= loopState.start + tolerance) {
+           audioElement.currentTime = loopState.end; // Jump to end
+       }
+       else if (audioElement.currentTime > loopState.end) {
+           audioElement.currentTime = loopState.end; // Enforce boundary
+       }
+   } else {
+       // Normal forward loop
+       if (audioElement.currentTime >= loopState.end - tolerance) {
+           audioElement.currentTime = loopState.start; // Jump to start
+       }
+       else if (audioElement.currentTime < loopState.start) {
+           audioElement.currentTime = loopState.start; // Enforce boundary
+       }
+   }
+   ```
+
+5. **Button Interaction**:
+   - Clicking reverse loop button:
+     - Enables reverse mode and sets `reverse: true`
+     - Deactivates normal loop button
+     - Sets negative playback rate
+     - Jumps to loop end
+   - Clicking normal loop button:
+     - Disables reverse mode and sets `reverse: false`
+     - Deactivates reverse loop button
+     - Restores positive playback rate
+     - Allows forward playback
+
+6. **Boundary Enforcement**:
+   - Forward mode: Keeps playhead between start and end, jumping to start when reaching end
+   - Reverse mode: Keeps playhead between start and end, jumping to end when reaching start
+   - Both modes use debounced seeking (50ms intervals) to prevent audio glitches
+
+**Styling**:
+- **Reverse loop button active state**:
+  - Magenta/orange gradient (distinct from cyan/magenta forward loop)
+  - Pulsing animation with magenta and orange glow
+  - Hover effects with scale and enhanced shadows
+  - CSS class: `.reverse-loop-btn.active`
+
+**Files Modified**:
+1. `/app/templates/index.html`:
+   - Added `reverseLoopBtn1` and `reverseLoopBtn2` buttons
+   - Positioned between loop and clear loop buttons
+
+2. `/app/static/js/visualizer-dual.js`:
+   - Added `reverseLoopBtn1` and `reverseLoopBtn2` DOM references
+   - Updated loop state objects with `reverse` flag
+   - Modified `enforceLoop()` to handle both directions
+   - Added event listeners for reverse loop buttons
+   - Updated normal loop button handlers to reset reverse mode
+
+3. `/app/static/css/style.css`:
+   - Added `.reverse-loop-btn.active` styling
+   - Created `reverseLoopPulse` keyframe animation
+   - Hover effects for reverse loop button
+
+**Technical Details**:
+
+1. **Negative Playback Rate**:
+   - HTML5 audio supports negative playback rates for reverse playback
+   - Formula: `playbackRate = -Math.abs(currentRate)`
+   - Preserves tempo/pitch relationship in reverse
+
+2. **Tolerance Adjustment**:
+   - Changed from `tolerance = 0.1 * playbackRate` to `tolerance = 0.1 * Math.abs(playbackRate)`
+   - Ensures tolerance works correctly with negative rates
+
+3. **Playhead Positioning**:
+   - Forward loop starts at loop start
+   - Reverse loop starts at loop end
+   - Automatic positioning prevents confusion
+
+4. **State Management**:
+   - `loopState.reverse` flag tracks current mode
+   - Buttons toggle each other off for clarity
+   - Clear visual feedback with different button colors
+
+**Use Cases**:
+- **Rewind Effects**: Classic DJ rewind drops
+- **Reverse Transitions**: Creative transitions between tracks
+- **Sound Design**: Experimental reverse audio textures
+- **Beatmatching**: Reverse loops can create interesting rhythmic patterns
+- **Live Performance**: Dynamic reverse effects during live sets
+
+**Commits**:
+- 299f01d - "Add reverse loop playback feature"
+
+**Key Learnings**:
+44. **Negative Playback Rates**: HTML5 Audio API supports negative playback rates for reverse playback
+45. **Absolute Value Tolerance**: Use `Math.abs()` on playback rate when calculating tolerance to handle both forward and reverse
+46. **Mutual Exclusivity**: Button states should be mutually exclusive for clarity when only one mode can be active
+47. **Directional Looping**: Loop enforcement logic must be inverted for reverse playback (start becomes end point)
+48. **Visual Differentiation**: Different color schemes help users distinguish between similar but different features
+
+---
+
 ## Version History Summary
 
 - **v1.0** - Initial dual-track DJ system with 3D visualization
@@ -2728,6 +2855,7 @@ if (recordingDestination) {
 - **v2.9** - Improved load recording & seamless track loading (proper fix)
 - **v3.0** - Keyboard sampler feature with volume control (play tracks/loops on pentatonic scales)
 - **v3.1** - Fixed sampler output routing to recording destination
+- **v3.2** - Reverse loop playback feature
 
 ---
 
