@@ -180,8 +180,8 @@ let bassLevel = 0;
 let trebleLevel = 0;
 
 // Loop state for both tracks
-let loopState1 = { enabled: false, start: null, end: null, settingPoint: 'start' };
-let loopState2 = { enabled: false, start: null, end: null, settingPoint: 'start' };
+let loopState1 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0 };
+let loopState2 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0 };
 
 // Zoom state for both tracks
 let zoomState1 = { level: 1.0, offset: 0.0, audioBuffer: null, isDragging: false, dragStartX: 0, dragStartOffset: 0 };
@@ -299,25 +299,58 @@ function clearLoopPoints(loopState, loopRegion, loopMarkerStart, loopMarkerEnd) 
 // Check and handle loop playback
 function handleLoopPlayback(audioElement, loopState, isDraggingMarker) {
     if (loopState.enabled && loopState.start !== null && loopState.end !== null) {
+        // Don't enforce loop boundaries while dragging markers
+        // This allows smooth marker adjustment during playback
+        if (isDraggingMarker) {
+            return;
+        }
+        
         // Adjust tolerance based on playback rate to catch loop point reliably
         // Higher playback rate = larger tolerance needed
         const tolerance = 0.1 * audioElement.playbackRate;
         
+        // Debounce seeking to prevent rapid seeks that cause static
+        const now = Date.now();
+        const minSeekInterval = 50; // Minimum 50ms between seeks
+        
         // Handle end of loop - always enforce this
         if (audioElement.currentTime >= loopState.end - tolerance) {
-            console.log('Looping: currentTime', audioElement.currentTime, 'jumping to', loopState.start);
-            const wasPlaying = !audioElement.paused;
-            audioElement.currentTime = loopState.start;
-            
-            // Ensure playback continues after jumping
-            if (wasPlaying && audioElement.paused) {
-                audioElement.play().catch(e => console.error('Error resuming playback:', e));
+            // Check if enough time has passed since last seek
+            if (now - loopState.lastSeekTime >= minSeekInterval) {
+                console.log('Looping: currentTime', audioElement.currentTime, 'jumping to', loopState.start);
+                
+                // Only seek if the audio is in a seekable state
+                if (audioElement.readyState >= 2) { // HAVE_CURRENT_DATA or better
+                    const wasPlaying = !audioElement.paused;
+                    
+                    try {
+                        audioElement.currentTime = loopState.start;
+                        loopState.lastSeekTime = now;
+                        
+                        // Ensure playback continues after jumping
+                        if (wasPlaying && audioElement.paused) {
+                            audioElement.play().catch(e => console.error('Error resuming playback:', e));
+                        }
+                    } catch (e) {
+                        console.error('Error seeking during loop:', e);
+                    }
+                }
             }
         }
-        // Only enforce start boundary when not dragging markers
-        // This allows seamless marker adjustment while playing
-        else if (!isDraggingMarker && audioElement.currentTime < loopState.start) {
-            audioElement.currentTime = loopState.start;
+        // Enforce start boundary
+        else if (audioElement.currentTime < loopState.start) {
+            // Check if enough time has passed since last seek
+            if (now - loopState.lastSeekTime >= minSeekInterval) {
+                // Only seek if the audio is in a seekable state
+                if (audioElement.readyState >= 2) {
+                    try {
+                        audioElement.currentTime = loopState.start;
+                        loopState.lastSeekTime = now;
+                    } catch (e) {
+                        console.error('Error seeking to loop start:', e);
+                    }
+                }
+            }
         }
     }
 }
@@ -2418,30 +2451,46 @@ waveform1.parentElement.addEventListener('mousemove', (e) => {
 });
 
 document.addEventListener('mouseup', () => {
-    // When finishing dragging Track 1 markers, adjust playhead if needed
+    // When finishing dragging Track 1 markers, only adjust playhead if it's way outside the loop
+    // This prevents glitches from unnecessary seeking
     if (isDraggingMarker1 && loopState1.enabled && !audioElement1.paused) {
         const currentTime = audioElement1.currentTime;
-        // If playhead is now outside the loop, move it to the nearest edge
-        if (currentTime < loopState1.start) {
-            audioElement1.currentTime = loopState1.start;
-            console.log('Adjusted playhead to loop start after marker drag');
-        } else if (currentTime > loopState1.end) {
-            audioElement1.currentTime = loopState1.start; // Jump to start for seamless loop
-            console.log('Adjusted playhead to loop start after marker drag');
+        const loopDuration = loopState1.end - loopState1.start;
+        
+        // Only adjust if playhead is significantly outside the loop (more than loop duration away)
+        // This gives a buffer zone to prevent jarring seeks
+        if (currentTime < loopState1.start - loopDuration || currentTime > loopState1.end + loopDuration) {
+            if (audioElement1.readyState >= 2) {
+                try {
+                    audioElement1.currentTime = loopState1.start;
+                    loopState1.lastSeekTime = Date.now();
+                    console.log('Adjusted playhead to loop start after marker drag (was far outside)');
+                } catch (e) {
+                    console.error('Error adjusting playhead after marker drag:', e);
+                }
+            }
         }
+        // If playhead is within reasonable distance, let handleLoopPlayback handle it naturally
     }
     
-    // When finishing dragging Track 2 markers, adjust playhead if needed
+    // When finishing dragging Track 2 markers, only adjust playhead if it's way outside the loop
     if (isDraggingMarker2 && loopState2.enabled && !audioElement2.paused) {
         const currentTime = audioElement2.currentTime;
-        // If playhead is now outside the loop, move it to the nearest edge
-        if (currentTime < loopState2.start) {
-            audioElement2.currentTime = loopState2.start;
-            console.log('Adjusted playhead to loop start after marker drag');
-        } else if (currentTime > loopState2.end) {
-            audioElement2.currentTime = loopState2.start; // Jump to start for seamless loop
-            console.log('Adjusted playhead to loop start after marker drag');
+        const loopDuration = loopState2.end - loopState2.start;
+        
+        // Only adjust if playhead is significantly outside the loop (more than loop duration away)
+        if (currentTime < loopState2.start - loopDuration || currentTime > loopState2.end + loopDuration) {
+            if (audioElement2.readyState >= 2) {
+                try {
+                    audioElement2.currentTime = loopState2.start;
+                    loopState2.lastSeekTime = Date.now();
+                    console.log('Adjusted playhead to loop start after marker drag (was far outside)');
+                } catch (e) {
+                    console.error('Error adjusting playhead after marker drag:', e);
+                }
+            }
         }
+        // If playhead is within reasonable distance, let handleLoopPlayback handle it naturally
     }
     
     isDraggingMarker1 = false;
