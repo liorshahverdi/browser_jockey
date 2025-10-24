@@ -436,7 +436,26 @@ async function loadRecordingToTrack1() {
         console.log('Setting audio element source');
         audioElement1.src = url;
         audioElement1.type = 'audio/webm';
-        audioElement1.load(); // Explicitly load the audio
+        
+        // Wait for metadata to load before proceeding
+        await new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                reject(new Error('Timeout waiting for audio metadata'));
+            }, 5000); // 5 second timeout
+            
+            audioElement1.addEventListener('loadedmetadata', () => {
+                clearTimeout(timeoutId);
+                console.log('Track 1 metadata loaded. Duration:', audioElement1.duration);
+                resolve();
+            }, { once: true });
+            
+            audioElement1.addEventListener('error', (e) => {
+                clearTimeout(timeoutId);
+                reject(new Error('Error loading audio metadata: ' + e.message));
+            }, { once: true });
+            
+            audioElement1.load(); // Explicitly load the audio
+        });
         
         fileName1.textContent = `Recording_${new Date().toISOString().replace(/[:.]/g, '_')}.webm`;
         
@@ -536,7 +555,26 @@ async function loadRecordingToTrack2() {
         console.log('Setting audio element source');
         audioElement2.src = url;
         audioElement2.type = 'audio/webm';
-        audioElement2.load(); // Explicitly load the audio
+        
+        // Wait for metadata to load before proceeding
+        await new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                reject(new Error('Timeout waiting for audio metadata'));
+            }, 5000); // 5 second timeout
+            
+            audioElement2.addEventListener('loadedmetadata', () => {
+                clearTimeout(timeoutId);
+                console.log('Track 2 metadata loaded. Duration:', audioElement2.duration);
+                resolve();
+            }, { once: true });
+            
+            audioElement2.addEventListener('error', (e) => {
+                clearTimeout(timeoutId);
+                reject(new Error('Error loading audio metadata: ' + e.message));
+            }, { once: true });
+            
+            audioElement2.load(); // Explicitly load the audio
+        });
         
         fileName2.textContent = `Recording_${new Date().toISOString().replace(/[:.]/g, '_')}.webm`;
         
@@ -2666,6 +2704,12 @@ waveform1.parentElement.addEventListener('click', (e) => {
     // Don't set loop points if clicking on markers
     if (e.target.classList.contains('loop-marker')) return;
     
+    // Check if duration is valid before proceeding
+    if (!audioElement1.duration || isNaN(audioElement1.duration) || !isFinite(audioElement1.duration)) {
+        console.warn('Cannot set loop markers: audio duration not yet available');
+        return;
+    }
+    
     const rect = waveform1.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const percentage = x / rect.width;
@@ -2768,6 +2812,12 @@ waveform2.parentElement.addEventListener('click', (e) => {
     
     // Don't set loop points if clicking on markers
     if (e.target.classList.contains('loop-marker')) return;
+    
+    // Check if duration is valid before proceeding
+    if (!audioElement2.duration || isNaN(audioElement2.duration) || !isFinite(audioElement2.duration)) {
+        console.warn('Cannot set loop markers: audio duration not yet available');
+        return;
+    }
     
     const rect = waveform2.getBoundingClientRect();
     const x = e.clientX - rect.left;

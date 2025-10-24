@@ -1,6 +1,9 @@
 # Browser Jockey
 
-[![Live Demo](https://img.shields.io/b- 🎤 **Advanced Microphone System** - Professional microphone input with extensive features
+[![Live Demo](https://img.shields.io/b- 🎤 **Advanced Microphone System** - Professional micr- ✨ **Enhanced UI/UX** - Premium button styling with CSS Grid distribution, larger controls (80px), backdrop blur effects, and logical layout organization
+- 🏗️ **Modular Architecture** - Clean ES6 modules for maintainability (see [MODULES.md](MODULES.md))
+- 🐛 **Production Ready** - Comprehensive error handling and live performance optimizations
+- 🔄 **Live Looping Workflow** - Record, load to tracks, set loop markers, and layer recordings for complex arrangementsone input with extensive features
   - 🎙️ Live mic input with volume control and real-time waveform monitoring
   - ⏺️ **Standalone Recording** - Record directly from microphone without any tracks loaded
   - 💾 Export mic recordings as WAV or MP3
@@ -11,7 +14,9 @@
 
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, and authentic DJ controls.
 
-**Latest Update (v3.10.4)**: Enhanced UI with improved track controls layout and microphone master routing! Track control buttons now use CSS Grid for even distribution with larger, premium styling (80px min size). Waveform color picker relocated to upload section for better UX. Control buttons repositioned below BPM/Key info for logical flow. Added microphone to master output routing controls for precise mixing.
+**Latest Update (v3.10.5)**: Fixed critical bug where loop markers weren't setting on recorded .webm files! Now properly waits for audio metadata to load before allowing loop marker placement. Added duration validation to prevent silent failures. Includes better error handling with console warnings when duration is unavailable. Perfect for live looping workflows with recorded content.
+
+**v3.10.4**: Enhanced UI with improved track controls layout and microphone master routing! Track control buttons now use CSS Grid for even distribution with larger, premium styling (80px min size). Waveform color picker relocated to upload section for better UX. Control buttons repositioned below BPM/Key info for logical flow. Added microphone to master output routing controls for precise mixing.
 
 **v3.10.3**: UI improvements - Enhanced track control buttons with CSS Grid layout for even spacing, larger premium button styling, improved visual effects with backdrop blur and multi-layer shadows, relocated waveform color picker to upload section, and repositioned control buttons below track info.
 
@@ -83,6 +88,7 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 - ⏪ **Reverse Loop** - Play loops backwards with seamless toggle (perfect for live performance)
 - ⚡ **Quick Loops** - Auto-create 1, 2, 4, or 8 bar loops based on BPM
 - 🎚️ **Seamless Loop Control** - Toggle between forward/reverse during playback with no audio cuts
+- 🔧 **WebM Loop Support** - Full loop marker support for recorded .webm files with proper metadata handling
 - 🔍 **Waveform Zoom** - Zoom up to 20x with drag-to-pan
 - 🔗 **Drag-and-Drop Effect Chains** - Visually reorder effects for Track 1, Track 2, and Master output
   - 🎚️ Filter, Reverb, Delay per track

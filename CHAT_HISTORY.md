@@ -1,15 +1,104 @@
 # Browser Jockey - Development Chat History
 
 ## Project Overview
-A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, professional crossfader with multiple modes, comprehensive audio routing management, and enhanced UI with premium controls.
+A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, professional crossfader with multiple modes, comprehensive audio routing management, enhanced UI with premium controls, and WebM loop marker support.
 
-**Latest Version: v3.10.4** - Enhanced UI + Microphone Master Routing
+**Latest Version: v3.10.5** - WebM Loop Marker Fix
 
 ---
 
 ## Session Timeline
 
-### Latest Session: Enhanced UI + Microphone Master Routing (v3.10.4)
+### Latest Session: WebM Loop Marker Fix (v3.10.5)
+**Date**: October 24, 2025
+
+**User Request**:
+"im trying to loop on a .webm file that i recorded and forwarded to track1 but the loop markers aren't setting"
+
+**Problem Identified**:
+When loading a recorded .webm file to Track 1 or Track 2, loop markers were not setting when clicking on the waveform. This was caused by the audio element's `duration` property not being available or being set to `NaN`/`Infinity` before the metadata was fully loaded.
+
+**Root Cause**:
+WebM files (especially those created from MediaRecorder) don't always have duration metadata immediately available when the source is set. The code was attempting to calculate loop marker positions using `audioElement.duration` before the metadata was loaded, resulting in:
+- `NaN` calculations for time positions
+- Loop markers silently failing to set
+- No error messages to indicate the issue
+
+**Solution Implemented**:
+
+**1. Added Duration Validation in Waveform Click Handlers**
+Added validation checks before attempting to set loop markers to ensure the duration is valid:
+
+For both Track 1 and Track 2 waveform click handlers:
+```javascript
+// Check if duration is valid before proceeding
+if (!audioElement.duration || isNaN(audioElement.duration) || !isFinite(audioElement.duration)) {
+    console.warn('Cannot set loop markers: audio duration not yet available');
+    return;
+}
+```
+
+**2. Wait for Metadata Before Continuing Load Process**
+Modified both `loadRecordingToTrack1()` and `loadRecordingToTrack2()` functions to wait for the `loadedmetadata` event before proceeding:
+
+```javascript
+// Wait for metadata to load before proceeding
+await new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+        reject(new Error('Timeout waiting for audio metadata'));
+    }, 5000); // 5 second timeout
+    
+    audioElement.addEventListener('loadedmetadata', () => {
+        clearTimeout(timeoutId);
+        console.log('Metadata loaded. Duration:', audioElement.duration);
+        resolve();
+    }, { once: true });
+    
+    audioElement.addEventListener('error', (e) => {
+        clearTimeout(timeoutId);
+        reject(new Error('Error loading audio metadata: ' + e.message));
+    }, { once: true });
+    
+    audioElement.load(); // Explicitly load the audio
+});
+```
+
+**Benefits**:
+- **Prevents silent failures**: Now provides console warnings when duration is not available
+- **Ensures metadata is loaded**: Waits for metadata before allowing loop marker operations
+- **Better error handling**: 5-second timeout with clear error messages
+- **Works with WebM files**: Properly handles files from MediaRecorder that may have delayed metadata
+- **Consistent behavior**: Same validation logic for both Track 1 and Track 2
+- **Enhanced live looping**: Record, load to track, set loop markers, and build complex layered arrangements
+
+**Testing Instructions**:
+1. Record audio using the microphone or master recording feature
+2. Load the recording to Track 1 or Track 2
+3. Enable loop mode by clicking the loop button
+4. Click on the waveform to set loop start and end points
+5. Verify that loop markers appear and the loop region is visible
+6. Play the audio to confirm the loop is working correctly
+
+**Files Modified**:
+- `app/static/js/visualizer-dual.js` (4 changes)
+  - Modified waveform click handler for Track 1 (added duration validation)
+  - Modified waveform click handler for Track 2 (added duration validation)
+  - Modified `loadRecordingToTrack1()` function (added metadata wait)
+  - Modified `loadRecordingToTrack2()` function (added metadata wait)
+
+**Documentation Created**:
+- `WEBM_LOOP_MARKER_FIX.md` - Detailed technical documentation of the fix
+
+**Use Cases Enabled**:
+- Live looping with recorded material
+- Layering multiple recordings with precise loop points
+- Building complex arrangements from recorded loops
+- Jamming with recorded backing tracks
+- Practice loops from recorded performances
+
+---
+
+### Previous Session: Enhanced UI + Microphone Master Routing (v3.10.4)
 **Date**: October 24, 2025
 
 **User Requests**:
