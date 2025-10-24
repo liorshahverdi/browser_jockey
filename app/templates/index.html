@@ -91,9 +91,12 @@
                             <label>Volume: <span id="volumeValue1">100%</span></label>
                             <input type="range" id="volumeSlider1" min="0" max="100" step="1" value="100" class="volume-slider">
                         </div>
+                        <div class="effect-chain-container" id="effectChain1">
+                            <!-- Effect chain UI will be dynamically generated here -->
+                        </div>
                         <div class="effects-section">
                             <div class="effects-header">🎛️ Effects</div>
-                            <div class="effect-control">
+                            <div id="filterControl1" class="effect-control">
                                 <label>Filter: <span id="filterValue1">20kHz</span></label>
                                 <input type="range" id="filterSlider1" min="20" max="20000" step="10" value="20000" class="effect-slider">
                                 <select id="filterType1" class="filter-type-select">
@@ -102,15 +105,15 @@
                                     <option value="bandpass">Band Pass</option>
                                 </select>
                             </div>
-                            <div class="effect-control">
+                            <div id="reverbControl1" class="effect-control">
                                 <label>Reverb: <span id="reverbValue1">0%</span></label>
                                 <input type="range" id="reverbSlider1" min="0" max="100" step="1" value="0" class="effect-slider">
                             </div>
-                            <div class="effect-control">
+                            <div id="delayControl1" class="effect-control">
                                 <label>Delay: <span id="delayValue1">0%</span></label>
                                 <input type="range" id="delaySlider1" min="0" max="100" step="1" value="0" class="effect-slider">
                             </div>
-                            <div class="effect-control">
+                            <div id="delayTimeControl1" class="effect-control">
                                 <label>Delay Time: <span id="delayTimeValue1">300ms</span></label>
                                 <input type="range" id="delayTimeSlider1" min="50" max="2000" step="50" value="300" class="effect-slider">
                             </div>
@@ -196,9 +199,12 @@
                             <label>Volume: <span id="volumeValue2">100%</span></label>
                             <input type="range" id="volumeSlider2" min="0" max="100" step="1" value="100" class="volume-slider">
                         </div>
+                        <div class="effect-chain-container" id="effectChain2">
+                            <!-- Effect chain UI will be dynamically generated here -->
+                        </div>
                         <div class="effects-section">
                             <div class="effects-header">🎛️ Effects</div>
-                            <div class="effect-control">
+                            <div id="filterControl2" class="effect-control">
                                 <label>Filter: <span id="filterValue2">20kHz</span></label>
                                 <input type="range" id="filterSlider2" min="20" max="20000" step="10" value="20000" class="effect-slider">
                                 <select id="filterType2" class="filter-type-select">
@@ -207,15 +213,15 @@
                                     <option value="bandpass">Band Pass</option>
                                 </select>
                             </div>
-                            <div class="effect-control">
+                            <div id="reverbControl2" class="effect-control">
                                 <label>Reverb: <span id="reverbValue2">0%</span></label>
                                 <input type="range" id="reverbSlider2" min="0" max="100" step="1" value="0" class="effect-slider">
                             </div>
-                            <div class="effect-control">
+                            <div id="delayControl2" class="effect-control">
                                 <label>Delay: <span id="delayValue2">0%</span></label>
                                 <input type="range" id="delaySlider2" min="0" max="100" step="1" value="0" class="effect-slider">
                             </div>
-                            <div class="effect-control">
+                            <div id="delayTimeControl2" class="effect-control">
                                 <label>Delay Time: <span id="delayTimeValue2">300ms</span></label>
                                 <input type="range" id="delayTimeSlider2" min="50" max="2000" step="50" value="300" class="effect-slider">
                             </div>
@@ -464,6 +470,46 @@
                         <div class="key-indicator" data-key="J">J</div>
                         <div class="key-indicator" data-key="K">K</div>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Master Channel Effects -->
+        <div class="master-effects-section">
+            <div class="master-effects-header">
+                <span class="master-title">🎚️ Master Output</span>
+            </div>
+            <div class="master-effects-content">
+                <div class="effect-chain-container" id="effectChainMaster">
+                    <!-- Master effect chain UI will be dynamically generated here -->
+                </div>
+                <div class="effects-section">
+                    <div class="effects-header">🎛️ Master Effects</div>
+                    <div id="filterControlMaster" class="effect-control">
+                        <label>Filter: <span id="filterValueMaster">20kHz</span></label>
+                        <input type="range" id="filterSliderMaster" min="20" max="20000" step="10" value="20000" class="effect-slider">
+                        <select id="filterTypeMaster" class="filter-type-select">
+                            <option value="lowpass">Low Pass</option>
+                            <option value="highpass">High Pass</option>
+                            <option value="bandpass">Band Pass</option>
+                        </select>
+                    </div>
+                    <div id="reverbControlMaster" class="effect-control">
+                        <label>Reverb: <span id="reverbValueMaster">0%</span></label>
+                        <input type="range" id="reverbSliderMaster" min="0" max="100" step="1" value="0" class="effect-slider">
+                    </div>
+                    <div id="delayControlMaster" class="effect-control">
+                        <label>Delay: <span id="delayValueMaster">0%</span></label>
+                        <input type="range" id="delaySliderMaster" min="0" max="100" step="1" value="0" class="effect-slider">
+                    </div>
+                    <div id="delayTimeControlMaster" class="effect-control">
+                        <label>Delay Time: <span id="delayTimeValueMaster">300ms</span></label>
+                        <input type="range" id="delayTimeSliderMaster" min="50" max="2000" step="50" value="300" class="effect-slider">
+                    </div>
+                </div>
+                <div class="master-volume-control">
+                    <label>Master Volume: <span id="masterVolumeValue">100%</span></label>
+                    <input type="range" id="masterVolumeSlider" min="0" max="100" step="1" value="100" class="volume-slider">
                 </div>
             </div>
         </div>

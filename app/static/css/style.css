@@ -578,6 +578,8 @@ h1 {
 
 .effect-control {
     margin-bottom: 10px;
+    transition: opacity 0.3s ease, max-height 0.3s ease;
+    overflow: hidden;
 }
 
 .effect-control label {
@@ -1803,6 +1805,227 @@ h1 {
 
 .reset-color-btn:active {
     transform: rotate(180deg) scale(1.05);
+}
+
+/* Effect Chain Drag and Drop */
+.effect-chain-container {
+    margin-top: 15px;
+    padding: 12px 15px;
+    background: rgba(128, 0, 255, 0.1);
+    border-radius: 8px;
+    border: 2px solid rgba(191, 0, 255, 0.3);
+}
+
+.effect-chain-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.effect-chain-title {
+    font-weight: 700;
+    color: rgba(255, 0, 255, 0.9);
+    font-size: 0.95em;
+    text-shadow: 0 0 5px rgba(255, 0, 255, 0.5);
+}
+
+.effect-chain-reset {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: all 0.3s ease;
+}
+
+.effect-chain-reset:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+}
+
+.effect-chain-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.effect-chain-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    cursor: move;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.effect-chain-item.enabled {
+    background: rgba(0, 255, 128, 0.1);
+    border-color: rgba(0, 255, 128, 0.3);
+}
+
+.effect-chain-item.disabled {
+    background: rgba(128, 128, 128, 0.1);
+    border-color: rgba(128, 128, 128, 0.3);
+    opacity: 0.6;
+}
+
+.effect-chain-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateX(5px);
+}
+
+.effect-chain-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.effect-chain-item.drag-over {
+    border-color: rgba(0, 255, 255, 0.8);
+    background: rgba(0, 255, 255, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3);
+}
+
+.effect-chain-drag-handle {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.2em;
+    cursor: grab;
+    line-height: 1;
+}
+
+.effect-chain-drag-handle:active {
+    cursor: grabbing;
+}
+
+.effect-chain-icon {
+    font-size: 1.3em;
+    line-height: 1;
+}
+
+.effect-chain-name {
+    flex: 1;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9em;
+}
+
+.effect-chain-toggle {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    min-width: 30px;
+}
+
+.effect-chain-item.enabled .effect-chain-toggle {
+    background: rgba(0, 255, 128, 0.3);
+    border-color: rgba(0, 255, 128, 0.5);
+    color: #00ff80;
+}
+
+.effect-chain-item.disabled .effect-chain-toggle {
+    background: rgba(255, 0, 0, 0.2);
+    border-color: rgba(255, 0, 0, 0.4);
+    color: #ff6666;
+}
+
+.effect-chain-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.effect-chain-info {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75em;
+    margin-top: 8px;
+}
+
+/* Master Effects Section */
+.master-effects-section {
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 140, 0, 0.1));
+    border-radius: 12px;
+    border: 3px solid rgba(255, 215, 0, 0.4);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+}
+
+.master-effects-header {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.master-title {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: rgba(255, 215, 0, 1);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+    letter-spacing: 0.05em;
+}
+
+.master-effects-content {
+    display: grid;
+    gap: 15px;
+}
+
+.master-volume-control {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 8px;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.master-volume-control label {
+    display: block;
+    font-weight: 700;
+    color: rgba(255, 215, 0, 0.9);
+    margin-bottom: 8px;
+    font-size: 1.05em;
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+
+.master-volume-control span {
+    color: #ffd700;
+    font-weight: 900;
+}
+
+/* Master effect chain - gold theme */
+#effectChainMaster {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: rgba(255, 215, 0, 0.3);
+}
+
+#effectChainMaster .effect-chain-title {
+    color: rgba(255, 215, 0, 0.9);
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+
+#effectChainMaster .effect-chain-item.enabled {
+    background: rgba(255, 215, 0, 0.15);
+    border-color: rgba(255, 215, 0, 0.4);
+}
+
+#effectChainMaster .effect-chain-item.enabled .effect-chain-toggle {
+    background: rgba(255, 215, 0, 0.3);
+    border-color: rgba(255, 215, 0, 0.5);
+    color: #ffd700;
 }
 
 /* Credits Footer */

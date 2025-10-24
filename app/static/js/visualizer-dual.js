@@ -22,6 +22,7 @@ import {
     initAudioEffects, 
     connectEffectsChain 
 } from './modules/audio-effects.js';
+import { EffectChain, connectEffectsInOrder } from './modules/effect-chain.js';
 import { 
     startRecording as startRecordingModule, 
     stopRecording as stopRecordingModule, 
@@ -216,6 +217,19 @@ const enableSamplerBtn = document.getElementById('enableSamplerBtn');
 const disableSamplerBtn = document.getElementById('disableSamplerBtn');
 const keyboardVisual = document.getElementById('keyboardVisual');
 
+// Master channel elements
+const filterSliderMaster = document.getElementById('filterSliderMaster');
+const filterValueMaster = document.getElementById('filterValueMaster');
+const filterTypeMaster = document.getElementById('filterTypeMaster');
+const reverbSliderMaster = document.getElementById('reverbSliderMaster');
+const reverbValueMaster = document.getElementById('reverbValueMaster');
+const delaySliderMaster = document.getElementById('delaySliderMaster');
+const delayValueMaster = document.getElementById('delayValueMaster');
+const delayTimeSliderMaster = document.getElementById('delayTimeSliderMaster');
+const delayTimeValueMaster = document.getElementById('delayTimeValueMaster');
+const masterVolumeSlider = document.getElementById('masterVolumeSlider');
+const masterVolumeValue = document.getElementById('masterVolumeValue');
+
 // Audio context and analysers
 let audioContext;
 let analyser;
@@ -224,6 +238,9 @@ let merger; // To mix both tracks
 let dataArray;
 let bufferLength;
 let animationId;
+
+// Effect Chain managers
+let effectChain1, effectChain2, effectChainMaster;
 
 // Microphone state
 let micState = null;
@@ -245,6 +262,10 @@ let reverbWet1, delayWet1;
 // Audio effects nodes for Track 2
 let gain2, reverb2, delay2, filter2;
 let reverbWet2, delayWet2;
+
+// Master effects nodes
+let gainMaster, reverbMaster, delayMaster, filterMaster;
+let reverbWetMaster, delayWetMaster;
 
 // Three.js variables
 let scene, camera, renderer;
@@ -1275,6 +1296,25 @@ function updateVisualizationColors() {
     });
 }
 
+// Handle effect chain changes
+function handleEffectChainChange(event) {
+    const { trackNumber, effects } = event.detail;
+    console.log(`Effect chain changed for track ${trackNumber}:`, effects);
+    
+    // When the effect chain changes, we need to reconnect the audio routing
+    // For now, we'll just log it. The actual reconnection would require
+    // disconnecting and reconnecting the audio nodes in the new order.
+    // This is a complex operation that would need careful management of the audio graph.
+    
+    // TODO: Implement dynamic audio graph reconnection based on effect order
+    // For the current implementation, the effect chain UI shows the order
+    // but the actual audio processing still follows the fixed order.
+    // To make it fully functional, we would need to:
+    // 1. Disconnect all current connections
+    // 2. Reconnect in the new order specified by the effect chain
+    // 3. Ensure proper wet/dry mixing for each effect
+}
+
 // === Audio Context & Effects Initialization ===
 
 // Initialize audio context and connect both tracks
@@ -1300,10 +1340,42 @@ function initAudioContext() {
         recordingAnalyser.fftSize = 2048;
         recordingAnalyser.smoothingTimeConstant = 0.8;
         
-        // Connect merger to analyser, recording destination, and recording analyser
-        merger.connect(analyser);
-        merger.connect(recordingDestination);
-        merger.connect(recordingAnalyser);
+        // Initialize master effects
+        const effectsMaster = initAudioEffects(audioContext, 'Master');
+        gainMaster = effectsMaster.gain;
+        reverbMaster = effectsMaster.reverb;
+        delayMaster = effectsMaster.delay;
+        filterMaster = effectsMaster.filter;
+        
+        // Connect merger to master effects chain
+        // merger -> filterMaster -> reverbMaster -> delayMaster -> analyser/destination
+        merger.connect(filterMaster);
+        
+        // Reverb path
+        filterMaster.connect(reverbMaster.convolver);
+        reverbMaster.convolver.connect(reverbMaster.wet);
+        filterMaster.connect(reverbMaster.dry);
+        
+        const reverbMixMaster = audioContext.createGain();
+        reverbMaster.wet.connect(reverbMixMaster);
+        reverbMaster.dry.connect(reverbMixMaster);
+        
+        // Delay path
+        reverbMixMaster.connect(delayMaster.node);
+        delayMaster.node.connect(delayMaster.wet);
+        reverbMixMaster.connect(delayMaster.dry);
+        
+        const finalMixMaster = audioContext.createGain();
+        delayMaster.wet.connect(finalMixMaster);
+        delayMaster.dry.connect(finalMixMaster);
+        
+        // Master gain (volume control)
+        finalMixMaster.connect(gainMaster);
+        
+        // Connect master chain to outputs
+        gainMaster.connect(analyser);
+        gainMaster.connect(recordingDestination);
+        gainMaster.connect(recordingAnalyser);
         analyser.connect(audioContext.destination);
         
         // Initialize effects for both tracks using module
@@ -1318,6 +1390,14 @@ function initAudioContext() {
         reverb2 = effects2.reverb;
         delay2 = effects2.delay;
         filter2 = effects2.filter;
+        
+        // Initialize effect chain managers
+        effectChain1 = new EffectChain(1, audioContext);
+        effectChain2 = new EffectChain(2, audioContext);
+        effectChainMaster = new EffectChain('Master', audioContext);
+        
+        // Listen for effect chain changes
+        document.addEventListener('effectChainChanged', handleEffectChainChange);
     }
     
     // Connect track 1 if it exists and isn't already connected
@@ -2913,6 +2993,62 @@ delayTimeSlider2.addEventListener('input', (e) => {
     }
     delayTimeValue2.textContent = e.target.value + 'ms';
 });
+
+// === Master Channel Effect Controls ===
+
+filterSliderMaster.addEventListener('input', (e) => {
+    const frequency = parseInt(e.target.value);
+    if (filterMaster) {
+        filterMaster.frequency.value = frequency;
+    }
+    if (frequency >= 1000) {
+        filterValueMaster.textContent = (frequency / 1000).toFixed(1) + 'kHz';
+    } else {
+        filterValueMaster.textContent = frequency + 'Hz';
+    }
+});
+
+filterTypeMaster.addEventListener('change', (e) => {
+    if (filterMaster) {
+        filterMaster.type = e.target.value;
+    }
+});
+
+reverbSliderMaster.addEventListener('input', (e) => {
+    const wetness = parseInt(e.target.value) / 100;
+    if (reverbMaster) {
+        reverbMaster.wet.gain.value = wetness;
+        reverbMaster.dry.gain.value = 1 - wetness;
+    }
+    reverbValueMaster.textContent = e.target.value + '%';
+});
+
+delaySliderMaster.addEventListener('input', (e) => {
+    const wetness = parseInt(e.target.value) / 100;
+    if (delayMaster) {
+        delayMaster.wet.gain.value = wetness;
+        delayMaster.dry.gain.value = 1 - wetness;
+    }
+    delayValueMaster.textContent = e.target.value + '%';
+});
+
+delayTimeSliderMaster.addEventListener('input', (e) => {
+    const delayTime = parseInt(e.target.value) / 1000;
+    if (delayMaster) {
+        delayMaster.node.delayTime.value = delayTime;
+    }
+    delayTimeValueMaster.textContent = e.target.value + 'ms';
+});
+
+masterVolumeSlider.addEventListener('input', (e) => {
+    const volume = parseInt(e.target.value) / 100;
+    if (gainMaster) {
+        gainMaster.gain.value = volume;
+    }
+    masterVolumeValue.textContent = e.target.value + '%';
+});
+
+// === Zoom Controls ===
 
 // Zoom controls for Track 1
 zoomInBtn1.addEventListener('click', () => {
