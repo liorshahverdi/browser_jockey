@@ -1,15 +1,131 @@
 # Browser Jockey - Development Chat History
 
 ## Project Overview
-A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, and stereo panning controls.
+A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, and comprehensive audio routing management.
 
-**Latest Version: v3.8.0** - Professional DJ Mixer Layout + Stereo Panning
+**Latest Version: v3.9.0** - Microphone Enhancements + Flexible Audio Routing + Bug Fixes
 
 ---
 
 ## Session Timeline
 
-### Latest Session: Professional DJ Layout + Vertical Faders + Panning (v3.8.0)
+### Latest Session: Microphone Enhancements + Flexible Routing + Critical Fixes (v3.9.0)
+**Date**: October 24, 2025
+
+**User Requests**:
+1. "extend the microphone capabilities so that i can use just the microphone to record without any tracks"
+2. "for the tempo and volume sliders on each track, they take up too much space so lets place them next to each other"
+3. "add buttons to send the microphone audio output to track1 or 2"
+4. "use the vocoder and autotuner with the standalone microphone or with one of the two tracks as well"
+5. "add to the master output options to enable track 1, 2, or the keyboard sampler"
+6. "Search for any logical or syntax errors, inconsistencies in the documentation and fix if found"
+7. Multiple bug fix requests for vocoder and autotune errors
+
+**Features Implemented**:
+
+**1. Standalone Microphone Recording**
+- Record directly from microphone without any tracks loaded
+- Real-time waveform visualization during recording
+- Recording timer with pulse animation
+- Export as WAV or MP3
+- Playback controls for recorded audio
+- See [MICROPHONE_STANDALONE_RECORDING.md](MICROPHONE_STANDALONE_RECORDING.md)
+
+**2. Compact Layout - Side-by-Side Controls**
+- Tempo and volume sliders now placed horizontally (side-by-side)
+- Saves ~200px vertical space per track
+- Uses flexbox layout while maintaining vertical slider orientation
+- See [LAYOUT_AND_LOAD_TO_TRACK.md](LAYOUT_AND_LOAD_TO_TRACK.md)
+
+**3. Load Microphone Recordings to Tracks**
+- New buttons to load mic recordings to Track 1 or Track 2
+- Uses DataTransfer API for programmatic file loading
+- Enables layering and remixing of mic recordings
+- Blue gradient styled buttons
+
+**4. Flexible Vocoder/Autotune Routing**
+- **Vocoder Modulator Source**: Microphone, Track 1, or Track 2
+- **Vocoder Carrier Source**: Microphone (Feedback), Track 1, Track 2, or Both Tracks (Mix)
+- **Autotune Audio Source**: Microphone, Track 1, or Track 2
+- Mic-to-mic vocoder creates feedback effects
+- Source selectors always visible (moved outside hidden settings)
+- See [VOCODER_AUTOTUNE_ROUTING_FEATURES.md](VOCODER_AUTOTUNE_ROUTING_FEATURES.md)
+
+**5. Master Output Routing Controls**
+- Toggle Track 1 to master output
+- Toggle Track 2 to master output
+- Toggle Keyboard Sampler to master output
+- Gold-themed checkboxes matching master section
+- Precise mixing control for complex arrangements
+
+**6. Critical Bug Fixes**
+
+**Bug Fix #1: Vocoder/Autotune Visibility Logic** (see [BUG_FIXES_SUMMARY.md](BUG_FIXES_SUMMARY.md))
+- Problem: Sections hidden when mic disabled even though they work with tracks
+- Solution: Created `updateVocoderAutotuneVisibility()` function
+- Shows sections when ANY source is available (mic OR tracks)
+
+**Bug Fix #2: ArrayBuffer to Blob Conversion**
+- Problem: `audioBufferToWav()` returns ArrayBuffer but code expected Blob
+- Solution: Wrapped ArrayBuffer in Blob constructor with correct MIME type
+
+**Bug Fix #3: Vocoder Carrier Error** (see [VOCODER_MIC_FEEDBACK_FIX.md](VOCODER_MIC_FEEDBACK_FIX.md))
+- Problem: Using 'mix' carrier without tracks returned null
+- Solution: Added 'mix' case to `getVocoderCarrierSource()` with mixer node
+
+**Bug Fix #4: Track Audio Node References** (see [CRITICAL_VOCODER_AUTOTUNE_FIXES.md](CRITICAL_VOCODER_AUTOTUNE_FIXES.md))
+- Problem: Using `source1`/`source2` (MediaElementSource) instead of `gain1`/`gain2` (GainNode)
+- Impact: Vocoder/autotune failed with tracks (node already connected error)
+- Solution: Changed all track references to use GainNodes
+
+**Bug Fix #5: Microphone Audio Node References** (see [MIC_AUDIO_ROUTING_FIX.md](MIC_AUDIO_ROUTING_FIX.md))
+- Problem: Using `micSource` (raw MediaStreamSource) instead of `micGain` (GainNode)
+- Impact: Mic-to-mic vocoder and autotune failed
+- Solution: Use `micGain` for all mic effect routing
+
+**Bug Fix #6: Audio Context Initialization** (see [AUDIO_CONTEXT_INIT_FIX.md](AUDIO_CONTEXT_INIT_FIX.md))
+- Problem: `merger` node not created when mic enabled first
+- Impact: "Audio output not initialized" error
+- Solution: Call `initAudioContext()` instead of creating context directly
+
+**Bug Fix #7: Vocoder/Autotune Runtime Errors** (see [VOCODER_AUTOTUNE_RUNTIME_FIXES.md](VOCODER_AUTOTUNE_RUNTIME_FIXES.md))
+- Problem 1: `autotuneAnalyser is not defined` error
+- Solution: Use `autotuneState.autotuneAnalyser` instead of global variable
+- Problem 2: Vocoder not producing sound
+- Solution: Call `audioContext.resume()` after enabling effects
+
+**Technical Implementation**:
+
+**Files Modified**:
+- `app/static/js/modules/microphone.js` - Added recording functions
+- `app/static/js/modules/recording.js` - Exported audioBufferToMp3
+- `app/static/js/modules/vocoder.js` - Added mix carrier, renamed parameters
+- `app/static/js/modules/autotune.js` - Renamed parameters for clarity
+- `app/static/js/visualizer-dual.js` - Major routing and bug fixes
+- `app/templates/index.html` - Added UI controls for all features
+- `app/static/css/style.css` - Styled new controls
+
+**Key Technical Changes**:
+- Use GainNodes (not source nodes) for all effect routing
+- Call `initAudioContext()` for complete initialization
+- Resume AudioContext when enabling effects
+- Proper state management for effect parameters
+- Centralized visibility logic for UI elements
+
+**Documentation Created**:
+- MICROPHONE_STANDALONE_RECORDING.md
+- LAYOUT_AND_LOAD_TO_TRACK.md
+- VOCODER_AUTOTUNE_ROUTING_FEATURES.md
+- BUG_FIXES_SUMMARY.md
+- VOCODER_MIC_FEEDBACK_FIX.md
+- CRITICAL_VOCODER_AUTOTUNE_FIXES.md
+- MIC_AUDIO_ROUTING_FIX.md
+- AUDIO_CONTEXT_INIT_FIX.md
+- VOCODER_AUTOTUNE_RUNTIME_FIXES.md
+
+---
+
+### Session: Professional DJ Layout + Vertical Faders + Panning (v3.8.0)
 **Date**: October 23, 2025
 
 **User Requests**:

@@ -85,13 +85,15 @@
                                 Auto-zoom to loop
                             </label>
                         </div>
-                        <div class="tempo-control-inline">
-                            <label>Tempo: <span id="tempoValue1">1.0x</span></label>
-                            <input type="range" id="tempoSlider1" min="0.25" max="2.0" step="0.05" value="1.0">
-                        </div>
-                        <div class="volume-control-inline">
-                            <label>Volume: <span id="volumeValue1">100%</span></label>
-                            <input type="range" id="volumeSlider1" min="0" max="100" step="1" value="100" class="volume-slider">
+                        <div class="tempo-volume-row">
+                            <div class="tempo-control-inline">
+                                <label>Tempo: <span id="tempoValue1">1.0x</span></label>
+                                <input type="range" id="tempoSlider1" min="0.25" max="2.0" step="0.05" value="1.0">
+                            </div>
+                            <div class="volume-control-inline">
+                                <label>Volume: <span id="volumeValue1">100%</span></label>
+                                <input type="range" id="volumeSlider1" min="0" max="100" step="1" value="100" class="volume-slider">
+                            </div>
                         </div>
                         <div class="pan-control-inline">
                             <label>Pan: <span id="panValue1">Center</span></label>
@@ -197,13 +199,15 @@
                                 Auto-zoom to loop
                             </label>
                         </div>
-                        <div class="tempo-control-inline">
-                            <label>Tempo: <span id="tempoValue2">1.0x</span></label>
-                            <input type="range" id="tempoSlider2" min="0.25" max="2.0" step="0.05" value="1.0">
-                        </div>
-                        <div class="volume-control-inline">
-                            <label>Volume: <span id="volumeValue2">100%</span></label>
-                            <input type="range" id="volumeSlider2" min="0" max="100" step="1" value="100" class="volume-slider">
+                        <div class="tempo-volume-row">
+                            <div class="tempo-control-inline">
+                                <label>Tempo: <span id="tempoValue2">1.0x</span></label>
+                                <input type="range" id="tempoSlider2" min="0.25" max="2.0" step="0.05" value="1.0">
+                            </div>
+                            <div class="volume-control-inline">
+                                <label>Volume: <span id="volumeValue2">100%</span></label>
+                                <input type="range" id="volumeSlider2" min="0" max="100" step="1" value="100" class="volume-slider">
+                            </div>
                         </div>
                         <div class="pan-control-inline">
                             <label>Pan: <span id="panValue2">Center</span></label>
@@ -290,9 +294,58 @@
                         </label>
                     </div>
                 </div>
+                
+                <!-- Microphone Recording Section -->
+                <div class="mic-recording-section" style="display: none;" id="micRecordingSection">
+                    <div class="mic-recording-header">🎙️ Microphone Recording</div>
+                    <div class="mic-recording-controls">
+                        <button id="micRecordBtn" class="control-btn">
+                            <span>⏺️</span> Record Mic
+                        </button>
+                        <button id="micStopBtn" class="control-btn" disabled style="display: none;">
+                            <span>⏹️</span> Stop Recording
+                        </button>
+                        <span id="micRecordingTime" class="recording-time" style="display: none;">0:00</span>
+                    </div>
+                    <div class="mic-recording-waveform-container" style="display: none;" id="micRecordingWaveformContainer">
+                        <canvas id="micRecordingWaveform" class="waveform-canvas"></canvas>
+                    </div>
+                    <div class="mic-recording-playback" style="display: none;" id="micRecordingPlayback">
+                        <audio id="micRecordingAudio" controls></audio>
+                        <div class="mic-recording-actions">
+                            <div class="mic-recording-load">
+                                <label>Load to Track:</label>
+                                <button id="micLoadToTrack1Btn" class="load-track-btn">🎵 Track 1</button>
+                                <button id="micLoadToTrack2Btn" class="load-track-btn">🎵 Track 2</button>
+                            </div>
+                            <div class="mic-recording-export">
+                                <button id="micExportWavBtn" class="export-btn">💾 Export as WAV</button>
+                                <button id="micExportMp3Btn" class="export-btn">💾 Export as MP3</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="vocoder-section" style="display: none;" id="vocoderSection">
                     <div class="vocoder-header">🤖 Vocoder Effect</div>
                     <div class="vocoder-controls">
+                        <div class="vocoder-control">
+                            <label>Modulator (Voice):</label>
+                            <select id="vocoderModulator" class="vocoder-select">
+                                <option value="mic" selected>Microphone</option>
+                                <option value="track1">Track 1</option>
+                                <option value="track2">Track 2</option>
+                            </select>
+                        </div>
+                        <div class="vocoder-control">
+                            <label>Carrier Source:</label>
+                            <select id="vocoderCarrier" class="vocoder-select">
+                                <option value="track1">Track 1</option>
+                                <option value="track2">Track 2</option>
+                                <option value="mix" selected>Both Tracks (Mix)</option>
+                                <option value="mic">Microphone (Feedback)</option>
+                            </select>
+                        </div>
                         <button id="enableVocoderBtn" class="vocoder-btn">
                             Enable Vocoder
                         </button>
@@ -300,15 +353,6 @@
                             Disable Vocoder
                         </button>
                         <div class="vocoder-settings" style="display: none;" id="vocoderSettings">
-                            <div class="vocoder-control">
-                                <label>Carrier Source:</label>
-                                <select id="vocoderCarrier" class="vocoder-select">
-                                    <option value="track1">Track 1</option>
-                                    <option value="track2">Track 2</option>
-                                    <option value="mix" selected>Both Tracks (Mix)</option>
-                                    <option value="mic">Microphone (Feedback)</option>
-                                </select>
-                            </div>
                             <div class="vocoder-control">
                                 <label>Dry/Wet Mix: <span id="vocoderMixValue">100%</span></label>
                                 <input type="range" id="vocoderMixSlider" min="0" max="100" step="1" value="100" class="effect-slider">
@@ -323,6 +367,14 @@
                 <div class="autotune-section" style="display: none;" id="autotuneSection">
                     <div class="autotune-header">🎵 Auto-Tune Effect</div>
                     <div class="autotune-controls">
+                        <div class="autotune-control">
+                            <label>Audio Source:</label>
+                            <select id="autotuneSource" class="autotune-select">
+                                <option value="mic" selected>Microphone</option>
+                                <option value="track1">Track 1</option>
+                                <option value="track2">Track 2</option>
+                            </select>
+                        </div>
                         <button id="enableAutotuneBtn" class="autotune-btn">
                             Enable Auto-Tune
                         </button>
@@ -464,6 +516,25 @@
                 <span class="master-title">🎚️ Master Output</span>
             </div>
             <div class="master-effects-content">
+                <!-- Master Routing Controls -->
+                <div class="master-routing-section">
+                    <div class="routing-header">🎛️ Routing</div>
+                    <div class="routing-controls">
+                        <label class="routing-toggle">
+                            <input type="checkbox" id="routeTrack1" checked>
+                            <span>🎵 Track 1</span>
+                        </label>
+                        <label class="routing-toggle">
+                            <input type="checkbox" id="routeTrack2" checked>
+                            <span>🎵 Track 2</span>
+                        </label>
+                        <label class="routing-toggle">
+                            <input type="checkbox" id="routeSampler" checked>
+                            <span>🎹 Sampler</span>
+                        </label>
+                    </div>
+                </div>
+                
                 <div class="effect-chain-container" id="effectChainMaster">
                     <!-- Master effect chain UI will be dynamically generated here -->
                 </div>

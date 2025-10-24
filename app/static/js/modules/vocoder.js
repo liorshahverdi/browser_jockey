@@ -6,15 +6,15 @@
 /**
  * Enable vocoder effect
  * @param {AudioContext} audioContext - Web Audio API context
- * @param {MediaStreamAudioSourceNode} micSource - Microphone source node
+ * @param {AudioNode} modulatorSource - Modulator source node (mic, track1, or track2)
  * @param {AudioNode} carrierSource - Carrier signal source (track or mic)
  * @param {ChannelMergerNode} merger - Output merger node
  * @param {number} numBands - Number of vocoder bands
  * @returns {Object} Vocoder state object
  */
-export function enableVocoder(audioContext, micSource, carrierSource, merger, numBands = 16) {
-    if (!micSource || !audioContext) {
-        throw new Error('Microphone source and audio context required');
+export function enableVocoder(audioContext, modulatorSource, carrierSource, merger, numBands = 16) {
+    if (!modulatorSource || !audioContext) {
+        throw new Error('Modulator source and audio context required');
     }
     
     if (!carrierSource) {
@@ -37,7 +37,7 @@ export function enableVocoder(audioContext, micSource, carrierSource, merger, nu
         if (carrierSource) {
             carrierSource.connect(vocoderCarrierGain);
         }
-        micSource.connect(vocoderModulatorGain);
+        modulatorSource.connect(vocoderModulatorGain);
         
         // Create vocoder bands
         for (let i = 0; i < numBands; i++) {
@@ -172,7 +172,7 @@ export function updateVocoderMix(vocoderOutputGain, mixValue) {
  * @param {MediaStreamAudioSourceNode} micSource - Microphone source
  * @returns {AudioNode|null} Carrier source node
  */
-export function getVocoderCarrierSource(carrierType, source1, source2, micSource) {
+export function getVocoderCarrierSource(carrierType, source1, source2, micSource, audioContext) {
     switch (carrierType) {
         case 'track1':
             return source1;
@@ -180,6 +180,19 @@ export function getVocoderCarrierSource(carrierType, source1, source2, micSource
             return source2;
         case 'mic':
             return micSource;
+        case 'mix':
+            // Create a mixer for both tracks
+            if (source1 && source2 && audioContext) {
+                const mixGain = audioContext.createGain();
+                source1.connect(mixGain);
+                source2.connect(mixGain);
+                return mixGain;
+            } else if (source1) {
+                return source1;
+            } else if (source2) {
+                return source2;
+            }
+            return null;
         default:
             return null;
     }

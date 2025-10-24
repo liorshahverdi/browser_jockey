@@ -8,14 +8,14 @@ import { musicScales } from './constants.js';
 /**
  * Enable auto-tune effect
  * @param {AudioContext} audioContext - Web Audio API context
- * @param {GainNode} micGain - Microphone gain node
+ * @param {AudioNode} audioSource - Audio source node (mic, track1, or track2)
  * @param {ChannelMergerNode} merger - Output merger node
  * @param {number} strength - Auto-tune strength (0-100)
  * @returns {Object} Auto-tune state object
  */
-export function enableAutotune(audioContext, micGain, merger, strength = 50) {
-    if (!micGain || !audioContext) {
-        throw new Error('Microphone gain and audio context required');
+export function enableAutotune(audioContext, audioSource, merger, strength = 50) {
+    if (!audioSource || !audioContext) {
+        throw new Error('Audio source and audio context required');
     }
     
     try {
@@ -51,14 +51,14 @@ export function enableAutotune(audioContext, micGain, merger, strength = 50) {
         }
         
         // Connect audio graph for pitch detection
-        micGain.connect(autotuneAnalyser);
+        audioSource.connect(autotuneAnalyser);
         
         // Connect dry signal
-        micGain.connect(dryGain);
+        audioSource.connect(dryGain);
         
         // Connect wet signal through pitch shifters
         pitchShifters.forEach(shifter => {
-            micGain.connect(shifter.filter);
+            audioSource.connect(shifter.filter);
             shifter.filter.connect(shifter.delay);
             shifter.delay.connect(shifter.gain);
             shifter.gain.connect(wetGain);

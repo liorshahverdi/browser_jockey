@@ -147,3 +147,76 @@ export function updateMicVolume(micGain, volume) {
         micGain.gain.value = volume / 100;
     }
 }
+
+/**
+ * Start recording from microphone
+ * @param {Object} micState - Microphone state object
+ * @returns {Object} Recording state object
+ */
+export function startMicRecording(micState) {
+    if (!micState || !micState.micStream) {
+        throw new Error('Microphone not enabled');
+    }
+    
+    const recordingState = {
+        chunks: [],
+        blob: null,
+        mediaRecorder: null,
+        startTime: null,
+        interval: null
+    };
+    
+    // Create MediaRecorder from microphone stream
+    const options = { mimeType: 'audio/webm' };
+    try {
+        recordingState.mediaRecorder = new MediaRecorder(micState.micStream, options);
+    } catch (e) {
+        console.error('MediaRecorder error:', e);
+        throw new Error('Recording not supported in this browser');
+    }
+    
+    recordingState.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+            recordingState.chunks.push(event.data);
+        }
+    };
+    
+    recordingState.mediaRecorder.start();
+    recordingState.startTime = Date.now();
+    
+    console.log('Microphone recording started');
+    
+    return recordingState;
+}
+
+/**
+ * Stop microphone recording
+ * @param {Object} recordingState - Recording state object
+ * @returns {Promise<Blob>} Recorded audio blob
+ */
+export function stopMicRecording(recordingState) {
+    return new Promise((resolve, reject) => {
+        if (!recordingState || !recordingState.mediaRecorder) {
+            reject(new Error('No active recording'));
+            return;
+        }
+        
+        if (recordingState.mediaRecorder.state === 'inactive') {
+            resolve(recordingState.blob);
+            return;
+        }
+        
+        recordingState.mediaRecorder.onstop = () => {
+            const blob = new Blob(recordingState.chunks, { type: 'audio/webm' });
+            recordingState.blob = blob;
+            console.log('Microphone recording stopped');
+            resolve(blob);
+        };
+        
+        recordingState.mediaRecorder.stop();
+        
+        if (recordingState.interval) {
+            clearInterval(recordingState.interval);
+        }
+    });
+}

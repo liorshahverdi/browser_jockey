@@ -33,7 +33,9 @@ import {
     enableMicrophone as enableMicrophoneModule,
     disableMicrophone as disableMicrophoneModule,
     drawMicWaveform as drawMicWaveformModule,
-    updateMicVolume
+    updateMicVolume,
+    startMicRecording,
+    stopMicRecording
 } from './modules/microphone.js';
 import {
     enableVocoder as enableVocoderModule,
@@ -188,11 +190,26 @@ const micMonitorCheckbox = document.getElementById('micMonitorCheckbox');
 const micWaveform = document.getElementById('micWaveform');
 const micWaveformContainer = document.getElementById('micWaveformContainer');
 
+// Microphone Recording elements
+const micRecordingSection = document.getElementById('micRecordingSection');
+const micRecordBtn = document.getElementById('micRecordBtn');
+const micStopBtn = document.getElementById('micStopBtn');
+const micRecordingTime = document.getElementById('micRecordingTime');
+const micRecordingWaveformContainer = document.getElementById('micRecordingWaveformContainer');
+const micRecordingWaveform = document.getElementById('micRecordingWaveform');
+const micRecordingPlayback = document.getElementById('micRecordingPlayback');
+const micRecordingAudio = document.getElementById('micRecordingAudio');
+const micExportWavBtn = document.getElementById('micExportWavBtn');
+const micExportMp3Btn = document.getElementById('micExportMp3Btn');
+const micLoadToTrack1Btn = document.getElementById('micLoadToTrack1Btn');
+const micLoadToTrack2Btn = document.getElementById('micLoadToTrack2Btn');
+
 // Vocoder elements
 const vocoderSection = document.getElementById('vocoderSection');
 const enableVocoderBtn = document.getElementById('enableVocoderBtn');
 const disableVocoderBtn = document.getElementById('disableVocoderBtn');
 const vocoderSettings = document.getElementById('vocoderSettings');
+const vocoderModulator = document.getElementById('vocoderModulator');
 const vocoderCarrier = document.getElementById('vocoderCarrier');
 const vocoderMixSlider = document.getElementById('vocoderMixSlider');
 const vocoderMixValue = document.getElementById('vocoderMixValue');
@@ -204,6 +221,7 @@ const autotuneSection = document.getElementById('autotuneSection');
 const enableAutotuneBtn = document.getElementById('enableAutotuneBtn');
 const disableAutotuneBtn = document.getElementById('disableAutotuneBtn');
 const autotuneSettings = document.getElementById('autotuneSettings');
+const autotuneSource = document.getElementById('autotuneSource');
 const autotuneKey = document.getElementById('autotuneKey');
 const autotuneScale = document.getElementById('autotuneScale');
 const autotuneSpeedSlider = document.getElementById('autotuneSpeedSlider');
@@ -222,6 +240,9 @@ const disableSamplerBtn = document.getElementById('disableSamplerBtn');
 const keyboardVisual = document.getElementById('keyboardVisual');
 
 // Master channel elements
+const routeTrack1 = document.getElementById('routeTrack1');
+const routeTrack2 = document.getElementById('routeTrack2');
+const routeSampler = document.getElementById('routeSampler');
 const filterSliderMaster = document.getElementById('filterSliderMaster');
 const filterValueMaster = document.getElementById('filterValueMaster');
 const filterTypeMaster = document.getElementById('filterTypeMaster');
@@ -252,6 +273,9 @@ let effectChain1, effectChain2, effectChainMaster;
 let micState = null;
 let micAnimationId = null;
 let micEnabled = false;
+let micRecordingState = null;
+let micRecordingAnimationId = null;
+let micRecordingInterval = null;
 
 // Vocoder state
 let vocoderEnabled = false;
@@ -650,9 +674,9 @@ function playBothAndRecord() {
 // Enable microphone input
 async function enableMicrophone() {
     try {
-        // Initialize audio context if not already
+        // Initialize audio context if not already (this also creates merger)
         if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            initAudioContext();
         }
         
         // Use module to enable microphone
@@ -666,8 +690,10 @@ async function enableMicrophone() {
         micVolumeControl.style.display = 'flex';
         micMonitoring.style.display = 'block';
         micWaveformContainer.style.display = 'block';
-        vocoderSection.style.display = 'block';
-        autotuneSection.style.display = 'block';
+        micRecordingSection.style.display = 'block';
+        
+        // Update vocoder/autotune visibility
+        updateVocoderAutotuneVisibility();
         
         // Start waveform visualization
         drawMicWaveform();
@@ -681,6 +707,11 @@ async function enableMicrophone() {
 
 // Disable microphone input
 function disableMicrophone() {
+    // Stop recording if active
+    if (micRecordingState) {
+        stopMicRecordingHandler();
+    }
+    
     if (micAnimationId) {
         cancelAnimationFrame(micAnimationId);
         micAnimationId = null;
@@ -693,9 +724,14 @@ function disableMicrophone() {
     
     micEnabled = false;
     
-    // Disable autotune if enabled
-    if (autotuneEnabled) {
+    // Disable autotune if enabled and using mic source
+    if (autotuneEnabled && autotuneSource.value === 'mic') {
         disableAutotune();
+    }
+    
+    // Disable vocoder if enabled and using mic as modulator
+    if (vocoderEnabled && vocoderModulator.value === 'mic') {
+        disableVocoder();
     }
     
     // Update UI
@@ -704,9 +740,11 @@ function disableMicrophone() {
     micVolumeControl.style.display = 'none';
     micMonitoring.style.display = 'none';
     micWaveformContainer.style.display = 'none';
-    vocoderSection.style.display = 'none';
-    autotuneSection.style.display = 'none';
+    micRecordingSection.style.display = 'none';
     micMonitorCheckbox.checked = false;
+    
+    // Update vocoder/autotune visibility based on remaining sources
+    updateVocoderAutotuneVisibility();
     
     console.log('Microphone disabled');
 }
@@ -728,6 +766,21 @@ function updateMicVolumeWrapper(value) {
     }
 }
 
+// Update vocoder/autotune section visibility based on available sources
+function updateVocoderAutotuneVisibility() {
+    // Show vocoder/autotune if microphone OR any track is available
+    const hasAudioSource = micEnabled || source1 || source2;
+    
+    if (hasAudioSource) {
+        vocoderSection.style.display = 'block';
+        autotuneSection.style.display = 'block';
+    } else {
+        // Hide only if no sources are available
+        vocoderSection.style.display = 'none';
+        autotuneSection.style.display = 'none';
+    }
+}
+
 // Toggle microphone monitoring (hearing yourself)
 function toggleMicMonitoring(enabled) {
     if (!micState || !micState.micGain || !audioContext) return;
@@ -745,23 +798,326 @@ function toggleMicMonitoring(enabled) {
     }
 }
 
-// Enable vocoder effect
-function enableVocoder() {
-    if (!micState || !micState.micSource || !audioContext) {
+// Start microphone recording
+function startMicRecordingHandler() {
+    if (!micState) {
         alert('Please enable microphone first!');
         return;
     }
     
-    // Check if carrier source is available (allow mic as carrier for feedback effects)
+    try {
+        micRecordingState = startMicRecording(micState);
+        
+        // Update UI
+        micRecordBtn.style.display = 'none';
+        micStopBtn.disabled = false;
+        micStopBtn.style.display = 'inline-block';
+        micRecordingTime.style.display = 'inline-block';
+        micRecordingWaveformContainer.style.display = 'block';
+        micRecordingPlayback.style.display = 'none';
+        
+        // Start time display
+        micRecordingInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - micRecordingState.startTime) / 1000);
+            micRecordingTime.textContent = formatTime(elapsed);
+        }, 100);
+        
+        // Start real-time waveform
+        drawMicRecordingWaveform();
+        
+        console.log('Microphone recording started');
+    } catch (error) {
+        console.error('Error starting microphone recording:', error);
+        alert(error.message || 'Could not start recording');
+    }
+}
+
+// Stop microphone recording
+async function stopMicRecordingHandler() {
+    if (!micRecordingState) {
+        return;
+    }
+    
+    try {
+        // Stop recording
+        const blob = await stopMicRecording(micRecordingState);
+        
+        // Stop waveform animation
+        if (micRecordingAnimationId) {
+            cancelAnimationFrame(micRecordingAnimationId);
+            micRecordingAnimationId = null;
+        }
+        
+        // Stop time display
+        if (micRecordingInterval) {
+            clearInterval(micRecordingInterval);
+            micRecordingInterval = null;
+        }
+        
+        // Create playback URL
+        const url = URL.createObjectURL(blob);
+        micRecordingAudio.src = url;
+        
+        // Decode and draw final waveform
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const arrayBuffer = e.target.result;
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                drawWaveformSimple(micRecordingWaveform, audioBuffer, '#ff0064');
+            } catch (err) {
+                console.error('Error decoding recorded audio:', err);
+            }
+        };
+        reader.readAsArrayBuffer(blob);
+        
+        // Update UI
+        micStopBtn.style.display = 'none';
+        micRecordBtn.style.display = 'inline-block';
+        micRecordingTime.style.display = 'none';
+        micRecordingPlayback.style.display = 'block';
+        
+        console.log('Microphone recording stopped');
+    } catch (error) {
+        console.error('Error stopping microphone recording:', error);
+        alert(error.message || 'Could not stop recording');
+    }
+}
+
+// Draw real-time microphone recording waveform
+function drawMicRecordingWaveform() {
+    if (!micState || !micState.micAnalyser) {
+        return;
+    }
+    
+    const canvas = micRecordingWaveform;
+    const analyser = micState.micAnalyser;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+    const height = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+    
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    function draw() {
+        micRecordingAnimationId = requestAnimationFrame(draw);
+        
+        analyser.getByteTimeDomainData(dataArray);
+        
+        // Clear with slight trail
+        ctx.fillStyle = 'rgba(10, 10, 10, 0.3)';
+        ctx.fillRect(0, 0, width, height);
+        
+        ctx.lineWidth = 3 * window.devicePixelRatio;
+        ctx.strokeStyle = 'rgba(255, 0, 100, 1)';
+        ctx.beginPath();
+        
+        const sliceWidth = width / bufferLength;
+        let x = 0;
+        
+        for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = v * height / 2;
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+            
+            x += sliceWidth;
+        }
+        
+        ctx.lineTo(width, height / 2);
+        ctx.stroke();
+        
+        // Add center line
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, height / 2);
+        ctx.lineTo(width, height / 2);
+        ctx.stroke();
+    }
+    
+    draw();
+}
+
+// Export microphone recording
+async function exportMicRecording(format) {
+    if (!micRecordingState || !micRecordingState.blob) {
+        alert('No recording available to export');
+        return;
+    }
+    
+    try {
+        let exportBlob = micRecordingState.blob;
+        let filename = `mic-recording-${Date.now()}.webm`;
+        
+        if (format === 'wav' || format === 'mp3') {
+            // Read the webm blob and decode it
+            const arrayBuffer = await micRecordingState.blob.arrayBuffer();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            
+            if (format === 'wav') {
+                // Convert to WAV
+                const { audioBufferToWav } = await import('./modules/recording.js');
+                const wavArrayBuffer = audioBufferToWav(audioBuffer);
+                exportBlob = new Blob([wavArrayBuffer], { type: 'audio/wav' });
+                filename = `mic-recording-${Date.now()}.wav`;
+            } else if (format === 'mp3') {
+                // Convert to MP3
+                const { audioBufferToMp3 } = await import('./modules/recording.js');
+                const mp3Blob = audioBufferToMp3(audioBuffer);
+                exportBlob = mp3Blob;
+                filename = `mic-recording-${Date.now()}.mp3`;
+            }
+        }
+        
+        // Download the file
+        const url = URL.createObjectURL(exportBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log(`Microphone recording exported as ${format.toUpperCase()}`);
+    } catch (error) {
+        console.error('Error exporting microphone recording:', error);
+        alert(`Could not export as ${format.toUpperCase()}: ${error.message}`);
+    }
+}
+
+// Load microphone recording to a track
+async function loadMicRecordingToTrack(trackNumber) {
+    if (!micRecordingState || !micRecordingState.blob) {
+        alert('No recording available to load');
+        return;
+    }
+    
+    try {
+        // Create a File object from the blob with a proper name
+        const filename = `mic-recording-${Date.now()}.webm`;
+        const file = new File([micRecordingState.blob], filename, { type: 'audio/webm' });
+        
+        // Determine which track to load into
+        const audioFile = trackNumber === 1 ? audioFile1 : audioFile2;
+        const fileName = trackNumber === 1 ? fileName1 : fileName2;
+        
+        // Create a FileList-like object (DataTransfer is the standard way)
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        
+        // Set the files on the input element
+        audioFile.files = dataTransfer.files;
+        
+        // Display the filename
+        fileName.textContent = filename;
+        
+        // Trigger the change event to load the file
+        const event = new Event('change', { bubbles: true });
+        audioFile.dispatchEvent(event);
+        
+        console.log(`Microphone recording loaded to Track ${trackNumber}`);
+        
+        // Show success message
+        const trackName = trackNumber === 1 ? 'Track 1' : 'Track 2';
+        alert(`✅ Microphone recording loaded to ${trackName}!`);
+        
+    } catch (error) {
+        console.error('Error loading microphone recording to track:', error);
+        alert(`Could not load to track: ${error.message}`);
+    }
+}
+
+// Enable vocoder effect
+function enableVocoder() {
+    // Initialize audio context if not already (this also creates merger)
+    if (!audioContext) {
+        initAudioContext();
+    }
+    
+    if (!merger) {
+        alert('Audio output not initialized. Please reload the page.');
+        return;
+    }
+    
+    // Get modulator source
+    const modulatorType = vocoderModulator.value;
+    let modulatorSource = null;
+    
+    if (modulatorType === 'mic') {
+        if (!micEnabled || !micState || !micState.micGain) {
+            alert('Please enable microphone first to use it as modulator!');
+            return;
+        }
+        // Verify micGain is a valid audio node
+        if (typeof micState.micGain.connect !== 'function') {
+            alert('Microphone audio node is invalid. Please disable and re-enable the microphone.');
+            return;
+        }
+        // Use micGain for modulator (includes volume control and can connect to multiple destinations)
+        modulatorSource = micState.micGain;
+    } else if (modulatorType === 'track1') {
+        if (!source1) {
+            alert('Please load Track 1 first to use it as modulator!');
+            return;
+        }
+        modulatorSource = gain1;
+    } else if (modulatorType === 'track2') {
+        if (!source2) {
+            alert('Please load Track 2 first to use it as modulator!');
+            return;
+        }
+        modulatorSource = gain2;
+    }
+    
+    if (!modulatorSource) {
+        alert('Please select a valid modulator source!');
+        return;
+    }
+    
+    // Check if carrier source is available
     const carrier = vocoderCarrier.value;
-    if (carrier !== 'mic' && !source1 && !source2) {
-        alert('Please load at least one audio track to use as carrier!');
+    
+    // Validate carrier availability
+    if (carrier === 'track1' && !source1) {
+        alert('Please load Track 1 to use it as carrier!');
+        return;
+    }
+    if (carrier === 'track2' && !source2) {
+        alert('Please load Track 2 to use it as carrier!');
+        return;
+    }
+    if (carrier === 'mix' && !source1 && !source2) {
+        alert('Please load at least one track to use mix as carrier!');
+        return;
+    }
+    if (carrier === 'mic' && !micEnabled) {
+        alert('Please enable the microphone to use it as carrier!');
         return;
     }
     
     try {
         // Get carrier source based on selection
-        const carrierSource = getVocoderCarrierSource(carrier, gain1, gain2, micState.micSource);
+        let carrierSourceForVocoder;
+        if (carrier === 'mic' && modulatorType === 'mic' && micState) {
+            // For mic-to-mic feedback, both use micGain (same node connected to both modulator and carrier)
+            carrierSourceForVocoder = micState.micGain;
+            console.log('Using micGain for both modulator and carrier (mic-to-mic feedback)');
+        } else {
+            carrierSourceForVocoder = getVocoderCarrierSource(carrier, gain1, gain2, micState ? micState.micGain : null, audioContext);
+            console.log(`Got carrier source for: ${carrier}`, carrierSourceForVocoder);
+        }
+        
+        if (!carrierSourceForVocoder) {
+            throw new Error(`Unable to get carrier source for: ${carrier}`);
+        }
+        
+        console.log(`Enabling vocoder - Modulator: ${modulatorType}, Carrier: ${carrier}, Bands: ${vocoderBandsSlider.value}`);
         
         // Get number of bands
         const numBands = parseInt(vocoderBandsSlider.value);
@@ -769,17 +1125,19 @@ function enableVocoder() {
         // Use module to enable vocoder
         vocoderState = enableVocoderModule(
             audioContext,
-            micState.micSource,
-            carrierSource,
+            modulatorSource,
+            carrierSourceForVocoder,
             merger,
             numBands
         );
         
-        // Disconnect mic from direct output
-        try {
-            micState.micGain.disconnect(merger);
-        } catch (e) {
-            // Already disconnected
+        // Disconnect modulator from direct output if it's the mic
+        if (modulatorType === 'mic' && micState) {
+            try {
+                micState.micGain.disconnect(merger);
+            } catch (e) {
+                // Already disconnected
+            }
         }
         
         // Set initial mix level
@@ -788,6 +1146,11 @@ function enableVocoder() {
         
         vocoderEnabled = true;
         
+        // Resume audio context if suspended
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        
         // Update UI
         enableVocoderBtn.style.display = 'none';
         disableVocoderBtn.disabled = false;
@@ -795,7 +1158,7 @@ function enableVocoder() {
         vocoderSettings.style.display = 'flex';
         vocoderMixValue.textContent = `${mixValue}%`;
         
-        console.log(`Vocoder enabled with ${numBands} bands`);
+        console.log(`Vocoder enabled with ${numBands} bands (Modulator: ${modulatorType}, Carrier: ${carrier})`);
     } catch (error) {
         console.error('Error enabling vocoder:', error);
         alert(error.message || 'Error enabling vocoder. Please try again.');
@@ -809,13 +1172,14 @@ function disableVocoder() {
     try {
         // Use module to disable vocoder
         disableVocoderModule(vocoderState);
-        vocoderState = null;
         
-        // Reconnect mic directly to merger
-        if (micState && micState.micGain && merger) {
+        // Reconnect modulator directly to merger if it was the mic
+        const modulatorType = vocoderModulator.value;
+        if (modulatorType === 'mic' && micState && micState.micGain && merger) {
             micState.micGain.connect(merger);
         }
         
+        vocoderState = null;
         vocoderEnabled = false;
         
         // Update UI
@@ -827,6 +1191,15 @@ function disableVocoder() {
     } catch (error) {
         console.error('Error disabling vocoder:', error);
     }
+}
+
+// Update vocoder modulator source
+function updateVocoderModulator() {
+    if (!vocoderEnabled) return;
+    
+    // Disable and re-enable to rebuild with new modulator
+    disableVocoder();
+    setTimeout(() => enableVocoder(), 100);
 }
 
 // Update vocoder carrier source
@@ -859,8 +1232,42 @@ function updateVocoderBandsCount(value) {
 
 // Enable auto-tune effect
 function enableAutotune() {
-    if (!micState || !micState.micGain || !audioContext) {
-        alert('Please enable microphone first!');
+    // Initialize audio context if not already (this also creates merger)
+    if (!audioContext) {
+        initAudioContext();
+    }
+    
+    if (!merger) {
+        alert('Audio output not initialized. Please reload the page.');
+        return;
+    }
+    
+    // Get audio source
+    const sourceType = autotuneSource.value;
+    let audioSource = null;
+    
+    if (sourceType === 'mic') {
+        if (!micEnabled || !micState || !micState.micGain) {
+            alert('Please enable microphone first to use it with auto-tune!');
+            return;
+        }
+        audioSource = micState.micGain;
+    } else if (sourceType === 'track1') {
+        if (!gain1) {
+            alert('Please load Track 1 first to use it with auto-tune!');
+            return;
+        }
+        audioSource = gain1;
+    } else if (sourceType === 'track2') {
+        if (!gain2) {
+            alert('Please load Track 2 first to use it with auto-tune!');
+            return;
+        }
+        audioSource = gain2;
+    }
+    
+    if (!audioSource) {
+        alert('Please select a valid audio source!');
         return;
     }
     
@@ -868,19 +1275,26 @@ function enableAutotune() {
         // Get strength value
         const strength = parseInt(autotuneStrengthSlider.value);
         
-        // Use module to enable autotune
-        autotuneState = enableAutotuneModule(audioContext, micState.micGain, merger, strength);
+        console.log(`Enabling auto-tune with source: ${sourceType}, strength: ${strength}%`);
         
-        // Disconnect mic from direct path
+        // Use module to enable autotune
+        autotuneState = enableAutotuneModule(audioContext, audioSource, merger, strength);
+        
+        // Disconnect source from direct path
         try {
-            if (!vocoderEnabled) {
-                micState.micGain.disconnect(merger);
+            if (!vocoderEnabled || sourceType !== 'mic') {
+                audioSource.disconnect(merger);
             }
         } catch (e) {
             // Already disconnected
         }
         
         autotuneEnabled = true;
+        
+        // Resume audio context if suspended
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
         
         // Start pitch correction loop
         correctPitch();
@@ -891,7 +1305,7 @@ function enableAutotune() {
         disableAutotuneBtn.style.display = 'inline-block';
         autotuneSettings.style.display = 'flex';
         
-        console.log('Auto-tune enabled');
+        console.log(`Auto-tune enabled on ${sourceType}`);
     } catch (error) {
         console.error('Error enabling auto-tune:', error);
         alert(error.message || 'Error enabling auto-tune. Please try again.');
@@ -905,13 +1319,18 @@ function disableAutotune() {
     try {
         // Use module to disable autotune
         disableAutotuneModule(autotuneState);
-        autotuneState = null;
         
-        // Reconnect mic directly
-        if (micState && micState.micGain && merger && !vocoderEnabled) {
+        // Reconnect source directly based on source type
+        const sourceType = autotuneSource.value;
+        if (sourceType === 'mic' && micState && micState.micGain && merger && !vocoderEnabled) {
             micState.micGain.connect(merger);
+        } else if (sourceType === 'track1' && gain1 && merger) {
+            gain1.connect(merger);
+        } else if (sourceType === 'track2' && gain2 && merger) {
+            gain2.connect(merger);
         }
         
+        autotuneState = null;
         autotuneEnabled = false;
         
         // Update UI
@@ -927,11 +1346,11 @@ function disableAutotune() {
 
 // Pitch correction loop
 function correctPitch() {
-    if (!autotuneEnabled || !autotuneAnalyser) return;
+    if (!autotuneEnabled || !autotuneState || !autotuneState.autotuneAnalyser) return;
     
-    const bufferLength = autotuneAnalyser.frequencyBinCount;
+    const bufferLength = autotuneState.autotuneAnalyser.frequencyBinCount;
     const dataArray = new Float32Array(bufferLength);
-    autotuneAnalyser.getFloatTimeDomainData(dataArray);
+    autotuneState.autotuneAnalyser.getFloatTimeDomainData(dataArray);
     
     // Detect pitch using autocorrelation
     const detectedFreq = autoCorrelate(dataArray, audioContext.sampleRate);
@@ -1053,6 +1472,76 @@ function updateAutotuneStrengthWrapper(value) {
     
     if (autotuneState && autotuneState.dryGain && autotuneState.wetGain) {
         updateAutotuneStrength(autotuneState.dryGain, autotuneState.wetGain, value);
+    }
+}
+
+// Update auto-tune source
+function updateAutotuneSource() {
+    if (!autotuneEnabled) return;
+    
+    // Disable and re-enable to rebuild with new source
+    disableAutotune();
+    setTimeout(() => enableAutotune(), 100);
+}
+
+// Master Routing Functions
+function toggleTrackRouting(trackNumber, enabled) {
+    const gain = trackNumber === 1 ? gain1 : gain2;
+    
+    if (!gain || !merger) {
+        console.warn(`Track ${trackNumber} or merger not initialized`);
+        return;
+    }
+    
+    try {
+        if (enabled) {
+            // Connect track to merger
+            gain.connect(merger);
+            console.log(`Track ${trackNumber} routed to master`);
+        } else {
+            // Disconnect track from merger
+            gain.disconnect(merger);
+            console.log(`Track ${trackNumber} disconnected from master`);
+        }
+    } catch (error) {
+        console.error(`Error toggling Track ${trackNumber} routing:`, error);
+        // Reconnect on error
+        if (enabled) {
+            try {
+                gain.connect(merger);
+            } catch (e) {
+                // Already connected or other error
+            }
+        }
+    }
+}
+
+function toggleSamplerRouting(enabled) {
+    if (!samplerGain || !merger) {
+        console.warn('Sampler or merger not initialized');
+        return;
+    }
+    
+    try {
+        if (enabled) {
+            // Connect sampler to merger
+            samplerGain.connect(merger);
+            console.log('Sampler routed to master');
+        } else {
+            // Disconnect sampler from merger
+            samplerGain.disconnect(merger);
+            console.log('Sampler disconnected from master');
+        }
+    } catch (error) {
+        console.error('Error toggling sampler routing:', error);
+        // Reconnect on error
+        if (enabled) {
+            try {
+                samplerGain.connect(merger);
+            } catch (e) {
+                // Already connected or other error
+            }
+        }
     }
 }
 
@@ -1902,6 +2391,9 @@ audioFile1.addEventListener('change', async (e) => {
         
         // Check if both tracks are loaded to enable dual buttons
         checkDualTrackButtonsState();
+        
+        // Update vocoder/autotune visibility now that track is available
+        updateVocoderAutotuneVisibility();
     }
 });
 
@@ -2036,6 +2528,9 @@ audioFile2.addEventListener('change', async (e) => {
         
         // Check if both tracks are loaded to enable dual buttons
         checkDualTrackButtonsState();
+        
+        // Update vocoder/autotune visibility now that track is available
+        updateVocoderAutotuneVisibility();
     }
 });
 
@@ -2817,10 +3312,19 @@ micMonitorCheckbox.addEventListener('change', (e) => {
     toggleMicMonitoring(e.target.checked);
 });
 
+// Microphone Recording button handlers
+micRecordBtn.addEventListener('click', startMicRecordingHandler);
+micStopBtn.addEventListener('click', stopMicRecordingHandler);
+micExportWavBtn.addEventListener('click', () => exportMicRecording('wav'));
+micExportMp3Btn.addEventListener('click', () => exportMicRecording('mp3'));
+micLoadToTrack1Btn.addEventListener('click', () => loadMicRecordingToTrack(1));
+micLoadToTrack2Btn.addEventListener('click', () => loadMicRecordingToTrack(2));
+
 // Vocoder button handlers
 enableVocoderBtn.addEventListener('click', enableVocoder);
 disableVocoderBtn.addEventListener('click', disableVocoder);
 
+vocoderModulator.addEventListener('change', updateVocoderModulator);
 vocoderCarrier.addEventListener('change', updateVocoderCarrier);
 
 vocoderMixSlider.addEventListener('input', (e) => {
@@ -2834,6 +3338,8 @@ vocoderBandsSlider.addEventListener('input', (e) => {
 // Auto-Tune button handlers
 enableAutotuneBtn.addEventListener('click', enableAutotune);
 disableAutotuneBtn.addEventListener('click', disableAutotune);
+
+autotuneSource.addEventListener('change', updateAutotuneSource);
 
 autotuneKey.addEventListener('change', () => {
     // Key or scale change doesn't require restart, just affects pitch correction
@@ -3079,6 +3585,19 @@ delayTimeSliderMaster.addEventListener('input', (e) => {
         delayMaster.node.delayTime.value = delayTime;
     }
     delayTimeValueMaster.textContent = e.target.value + 'ms';
+});
+
+// Master routing handlers
+routeTrack1.addEventListener('change', (e) => {
+    toggleTrackRouting(1, e.target.checked);
+});
+
+routeTrack2.addEventListener('change', (e) => {
+    toggleTrackRouting(2, e.target.checked);
+});
+
+routeSampler.addEventListener('change', (e) => {
+    toggleSamplerRouting(e.target.checked);
 });
 
 masterVolumeSlider.addEventListener('input', (e) => {

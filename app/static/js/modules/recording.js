@@ -250,7 +250,7 @@ export function audioBufferToWav(audioBuffer) {
 }
 
 // Convert AudioBuffer to MP3 using lamejs
-function audioBufferToMp3(audioBuffer) {
+export function audioBufferToMp3(audioBuffer) {
     const mp3encoder = new lamejs.Mp3Encoder(audioBuffer.numberOfChannels, audioBuffer.sampleRate, 128);
     const samples = [];
     

@@ -12,9 +12,11 @@
   - Master pan for global stereo positioning
   - Real-time visual feedback (L/R percentage display)
 - 🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneouslyockey.onrender.com/)
-A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, and professional DJ controls.
+A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, and professional DJ controls.
 
-**Latest Update (v3.8.0)**: Complete professional DJ mixer redesign! Features authentic DJ layout with dual decks, vertical faders, and stereo panning controls. Interface now mirrors real DJ equipment with side-by-side decks (cyan/magenta), center mixer section, vertical volume/tempo sliders, and horizontal pan controls for precise stereo positioning. Recording integrated into master output section for streamlined workflow.
+**Latest Update (v3.9.0)**: Major microphone and effects routing enhancements! Added standalone microphone recording (record directly from mic without tracks), flexible vocoder/auto-tune routing (use mic OR tracks as sources), load microphone recordings to tracks, side-by-side tempo/volume controls for compact layout, and master output routing toggles for precise mixing control. Includes comprehensive bug fixes for audio node routing and AudioContext initialization.
+
+**v3.8.0**: Complete professional DJ mixer redesign! Features authentic DJ layout with dual decks, vertical faders, and stereo panning controls. Interface now mirrors real DJ equipment with side-by-side decks (cyan/magenta), center mixer section, vertical volume/tempo sliders, and horizontal pan controls for precise stereo positioning. Recording integrated into master output section for streamlined workflow.
 
 **v3.7.0**: Added drag-and-drop effect chains for Track 1, Track 2, and Master output! Reorder effects visually, toggle them on/off with dynamic slider visibility, and apply professional mastering effects to the final mix. Master channel features a distinctive golden theme. See [EFFECT_CHAIN_FEATURE.md](EFFECT_CHAIN_FEATURE.md), [EFFECT_CHAIN_ENHANCEMENT.md](EFFECT_CHAIN_ENHANCEMENT.md), and [MASTER_EFFECT_CHAIN.md](MASTER_EFFECT_CHAIN.md) for details.
 
@@ -41,12 +43,32 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 
 ## Features
 
-- � **Professional DJ Layout** - Classic DJ setup with dual decks, center mixer, and master output
+- 🎧 **Professional DJ Layout** - Classic DJ setup with dual decks, center mixer, and master output
   - 🎛️ Dual decks side-by-side (cyan/magenta color coding)
+  - 🎚️ Vertical faders for volume and tempo (like real DJ mixers)
+  - 🔄 Horizontal pan controls for stereo positioning
   - 🎚️ Center mixer section with dual track controls
   - 🏆 Master output with integrated recording
-- �🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneously
+  - ✨ Glowing effects and neon accents matching DJ equipment
+- 🎚️ **Stereo Panning** - Full L/R stereo control for each track and master output
+- 🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneously
 - ▶️▶️ **Dual Track Controls** - Play both tracks at once, or play both and record simultaneously
+- 🎤 **Advanced Microphone System** - Professional microphone input with extensive features
+  - 🎙️ Live mic input with volume control and real-time waveform monitoring
+  - ⏺️ **Standalone Recording** - Record directly from microphone without any tracks loaded
+  - 💾 Export mic recordings as WAV or MP3
+  - 📥 **Load to Tracks** - Load mic recordings directly to Track 1 or Track 2
+  - 🔀 **Flexible Routing** - Use microphone OR tracks as sources for effects
+  - �️ **Master Routing Control** - Toggle Track 1, Track 2, or Keyboard Sampler to master output
+- 🤖 **Vocoder Effect** - Robot voice effect with advanced routing
+  - 8-32 frequency bands with adjustable mix
+  - Select modulator source: Microphone, Track 1, or Track 2
+  - Select carrier source: Microphone (Feedback), Track 1, Track 2, or Both Tracks (Mix)
+  - Mic-to-mic feedback for creative robotic effects
+- �🎵 **Auto-Tune Effect** - Real-time pitch correction with flexible sources
+  - Select audio source: Microphone, Track 1, or Track 2
+  - Key/scale selection with adjustable correction speed and strength
+  - Works standalone or with tracks
 - 🎵 **BPM Detection** - Automatic tempo detection for each track
 - 🎹 **Key Detection** - Per-track musical key analysis
 - 🔁 **A-B Loop Markers** - Create precise loops with draggable markers
@@ -66,13 +88,10 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
   - 📥 Load recordings back to tracks for layering
 - 💾 **Export** - Export full stems or loop regions as WAV or MP3 files
 - 🎵 **Format Options** - Choose between WAV (lossless) or MP3 (compressed 128kbps) export
-- 🎤 **Microphone Input** - Live mic input with volume control and monitoring
-- 🤖 **Vocoder Effect** - Robot voice effect with 8-32 frequency bands, carrier source selection
-- 🎵 **Auto-Tune Effect** - Real-time pitch correction with key/scale selection, adjustable correction speed
-- 🎨 **3D Visualization** - Real-time WebGL visualization with Three.js (Circle/Bars/Sphere modes)
+-  **3D Visualization** - Real-time WebGL visualization with Three.js (Circle/Bars/Sphere modes)
 - 🌈 **Dynamic Heat Map Colors** - Circle mode bars change color based on energy (blue→cyan→green→yellow→red)
 - 🎨 **Musical Key Colors** - Visualization colors based on detected key
--  **Keyboard Sampler** - Play tracks/loops/recordings on pentatonic scales using keyboard (Q-I, A-K keys)
+- 🎹 **Keyboard Sampler** - Play tracks/loops/recordings on pentatonic scales using keyboard (Q-I, A-K keys)
   - 🎼 Multiple scales: Pentatonic Major/Minor, Chromatic
   - 🎵 Transposable to any root note (C through B)
   - 🎚️ Independent volume control for mixing with tracks
