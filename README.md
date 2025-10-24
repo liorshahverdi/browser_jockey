@@ -1,6 +1,6 @@
 # Browser Jockey
 
-[![Live Demo](https://img.shields.io/b- 🎤 **Advanced Microphone System** - Profession- 💾 **Export** - Export full stems or loop regions as WAV or MP3 files
+- 🎤 **Advanced Microphone System** - Professional microphone input with extensive features
 - 🎵 **Format Options** - Choose between WAV (lossless) or MP3 (compressed 128kbps) export
 - 📊 **3D Visualization** - Real-time WebGL visualization with Three.js (Circle/Bars/Sphere modes)
 - 〰️ **XY Oscilloscope** - Lissajous mode visualization with Cartesian coordinates
@@ -47,19 +47,17 @@ A dual-track DJ mixing web application with 3D audio visualization, XY oscillosc
 **v3.6.0**: Added Dual Track Controls - new buttons to play both tracks simultaneously and to play both tracks while recording. Perfect for live mixing and creating layered recordings! See [DUAL_TRACK_CONTROLS_FEATURE.md](DUAL_TRACK_CONTROLS_FEATURE.md) for details.
 
 ## Screenshots
+![Browser Jockey - Dual Track Interface](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
 
-![Browser Jockey Screenshot 1](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
+*Professional dual-track DJ interface with 3D visualization and XY oscilloscope*
 
-![Browser Jockey Screenshot 2](app/screenshots/app_screenshot_2025_10_23_at_02_04_14.png)
+![Browser Jockey - Circle Visualization Mode](app/screenshots/app_screenshot_2025_10_22_at_23_02_10.png)
 
-![Browser Jockey Screenshot 3](app/screenshots/app_screenshot_2025_10_23_at_02_04_34.png)
+*Circle mode with dynamic heat map colors responding to audio energy*
 
-![Browser Jockey Screenshot 4](app/screenshots/app_screenshot_2025_10_23_at_02_04_51.png)
+![Browser Jockey - Sphere Visualization Mode](app/screenshots/app_screenshot_2025_10_22_at_23_02_25.png)
 
-![Browser Jockey Screenshot 5](app/screenshots/app_screenshot_2025_10_23_at_02_09_07.png)
-
-![Browser Jockey Screenshot 6 - Keyboard Sampler (v3.0)](app/screenshots/app_screenshot_2025_10_23_at_10_15_40.png)
-*v3.0 Keyboard Sampler Feature - Play tracks/loops on pentatonic scales using keyboard*
+*Sphere mode with immersive 3D audio-reactive geometry*
 
 
 
