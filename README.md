@@ -1,4 +1,5 @@
 # Browser Jockey
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browser-jockey.onrender.com/) (disclaimer - running on a free render instance so might not always be up. But feel free to clone this repo and run locally by following the guidelines below!)
 
 - 🎤 **Advanced Microphone System** - Professional microphone input with extensive features
 - 🎵 **Format Options** - Choose between WAV (lossless) or MP3 (compressed 128kbps) export
