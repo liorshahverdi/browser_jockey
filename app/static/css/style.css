@@ -225,6 +225,177 @@ h1 {
     text-shadow: 0 0 15px rgba(255, 0, 255, 0.8);
 }
 
+/* Vinyl Animation Styles */
+.vinyl-animation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px 0;
+    margin: 10px 0;
+}
+
+.vinyl-record {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle at center,
+        #1a1a1a 0%,
+        #1a1a1a 20%,
+        #2d2d2d 20%,
+        #2d2d2d 22%,
+        #1a1a1a 22%,
+        #1a1a1a 24%,
+        #2d2d2d 24%,
+        #2d2d2d 26%,
+        #1a1a1a 26%,
+        #1a1a1a 100%
+    );
+    position: relative;
+    box-shadow: 
+        0 0 20px rgba(0, 0, 0, 0.5),
+        inset 0 0 10px rgba(0, 0, 0, 0.8);
+    animation: spin 2s linear infinite;
+}
+
+/* Add a bright line indicator to make spinning obvious */
+.vinyl-record::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 35%;
+    background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.9) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: translate(-50%, -100%);
+    transform-origin: bottom center;
+    filter: blur(0.5px);
+}
+
+/* Add a second indicator line for even more visibility */
+.vinyl-record::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 3px;
+    height: 20%;
+    background: linear-gradient(
+        to bottom,
+        rgba(255, 215, 0, 0) 0%,
+        rgba(255, 215, 0, 1) 50%,
+        rgba(255, 215, 0, 0) 100%
+    );
+    transform: translate(-50%, -100%) rotate(90deg);
+    transform-origin: bottom center;
+}
+
+.vinyl-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #d4af37 0%, #aa8a3c 50%, #8b7333 100%);
+    box-shadow: 
+        0 0 5px rgba(212, 175, 55, 0.8),
+        inset 0 0 3px rgba(0, 0, 0, 0.5);
+    z-index: 2;
+}
+
+/* Add a small offset mark on the center to show rotation */
+.vinyl-center::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: #000;
+    border-radius: 50%;
+}
+
+.vinyl-groove {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(100, 100, 100, 0.3);
+}
+
+.vinyl-groove:nth-child(2) {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 55%;
+    height: 55%;
+}
+
+.vinyl-groove:nth-child(3) {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70%;
+    height: 70%;
+}
+
+.vinyl-groove:nth-child(4) {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 85%;
+    height: 85%;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Track 1 vinyl glow effect */
+.track-upload:first-child .vinyl-record {
+    box-shadow: 
+        0 0 20px rgba(0, 255, 255, 0.3),
+        0 0 30px rgba(0, 255, 255, 0.2),
+        inset 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.track-upload:first-child .vinyl-record::before {
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 255, 255, 0) 0%,
+        rgba(0, 255, 255, 0.9) 50%,
+        rgba(0, 255, 255, 0) 100%
+    );
+}
+
+/* Track 2 vinyl glow effect */
+.track-upload:last-child .vinyl-record {
+    box-shadow: 
+        0 0 20px rgba(255, 0, 255, 0.3),
+        0 0 30px rgba(255, 0, 255, 0.2),
+        inset 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.track-upload:last-child .vinyl-record::before {
+    background: linear-gradient(
+        to bottom,
+        rgba(255, 0, 255, 0) 0%,
+        rgba(255, 0, 255, 0.9) 50%,
+        rgba(255, 0, 255, 0) 100%
+    );
+}
+
 .track-main-content {
     display: flex;
     flex-direction: column;

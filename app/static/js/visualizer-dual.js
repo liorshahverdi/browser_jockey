@@ -179,6 +179,10 @@ const recordedAudio = document.getElementById('recordedAudio');
 const playBothBtn = document.getElementById('playBothBtn');
 const playBothRecordBtn = document.getElementById('playBothRecordBtn');
 
+// Vinyl animation elements
+const vinylAnimation1 = document.getElementById('vinylAnimation1');
+const vinylAnimation2 = document.getElementById('vinylAnimation2');
+
 // Crossfader elements
 const crossfader = document.getElementById('crossfader');
 const crossfaderValue = document.getElementById('crossfaderValue');
@@ -627,6 +631,10 @@ function playBothTracks() {
         audioElement1.play();
         audioElement2.play();
         
+        // Show both vinyl animations
+        vinylAnimation1.style.display = 'flex';
+        vinylAnimation2.style.display = 'flex';
+        
         if (!animationId) draw();
         
         // Handle reverse animations if needed
@@ -660,6 +668,10 @@ function playBothAndRecord() {
         // Then start both tracks
         audioElement1.play();
         audioElement2.play();
+        
+        // Show both vinyl animations
+        vinylAnimation1.style.display = 'flex';
+        vinylAnimation2.style.display = 'flex';
         
         if (!animationId) draw();
         
@@ -3070,6 +3082,7 @@ playBtn1.addEventListener('click', () => {
     initAudioContext();
     audioContext.resume().then(() => {
         audioElement1.play();
+        vinylAnimation1.style.display = 'flex'; // Show vinyl animation
         if (!animationId) draw();
         // Start reverse animation if in reverse mode
         if (loopState1.reverse && loopState1.enabled) {
@@ -3085,6 +3098,7 @@ playBtn2.addEventListener('click', () => {
     initAudioContext();
     audioContext.resume().then(() => {
         audioElement2.play();
+        vinylAnimation2.style.display = 'flex'; // Show vinyl animation
         if (!animationId) draw();
         // Start reverse animation if in reverse mode
         if (loopState2.reverse && loopState2.enabled) {
@@ -3099,12 +3113,14 @@ playBtn2.addEventListener('click', () => {
 // Pause button handlers
 pauseBtn1.addEventListener('click', () => {
     audioElement1.pause();
+    vinylAnimation1.style.display = 'none'; // Hide vinyl animation
     // Stop reverse animation when pausing
     stopReversePlayback(loopState1);
 });
 
 pauseBtn2.addEventListener('click', () => {
     audioElement2.pause();
+    vinylAnimation2.style.display = 'none'; // Hide vinyl animation
     // Stop reverse animation when pausing
     stopReversePlayback(loopState2);
 });
@@ -3113,6 +3129,7 @@ pauseBtn2.addEventListener('click', () => {
 stopBtn1.addEventListener('click', () => {
     audioElement1.pause();
     audioElement1.currentTime = 0;
+    vinylAnimation1.style.display = 'none'; // Hide vinyl animation
     // Stop reverse animation
     stopReversePlayback(loopState1);
 });
@@ -3120,6 +3137,7 @@ stopBtn1.addEventListener('click', () => {
 stopBtn2.addEventListener('click', () => {
     audioElement2.pause();
     audioElement2.currentTime = 0;
+    vinylAnimation2.style.display = 'none'; // Hide vinyl animation
     // Stop reverse animation
     stopReversePlayback(loopState2);
 });
