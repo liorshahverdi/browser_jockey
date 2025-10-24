@@ -2260,6 +2260,14 @@ h1 {
     transform: scale(0.95);
 }
 
+/* Visualization wrapper for side-by-side layout */
+.visualization-wrapper {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    width: 100%;
+}
+
 .visualizer-container,
 #visualizer-container {
     position: relative;
@@ -2287,6 +2295,46 @@ h1 {
     height: 100% !important;
     display: block;
     border-radius: 15px;
+}
+
+/* Oscilloscope styles */
+.oscilloscope-container {
+    position: relative;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    min-height: 500px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+}
+
+.oscilloscope-container:hover {
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+}
+
+.oscilloscope-header {
+    padding: 15px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+}
+
+.oscilloscope-header label {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: rgba(0, 255, 255, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.oscilloscope-canvas {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
 }
 
 .placeholder,
@@ -2971,4 +3019,17 @@ h1 {
     letter-spacing: 0.05em;
     pointer-events: none;
     z-index: 1;
+}
+
+/* Responsive layout for smaller screens */
+@media (max-width: 1200px) {
+    .visualization-wrapper {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .oscilloscope-container {
+        min-height: 300px;
+        height: 300px;
+    }
 }

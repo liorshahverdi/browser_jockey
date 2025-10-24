@@ -1,15 +1,152 @@
 # Browser Jockey - Development Chat History
 
 ## Project Overview
-A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, professional crossfader with multiple modes, comprehensive audio routing management, enhanced UI with premium controls, and WebM loop marker support.
+A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, XY oscilloscope (Lissajous mode), BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, professional crossfader with multiple modes, comprehensive audio routing management, enhanced UI with premium controls, WebM loop marker support, and real-time stereo phase visualization.
 
-**Latest Version: v3.10.5** - WebM Loop Marker Fix
+**Latest Version: v3.11.0** - XY Oscilloscope Visualization
 
 ---
 
 ## Session Timeline
 
-### Latest Session: WebM Loop Marker Fix (v3.10.5)
+### Latest Session: XY Oscilloscope Visualization (v3.11.0)
+**Date**: October 24, 2025
+
+**User Requests**:
+1. "to the right of the 3d visualization i want to add an oscilloscope"
+2. "i want the oscilloscope to animate along the cartesian plane with x,y being 0,0 at the center"
+3. "if im listening to the output audio i just recorded i want it plugged into the oscilloscope"
+
+**Feature Implemented**:
+Added a professional XY oscilloscope visualization positioned to the right of the 3D visualization, displaying audio in Lissajous mode with Cartesian coordinates centered at (0,0).
+
+**Implementation Details**:
+
+**1. HTML Structure** (`app/templates/index.html`)
+- Created `visualization-wrapper` container with grid layout
+- Added `oscilloscope-container` with header and canvas element
+- Side-by-side layout: 3D visualization (2fr) | Oscilloscope (1fr)
+
+**2. CSS Styling** (`app/static/css/style.css`)
+- Grid layout: `grid-template-columns: 2fr 1fr`
+- Glass-morphism design matching app aesthetic
+- Cyan-themed header with "OSCILLOSCOPE" label
+- Responsive layout (stacks vertically on screens < 1200px)
+- Hover effects and smooth transitions
+
+**3. JavaScript Implementation** (`app/static/js/visualizer-dual.js`)
+
+**New Variables**:
+```javascript
+let oscilloscopeCanvas, oscilloscopeCtx;
+let oscilloscopeAnalyser;
+let oscilloscopeAnimationId;
+let recordedAudioSource = null;
+```
+
+**Key Functions**:
+
+**`initOscilloscope()`**:
+- Sets up canvas with proper dimensions
+- Creates separate AnalyserNode (FFT 2048, smoothing 0.3)
+- Handles window resize events
+- Starts drawing loop immediately
+
+**`drawOscilloscope()`**:
+- Implements XY plotting (Lissajous mode)
+- Cartesian coordinate system with (0,0) at center
+- Draws 8x8 grid overlay
+- Bright X/Y axes through center
+- Origin marker at (0,0)
+- Phase-offset plotting for complex patterns
+- Radial gradient (magenta→cyan)
+- Motion blur trails (alpha 0.1)
+- Glow points for enhanced visualization
+- Graceful degradation when no audio (shows grid + center dot)
+
+**`connectOscilloscopeToMerger()`**:
+- Creates analyser if needed
+- Connects merger output to oscilloscope
+- Called when audio context initializes
+
+**`setupRecordedAudioConnection()`**:
+- Monitors recorded audio playback
+- Creates MediaElementSource on play
+- Routes to oscilloscope analyser + destination
+- Reconnects to merger when stopped/paused
+- Handles InvalidStateError gracefully
+
+**4. Audio Routing**
+```
+Track 1 & Track 2 → Merger (stereo)
+                      ↓
+                      ├→ Main Analyser (3D viz)
+                      ├→ Oscilloscope Analyser (XY plot)
+                      └→ Master Effects → Output
+
+Recorded Audio → MediaElementSource
+                  ↓
+                  ├→ Oscilloscope Analyser (when playing)
+                  └→ Audio Destination
+```
+
+**5. Pattern Interpretation**
+The oscilloscope reveals stereo relationships:
+- **Circular/elliptical**: Tracks in phase, similar content
+- **Diagonal lines**: One track dominates
+- **Horizontal line**: Mono or centered audio
+- **Complex Lissajous**: Harmonic relationships, stereo separation
+- **Vertical line**: 90° phase difference
+- **Figure-8**: 180° phase difference
+
+**Visual Features**:
+- Motion blur trails for smooth animation
+- Phase offset (bufferLength/8) for interesting patterns
+- Radial gradient coloring (magenta at center → cyan at edges)
+- Glow effects on sample points (every 32nd sample)
+- Dynamic color based on position (HSL hue 180-300°)
+- Grid overlay for precise visual reference
+- Center axes highlighted in brighter cyan
+
+**Benefits**:
+- **Stereo Analysis**: Visualize phase correlation between tracks
+- **Mix Monitoring**: See mono compatibility and stereo width
+- **Recording Playback**: Analyze what you just recorded
+- **Professional Tool**: Classic oscilloscope for audio engineers
+- **Educational**: Learn about stereo imaging and phase
+- **Creative**: Beautiful Lissajous patterns as art
+
+**Performance**:
+- Separate AnalyserNode (no interference with 3D viz)
+- 60fps animation via requestAnimationFrame
+- Efficient canvas rendering
+- Low CPU overhead
+
+**Use Cases**:
+- Monitor stereo phase relationships while DJing
+- Check mono compatibility of your mix
+- Analyze harmonic content of recordings
+- Visualize crossfader transitions
+- Educational tool for understanding stereo audio
+- Live performance visual element
+
+**Files Modified**:
+- `app/templates/index.html` (added oscilloscope container)
+- `app/static/css/style.css` (grid layout + oscilloscope styling)
+- `app/static/js/visualizer-dual.js` (oscilloscope implementation)
+
+**Testing Completed**:
+✅ Oscilloscope displays on page load with grid
+✅ Animates when tracks play
+✅ Shows combined stereo from both tracks
+✅ Displays recorded audio playback
+✅ Reconnects to tracks when recording stops
+✅ Responsive layout works on different screen sizes
+✅ No audio glitches or routing conflicts
+
+---
+
+### Previous Session: WebM Loop Marker Fix (v3.10.5)
 **Date**: October 24, 2025
 
 **User Request**:

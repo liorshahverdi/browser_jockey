@@ -666,23 +666,32 @@
             </div>
         </div>
         
-        <div id="visualizer-container" class="visualizer-container">
-            <div class="visualization-mode">
-                <label>Mode:</label>
-                <button id="modeCircle" class="mode-btn active">🔵 Circle</button>
-                <button id="modeBars" class="mode-btn">📊 Bars</button>
-                <button id="modeSphere" class="mode-btn">🌐 Sphere</button>
+        <div class="visualization-wrapper">
+            <div id="visualizer-container" class="visualizer-container">
+                <div class="visualization-mode">
+                    <label>Mode:</label>
+                    <button id="modeCircle" class="mode-btn active">🔵 Circle</button>
+                    <button id="modeBars" class="mode-btn">📊 Bars</button>
+                    <button id="modeSphere" class="mode-btn">🌐 Sphere</button>
+                </div>
+                
+                <div id="placeholder" class="placeholder">
+                    <p>Upload audio files to get started</p>
+                    <p style="font-size: 0.9rem; margin-top: 10px;">Upload two tracks to mix them together!</p>
+                    <p style="font-size: 0.8rem; margin-top: 15px; color: rgba(255, 255, 255, 0.5);">
+                        Supported formats: MP3, WAV, OGG, M4A, AAC, FLAC*, AIFF*, OPUS, WEBM
+                    </p>
+                    <p style="font-size: 0.7rem; margin-top: 5px; color: rgba(255, 255, 255, 0.4);">
+                        *FLAC/AIFF may not play in Safari. Use Chrome/Firefox for best compatibility.
+                    </p>
+                </div>
             </div>
             
-            <div id="placeholder" class="placeholder">
-                <p>Upload audio files to get started</p>
-                <p style="font-size: 0.9rem; margin-top: 10px;">Upload two tracks to mix them together!</p>
-                <p style="font-size: 0.8rem; margin-top: 15px; color: rgba(255, 255, 255, 0.5);">
-                    Supported formats: MP3, WAV, OGG, M4A, AAC, FLAC*, AIFF*, OPUS, WEBM
-                </p>
-                <p style="font-size: 0.7rem; margin-top: 5px; color: rgba(255, 255, 255, 0.4);">
-                    *FLAC/AIFF may not play in Safari. Use Chrome/Firefox for best compatibility.
-                </p>
+            <div id="oscilloscope-container" class="oscilloscope-container">
+                <div class="oscilloscope-header">
+                    <label>Oscilloscope</label>
+                </div>
+                <canvas id="oscilloscope" class="oscilloscope-canvas"></canvas>
             </div>
         </div>
         

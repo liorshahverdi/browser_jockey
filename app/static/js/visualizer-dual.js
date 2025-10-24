@@ -319,6 +319,12 @@ let cameraRotation = { x: 0, y: 0 };
 let bassLevel = 0;
 let trebleLevel = 0;
 
+// Oscilloscope variables
+let oscilloscopeCanvas, oscilloscopeCtx;
+let oscilloscopeAnalyser;
+let oscilloscopeAnimationId;
+let recordedAudioSource = null; // MediaElementSource for recorded audio playback
+
 // Loop state for both tracks
 let loopState1 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0, reverse: false, reverseAnimationId: null, lastReverseTime: 0 };
 let loopState2 = { enabled: false, start: null, end: null, settingPoint: 'start', lastSeekTime: 0, reverse: false, reverseAnimationId: null, lastReverseTime: 0 };
@@ -479,6 +485,7 @@ async function loadRecordingToTrack1() {
         if (!scene) {
             console.log('Initializing 3D visualization');
             initThreeJS();
+            initOscilloscope();
             createCircleVisualization();
         }
         
@@ -2034,6 +2041,9 @@ function initAudioContext() {
         gainMaster.connect(recordingAnalyser);
         analyser.connect(audioContext.destination);
         
+        // Connect oscilloscope to merger if it exists
+        connectOscilloscopeToMerger();
+        
         // Initialize effects for both tracks using module
         const effects1 = initAudioEffects(audioContext, 1);
         gain1 = effects1.gain;
@@ -2180,6 +2190,203 @@ function initThreeJS() {
     });
     
     container.addEventListener('click', onVisualizerClick);
+}
+
+// Initialize Oscilloscope
+function initOscilloscope() {
+    oscilloscopeCanvas = document.getElementById('oscilloscope');
+    if (!oscilloscopeCanvas) {
+        console.error('Oscilloscope canvas not found');
+        return;
+    }
+    
+    oscilloscopeCtx = oscilloscopeCanvas.getContext('2d');
+    
+    // Set canvas size to match container
+    const container = document.getElementById('oscilloscope-container');
+    if (container) {
+        oscilloscopeCanvas.width = container.offsetWidth;
+        oscilloscopeCanvas.height = container.offsetHeight - 50; // Account for header
+    }
+    
+    // Create analyser for oscilloscope only if audioContext exists
+    if (audioContext && !oscilloscopeAnalyser) {
+        oscilloscopeAnalyser = audioContext.createAnalyser();
+        oscilloscopeAnalyser.fftSize = 2048;
+        oscilloscopeAnalyser.smoothingTimeConstant = 0.3;
+        
+        // Connect to merger if available
+        connectOscilloscopeToMerger();
+    }
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        const container = document.getElementById('oscilloscope-container');
+        if (container && oscilloscopeCanvas) {
+            oscilloscopeCanvas.width = container.offsetWidth;
+            oscilloscopeCanvas.height = container.offsetHeight - 50;
+        }
+    });
+    
+    // Start drawing if not already started
+    if (!oscilloscopeAnimationId) {
+        drawOscilloscope();
+    }
+}
+
+// Connect oscilloscope to the audio merger
+function connectOscilloscopeToMerger() {
+    if (audioContext && !oscilloscopeAnalyser) {
+        oscilloscopeAnalyser = audioContext.createAnalyser();
+        oscilloscopeAnalyser.fftSize = 2048;
+        oscilloscopeAnalyser.smoothingTimeConstant = 0.3;
+    }
+    
+    if (oscilloscopeAnalyser && merger) {
+        try {
+            merger.connect(oscilloscopeAnalyser);
+            console.log('Oscilloscope connected to audio merger');
+        } catch (e) {
+            console.error('Error connecting oscilloscope to merger:', e);
+        }
+    }
+}
+
+// Draw oscilloscope waveform
+function drawOscilloscope() {
+    oscilloscopeAnimationId = requestAnimationFrame(drawOscilloscope);
+    
+    if (!oscilloscopeCtx || !oscilloscopeCanvas) {
+        return;
+    }
+    
+    const width = oscilloscopeCanvas.width;
+    const height = oscilloscopeCanvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    // Clear canvas with slight trail effect for motion blur
+    oscilloscopeCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    oscilloscopeCtx.fillRect(0, 0, width, height);
+    
+    // Draw grid centered at (0,0)
+    oscilloscopeCtx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+    oscilloscopeCtx.lineWidth = 1;
+    
+    // Horizontal grid lines
+    const gridLines = 8;
+    for (let i = 0; i <= gridLines; i++) {
+        oscilloscopeCtx.beginPath();
+        const y = (height / gridLines) * i;
+        oscilloscopeCtx.moveTo(0, y);
+        oscilloscopeCtx.lineTo(width, y);
+        oscilloscopeCtx.stroke();
+    }
+    
+    // Vertical grid lines
+    for (let i = 0; i <= gridLines; i++) {
+        oscilloscopeCtx.beginPath();
+        const x = (width / gridLines) * i;
+        oscilloscopeCtx.moveTo(x, 0);
+        oscilloscopeCtx.lineTo(x, height);
+        oscilloscopeCtx.stroke();
+    }
+    
+    // Draw center axes (0,0) with brighter lines
+    oscilloscopeCtx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
+    oscilloscopeCtx.lineWidth = 2;
+    
+    // Y-axis (vertical center line)
+    oscilloscopeCtx.beginPath();
+    oscilloscopeCtx.moveTo(centerX, 0);
+    oscilloscopeCtx.lineTo(centerX, height);
+    oscilloscopeCtx.stroke();
+    
+    // X-axis (horizontal center line)
+    oscilloscopeCtx.beginPath();
+    oscilloscopeCtx.moveTo(0, centerY);
+    oscilloscopeCtx.lineTo(width, centerY);
+    oscilloscopeCtx.stroke();
+    
+    // Draw origin marker
+    oscilloscopeCtx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+    oscilloscopeCtx.beginPath();
+    oscilloscopeCtx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+    oscilloscopeCtx.fill();
+    
+    // Only draw waveform if analyser exists
+    if (!oscilloscopeAnalyser) {
+        // Draw a small dot at center when no audio is playing
+        oscilloscopeCtx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+        oscilloscopeCtx.shadowBlur = 10;
+        oscilloscopeCtx.shadowColor = '#00ffff';
+        oscilloscopeCtx.beginPath();
+        oscilloscopeCtx.arc(centerX, centerY, 5, 0, Math.PI * 2);
+        oscilloscopeCtx.fill();
+        oscilloscopeCtx.shadowBlur = 0;
+        return;
+    }
+    
+    const bufferLength = oscilloscopeAnalyser.fftSize;
+    const dataArray = new Uint8Array(bufferLength);
+    oscilloscopeAnalyser.getByteTimeDomainData(dataArray);
+    
+    // XY Mode: Plot samples as (x, y) coordinates
+    // Use alternating samples for X and Y to create Lissajous-like patterns
+    oscilloscopeCtx.lineWidth = 2;
+    
+    // Create dynamic gradient based on position
+    const gradient = oscilloscopeCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height) / 2);
+    gradient.addColorStop(0, '#ff00ff');
+    gradient.addColorStop(0.5, '#00ffff');
+    gradient.addColorStop(1, '#ff00ff');
+    
+    oscilloscopeCtx.strokeStyle = gradient;
+    oscilloscopeCtx.shadowBlur = 8;
+    oscilloscopeCtx.shadowColor = '#00ffff';
+    
+    oscilloscopeCtx.beginPath();
+    
+    // Plot in XY mode - use phase offset for interesting patterns
+    const scale = Math.min(width, height) * 0.4; // Scale to fit canvas
+    const phaseOffset = Math.floor(bufferLength / 8); // Phase offset for more complex patterns
+    
+    for (let i = 0; i < bufferLength - phaseOffset; i += 2) {
+        // Convert from 0-255 range to -1 to 1 range, centered at 0
+        const x = ((dataArray[i] - 128) / 128.0) * scale;
+        const y = ((dataArray[i + phaseOffset] - 128) / 128.0) * scale;
+        
+        // Map to canvas coordinates with (0,0) at center
+        const canvasX = centerX + x;
+        const canvasY = centerY + y;
+        
+        if (i === 0) {
+            oscilloscopeCtx.moveTo(canvasX, canvasY);
+        } else {
+            oscilloscopeCtx.lineTo(canvasX, canvasY);
+        }
+    }
+    
+    oscilloscopeCtx.stroke();
+    
+    // Add some glow points for extra effect
+    oscilloscopeCtx.shadowBlur = 15;
+    for (let i = 0; i < bufferLength - phaseOffset; i += 32) {
+        const x = ((dataArray[i] - 128) / 128.0) * scale;
+        const y = ((dataArray[i + phaseOffset] - 128) / 128.0) * scale;
+        const canvasX = centerX + x;
+        const canvasY = centerY + y;
+        
+        // Vary color based on position
+        const hue = ((i / bufferLength) * 120 + 180) % 360;
+        oscilloscopeCtx.fillStyle = `hsla(${hue}, 100%, 50%, 0.6)`;
+        oscilloscopeCtx.beginPath();
+        oscilloscopeCtx.arc(canvasX, canvasY, 2, 0, Math.PI * 2);
+        oscilloscopeCtx.fill();
+    }
+    
+    // Reset shadow
+    oscilloscopeCtx.shadowBlur = 0;
 }
 
 // Handle clicks on visualization objects
@@ -2505,6 +2712,7 @@ audioFile1.addEventListener('change', async (e) => {
         
         if (!scene) {
             initThreeJS();
+            initOscilloscope();
             createCircleVisualization();
         }
         
@@ -2642,6 +2850,7 @@ audioFile2.addEventListener('change', async (e) => {
         
         if (!scene) {
             initThreeJS();
+            initOscilloscope();
             createCircleVisualization();
         }
         
@@ -4611,4 +4820,81 @@ function animate() {
 // For audio drawing
 function draw() {
     animate();
+}
+
+// Initialize oscilloscope on page load
+document.addEventListener('DOMContentLoaded', () => {
+    initOscilloscope();
+    setupRecordedAudioConnection();
+});
+
+// Setup event listeners for recorded audio playback to connect to oscilloscope
+function setupRecordedAudioConnection() {
+    if (!recordedAudio) {
+        console.warn('Recorded audio element not found');
+        return;
+    }
+    
+    // Connect recorded audio to oscilloscope when it starts playing
+    recordedAudio.addEventListener('play', () => {
+        if (!audioContext) {
+            // Create audio context if it doesn't exist
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        // Resume audio context if suspended
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        
+        // Create oscilloscope analyser if it doesn't exist
+        if (!oscilloscopeAnalyser) {
+            oscilloscopeAnalyser = audioContext.createAnalyser();
+            oscilloscopeAnalyser.fftSize = 2048;
+            oscilloscopeAnalyser.smoothingTimeConstant = 0.3;
+        }
+        
+        // Create media element source for recorded audio if it doesn't exist
+        if (!recordedAudioSource) {
+            try {
+                recordedAudioSource = audioContext.createMediaElementSource(recordedAudio);
+                console.log('Created MediaElementSource for recorded audio');
+            } catch (err) {
+                console.error('Error creating recorded audio source:', err);
+                // Already created, this is fine
+                if (err.name !== 'InvalidStateError') {
+                    return;
+                }
+            }
+        }
+        
+        // Connect to oscilloscope analyser and destination
+        if (recordedAudioSource) {
+            try {
+                // Disconnect any existing connections first
+                recordedAudioSource.disconnect();
+                
+                // Connect to oscilloscope analyser for visualization
+                recordedAudioSource.connect(oscilloscopeAnalyser);
+                
+                // Also connect to destination so we can hear it
+                recordedAudioSource.connect(audioContext.destination);
+                
+                console.log('Recorded audio connected to oscilloscope and output');
+            } catch (err) {
+                console.error('Error connecting recorded audio:', err);
+            }
+        }
+    });
+    
+    // When recorded audio stops, reconnect oscilloscope to the merger (main tracks)
+    recordedAudio.addEventListener('pause', () => {
+        connectOscilloscopeToMerger();
+        console.log('Recorded audio paused - oscilloscope reconnected to tracks');
+    });
+    
+    recordedAudio.addEventListener('ended', () => {
+        connectOscilloscopeToMerger();
+        console.log('Recorded audio ended - oscilloscope reconnected to tracks');
+    });
 }

@@ -1,6 +1,18 @@
 # Browser Jockey
 
-[![Live Demo](https://img.shields.io/b- 🎤 **Advanced Microphone System** - Professional micr- ✨ **Enhanced UI/UX** - Premium button styling with CSS Grid distribution, larger controls (80px), backdrop blur effects, and logical layout organization
+[![Live Demo](https://img.shields.io/b- 🎤 **Advanced Microphone System** - Profession- 💾 **Export** - Export full stems or loop regions as WAV or MP3 files
+- 🎵 **Format Options** - Choose between WAV (lossless) or MP3 (compressed 128kbps) export
+- 📊 **3D Visualization** - Real-time WebGL visualization with Three.js (Circle/Bars/Sphere modes)
+- 〰️ **XY Oscilloscope** - Lissajous mode visualization with Cartesian coordinates
+  - 📐 Centered at (0,0) with clear X/Y axes
+  - 🎨 Dynamic phase-offset plotting for complex patterns
+  - 🌈 Radial gradient colors (magenta→cyan)
+  - ✨ Motion blur trails and glow effects
+  - 🎯 Shows stereo correlation and harmonic relationships
+  - 🎵 Displays live mix OR recorded audio playback
+  - 🔄 Auto-switches between tracks and recordings
+- 🌈 **Dynamic Heat Map Colors** - Circle mode bars change color based on energy (blue→cyan→green→yellow→red)
+- 🎨 **Musical Key Colors** - Visualization colors based on detected keycr- ✨ **Enhanced UI/UX** - Premium button styling with CSS Grid distribution, larger controls (80px), backdrop blur effects, and logical layout organization
 - 🏗️ **Modular Architecture** - Clean ES6 modules for maintainability (see [MODULES.md](MODULES.md))
 - 🐛 **Production Ready** - Comprehensive error handling and live performance optimizations
 - 🔄 **Live Looping Workflow** - Record, load to tracks, set loop markers, and layer recordings for complex arrangementsone input with extensive features
@@ -12,9 +24,11 @@
   - 🎛️ **Master Routing Control** - Toggle Track 1, Track 2, Microphone, or Keyboard Sampler to master output
 - 🤖 **Vocoder Effect** - Robot voice effect with advanced routingo-live-brightgreen)](https://browserjockey.onrender.com/)
 
-A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, and authentic DJ controls.
+A dual-track DJ mixing web application with 3D audio visualization, XY oscilloscope, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, and authentic DJ controls.
 
-**Latest Update (v3.10.5)**: Fixed critical bug where loop markers weren't setting on recorded .webm files! Now properly waits for audio metadata to load before allowing loop marker placement. Added duration validation to prevent silent failures. Includes better error handling with console warnings when duration is unavailable. Perfect for live looping workflows with recorded content.
+**Latest Update (v3.11.0)**: Added XY Oscilloscope (Lissajous mode) visualization! Beautiful Cartesian coordinate system with (0,0) at center, displaying stereo phase relationships and audio patterns in real-time. Features animated XY plotting with phase offset for dynamic Lissajous curves, radial color gradients (magenta to cyan), motion blur trails, glow effects, and grid overlay. Perfect for visualizing stereo correlation and harmonic relationships between tracks!
+
+**v3.10.5**: Fixed critical bug where loop markers weren't setting on recorded .webm files! Now properly waits for audio metadata to load before allowing loop marker placement. Added duration validation to prevent silent failures. Includes better error handling with console warnings when duration is unavailable. Perfect for live looping workflows with recorded content.
 
 **v3.10.4**: Enhanced UI with improved track controls layout and microphone master routing! Track control buttons now use CSS Grid for even distribution with larger, premium styling (80px min size). Waveform color picker relocated to upload section for better UX. Control buttons repositioned below BPM/Key info for logical flow. Added microphone to master output routing controls for precise mixing.
 
@@ -446,19 +460,30 @@ browser_jockey/
 - **WAV**: Professional production, mastering, compatibility with all DAWs
 - **MP3**: Sharing online, email, storage optimization
 
-### 3D Visualization
-- **Three Modes**: Circle, Bars, Sphere
-- **Circle Mode Features**:
-  - **Dynamic Heat Map Colors**: Bars change color based on their height/energy
-    - Blue (0-20%): Low energy, quiet passages
-    - Cyan (20-40%): Building energy
-    - Green (40-60%): Medium energy
-    - Yellow (60-80%): High energy
-    - Red (80-100%): Maximum energy, bass drops
-  - **Smooth Transitions**: Colors blend seamlessly as energy changes
-  - **Emissive Glow**: Bars emit light matching their color
-- **Musical Key Colors**: Background colors based on detected key (all modes)
-- **Real-time**: Responds to merged audio output with physics-based animations
+### 3D Visualization & Oscilloscope
+- **Three Visualization Modes**: Circle, Bars, Sphere
+  - **Circle Mode Features**:
+    - **Dynamic Heat Map Colors**: Bars change color based on their height/energy
+      - Blue (0-20%): Low energy, quiet passages
+      - Cyan (20-40%): Building energy
+      - Green (40-60%): Medium energy
+      - Yellow (60-80%): High energy
+      - Red (80-100%): Maximum energy, bass drops
+    - **Smooth Transitions**: Colors blend seamlessly as energy changes
+    - **Emissive Glow**: Bars emit light matching their color
+  - **Musical Key Colors**: Background colors based on detected key (all modes)
+  - **Real-time**: Responds to merged audio output with physics-based animations
+- **XY Oscilloscope** (Side-by-side with 3D visualization):
+  - **Lissajous Mode**: Classic XY plotting for stereo phase visualization
+  - **Cartesian Grid**: Centered at (0,0) with clear X and Y axes
+  - **Dynamic Patterns**: Shape morphs based on stereo relationships
+    - Circular patterns when tracks are in phase
+    - Diagonal lines when one track dominates
+    - Complex Lissajous curves for harmonic relationships
+  - **Visual Effects**: Motion blur trails, radial gradients, glow points
+  - **Real-time Response**: Animated based on combined audio from both tracks
+  - **Recorded Audio Playback**: When you play a recording, oscilloscope automatically switches to display it
+  - **Smart Switching**: Returns to showing tracks when recording stops
 
 **Note**: FLAC files may not play in Safari. For best compatibility across all browsers, use MP3 or WAV formats.
 
