@@ -24,6 +24,8 @@
         </header>
         
         <div class="controls">
+            <!-- DJ Layout: Two Decks Side by Side -->
+            <div class="dj-decks-container">
             <div class="dual-track-section">
                 <div class="track-upload">
                     <label>Track 1</label>
@@ -90,6 +92,10 @@
                         <div class="volume-control-inline">
                             <label>Volume: <span id="volumeValue1">100%</span></label>
                             <input type="range" id="volumeSlider1" min="0" max="100" step="1" value="100" class="volume-slider">
+                        </div>
+                        <div class="pan-control-inline">
+                            <label>Pan: <span id="panValue1">Center</span></label>
+                            <input type="range" id="panSlider1" min="-100" max="100" step="1" value="0" class="pan-slider">
                         </div>
                         <div class="effect-chain-container" id="effectChain1">
                             <!-- Effect chain UI will be dynamically generated here -->
@@ -199,6 +205,10 @@
                             <label>Volume: <span id="volumeValue2">100%</span></label>
                             <input type="range" id="volumeSlider2" min="0" max="100" step="1" value="100" class="volume-slider">
                         </div>
+                        <div class="pan-control-inline">
+                            <label>Pan: <span id="panValue2">Center</span></label>
+                            <input type="range" id="panSlider2" min="-100" max="100" step="1" value="0" class="pan-slider">
+                        </div>
                         <div class="effect-chain-container" id="effectChain2">
                             <!-- Effect chain UI will be dynamically generated here -->
                         </div>
@@ -241,6 +251,11 @@
                     </div>
                 </div>
             </div>
+            </div>
+            
+            <!-- DJ Center Mixer Section -->
+            <div class="dj-mixer-section">
+                <div class="mixer-header">🎛️ DJ MIXER</div>
             
             <!-- Dual Track Controls -->
             <div class="dual-track-controls-section">
@@ -357,40 +372,9 @@
                 </div>
             </div>
             
-            <div class="recording-section">
-                <div class="recording-controls">
-                    <button id="recordBtn" class="control-btn" disabled>
-                        <span class="record-icon">⏺️</span> Start Recording
-                    </button>
-                    <button id="stopRecordBtn" class="control-btn" disabled style="display: none;">
-                        <span class="record-icon">⏹️</span> Stop Recording
-                    </button>
-                    <div class="recording-export-group" style="display: none;" id="recordingExportGroup">
-                        <div class="recording-format-selector">
-                            <label>Format:</label>
-                            <select id="recordingExportFormat" class="recording-format-select">
-                                <option value="webm" selected>WebM (original)</option>
-                                <option value="wav">WAV (lossless)</option>
-                                <option value="mp3">MP3 (compressed)</option>
-                            </select>
-                        </div>
-                        <button id="downloadBtn" class="control-btn">
-                            <span class="record-icon">💾</span> Download Recording
-                        </button>
-                        <button id="loadToTrack1Btn" class="control-btn">
-                            <span class="record-icon">📥</span> Load to Track 1
-                        </button>
-                        <button id="loadToTrack2Btn" class="control-btn">
-                            <span class="record-icon">📥</span> Load to Track 2
-                        </button>
-                    </div>
-                    <span id="recordingTime" class="recording-time" style="display: none;">0:00</span>
+                                </div>
                 </div>
-                <div class="recording-waveform-container" style="display: none;">
-                    <label>Recorded Output:</label>
-                    <canvas id="recordingWaveform" class="waveform-canvas"></canvas>
-                    <audio id="recordedAudio" controls></audio>
-                </div>
+            </div>
             </div>
             
             <!-- Keyboard Sampler Section -->
@@ -510,6 +494,48 @@
                 <div class="master-volume-control">
                     <label>Master Volume: <span id="masterVolumeValue">100%</span></label>
                     <input type="range" id="masterVolumeSlider" min="0" max="100" step="1" value="100" class="volume-slider">
+                </div>
+                <div class="master-pan-control">
+                    <label>Master Pan: <span id="masterPanValue">Center</span></label>
+                    <input type="range" id="masterPanSlider" min="-100" max="100" step="1" value="0" class="pan-slider">
+                </div>
+                
+                <!-- Recording Section -->
+                <div class="recording-section">
+                    <div class="recording-header">⏺️ Master Recording</div>
+                    <div class="recording-controls">
+                        <button id="recordBtn" class="control-btn" disabled>
+                            <span class="record-icon">⏺️</span> Start Recording
+                        </button>
+                        <button id="stopRecordBtn" class="control-btn" disabled style="display: none;">
+                            <span class="record-icon">⏹️</span> Stop Recording
+                        </button>
+                        <span id="recordingTime" class="recording-time" style="display: none;">0:00</span>
+                    </div>
+                    <div class="recording-export-group" style="display: none;" id="recordingExportGroup">
+                        <div class="recording-format-selector">
+                            <label>Format:</label>
+                            <select id="recordingExportFormat" class="recording-format-select">
+                                <option value="webm" selected>WebM (original)</option>
+                                <option value="wav">WAV (lossless)</option>
+                                <option value="mp3">MP3 (compressed)</option>
+                            </select>
+                        </div>
+                        <button id="downloadBtn" class="control-btn">
+                            <span class="record-icon">💾</span> Download Recording
+                        </button>
+                        <button id="loadToTrack1Btn" class="control-btn">
+                            <span class="record-icon">📥</span> Load to Track 1
+                        </button>
+                        <button id="loadToTrack2Btn" class="control-btn">
+                            <span class="record-icon">📥</span> Load to Track 2
+                        </button>
+                    </div>
+                    <div class="recording-waveform-container" style="display: none;">
+                        <label>Recorded Output:</label>
+                        <canvas id="recordingWaveform" class="waveform-canvas"></canvas>
+                        <audio id="recordedAudio" controls></audio>
+                    </div>
                 </div>
             </div>
         </div>

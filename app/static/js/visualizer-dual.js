@@ -79,6 +79,8 @@ const tempoSlider1 = document.getElementById('tempoSlider1');
 const tempoValue1 = document.getElementById('tempoValue1');
 const volumeSlider1 = document.getElementById('volumeSlider1');
 const volumeValue1 = document.getElementById('volumeValue1');
+const panSlider1 = document.getElementById('panSlider1');
+const panValue1 = document.getElementById('panValue1');
 const waveform1 = document.getElementById('waveform1');
 const waveformProgress1 = document.getElementById('waveformProgress1');
 const loopMarkerStart1 = document.getElementById('loopMarkerStart1');
@@ -121,6 +123,8 @@ const tempoSlider2 = document.getElementById('tempoSlider2');
 const tempoValue2 = document.getElementById('tempoValue2');
 const volumeSlider2 = document.getElementById('volumeSlider2');
 const volumeValue2 = document.getElementById('volumeValue2');
+const panSlider2 = document.getElementById('panSlider2');
+const panValue2 = document.getElementById('panValue2');
 const waveform2 = document.getElementById('waveform2');
 const waveformProgress2 = document.getElementById('waveformProgress2');
 const loopMarkerStart2 = document.getElementById('loopMarkerStart2');
@@ -229,6 +233,8 @@ const delayTimeSliderMaster = document.getElementById('delayTimeSliderMaster');
 const delayTimeValueMaster = document.getElementById('delayTimeValueMaster');
 const masterVolumeSlider = document.getElementById('masterVolumeSlider');
 const masterVolumeValue = document.getElementById('masterVolumeValue');
+const masterPanSlider = document.getElementById('masterPanSlider');
+const masterPanValue = document.getElementById('masterPanValue');
 
 // Audio context and analysers
 let audioContext;
@@ -256,15 +262,15 @@ let autotuneEnabled = false;
 let autotuneState = null;
 
 // Audio effects nodes for Track 1
-let gain1, reverb1, delay1, filter1;
+let gain1, reverb1, delay1, filter1, panner1;
 let reverbWet1, delayWet1;
 
 // Audio effects nodes for Track 2
-let gain2, reverb2, delay2, filter2;
+let gain2, reverb2, delay2, filter2, panner2;
 let reverbWet2, delayWet2;
 
 // Master effects nodes
-let gainMaster, reverbMaster, delayMaster, filterMaster;
+let gainMaster, reverbMaster, delayMaster, filterMaster, pannerMaster;
 let reverbWetMaster, delayWetMaster;
 
 // Three.js variables
@@ -434,7 +440,8 @@ async function loadRecordingToTrack1() {
                 
                 // Connect to the effects chain
                 source1.connect(gain1);
-                gain1.connect(filter1);
+                gain1.connect(panner1);
+                panner1.connect(filter1);
                 
                 filter1.connect(reverb1.convolver);
                 reverb1.convolver.connect(reverb1.wet);
@@ -452,8 +459,7 @@ async function loadRecordingToTrack1() {
                 delay1.wet.connect(finalMix1);
                 delay1.dry.connect(finalMix1);
                 
-                finalMix1.connect(merger, 0, 0);
-                finalMix1.connect(merger, 0, 1);
+                finalMix1.connect(merger);
                 
                 console.log('Track 1 audio source connected successfully');
             } catch (err) {
@@ -534,7 +540,8 @@ async function loadRecordingToTrack2() {
                 
                 // Connect to the effects chain
                 source2.connect(gain2);
-                gain2.connect(filter2);
+                gain2.connect(panner2);
+                panner2.connect(filter2);
                 
                 filter2.connect(reverb2.convolver);
                 reverb2.convolver.connect(reverb2.wet);
@@ -552,8 +559,7 @@ async function loadRecordingToTrack2() {
                 delay2.wet.connect(finalMix2);
                 delay2.dry.connect(finalMix2);
                 
-                finalMix2.connect(merger, 0, 0);
-                finalMix2.connect(merger, 0, 1);
+                finalMix2.connect(merger);
                 
                 console.log('Track 2 audio source connected successfully');
             } catch (err) {
@@ -1343,18 +1349,20 @@ function initAudioContext() {
         // Initialize master effects
         const effectsMaster = initAudioEffects(audioContext, 'Master');
         gainMaster = effectsMaster.gain;
+        pannerMaster = effectsMaster.panner;
         reverbMaster = effectsMaster.reverb;
         delayMaster = effectsMaster.delay;
         filterMaster = effectsMaster.filter;
         
         // Connect merger to master effects chain
-        // merger -> filterMaster -> reverbMaster -> delayMaster -> analyser/destination
+        // merger -> filterMaster -> pannerMaster -> reverbMaster -> delayMaster -> gainMaster -> analyser/destination
         merger.connect(filterMaster);
+        filterMaster.connect(pannerMaster);
         
         // Reverb path
-        filterMaster.connect(reverbMaster.convolver);
+        pannerMaster.connect(reverbMaster.convolver);
         reverbMaster.convolver.connect(reverbMaster.wet);
-        filterMaster.connect(reverbMaster.dry);
+        pannerMaster.connect(reverbMaster.dry);
         
         const reverbMixMaster = audioContext.createGain();
         reverbMaster.wet.connect(reverbMixMaster);
@@ -1381,12 +1389,14 @@ function initAudioContext() {
         // Initialize effects for both tracks using module
         const effects1 = initAudioEffects(audioContext, 1);
         gain1 = effects1.gain;
+        panner1 = effects1.panner;
         reverb1 = effects1.reverb;
         delay1 = effects1.delay;
         filter1 = effects1.filter;
         
         const effects2 = initAudioEffects(audioContext, 2);
         gain2 = effects2.gain;
+        panner2 = effects2.panner;
         reverb2 = effects2.reverb;
         delay2 = effects2.delay;
         filter2 = effects2.filter;
@@ -1405,10 +1415,11 @@ function initAudioContext() {
         source1 = audioContext.createMediaElementSource(audioElement1);
         
         // Effects chain for Track 1:
-        // source1 -> gain1 -> filter1 -> reverb (wet/dry) -> delay (wet/dry) -> merger
+        // source1 -> gain1 -> panner1 -> filter1 -> reverb (wet/dry) -> delay (wet/dry) -> merger
         
         source1.connect(gain1);
-        gain1.connect(filter1);
+        gain1.connect(panner1);
+        panner1.connect(filter1);
         
         // Reverb path: filter1 -> reverb -> reverbWet --\
         filter1.connect(reverb1.convolver);                // |
@@ -1434,8 +1445,7 @@ function initAudioContext() {
         delay1.wet.connect(finalMix1);                      //
         delay1.dry.connect(finalMix1);                      //
         
-        finalMix1.connect(merger, 0, 0);
-        finalMix1.connect(merger, 0, 1);
+        finalMix1.connect(merger);
     }
     
     // Connect track 2 if it exists and isn't already connected
@@ -1444,7 +1454,8 @@ function initAudioContext() {
         
         // Effects chain for Track 2 (same as Track 1)
         source2.connect(gain2);
-        gain2.connect(filter2);
+        gain2.connect(panner2);
+        panner2.connect(filter2);
         
         filter2.connect(reverb2.convolver);
         reverb2.convolver.connect(reverb2.wet);
@@ -1462,8 +1473,7 @@ function initAudioContext() {
         delay2.wet.connect(finalMix2);
         delay2.dry.connect(finalMix2);
         
-        finalMix2.connect(merger, 0, 0);
-        finalMix2.connect(merger, 0, 1);
+        finalMix2.connect(merger);
     }
 }
 
@@ -1863,7 +1873,8 @@ audioFile1.addEventListener('change', async (e) => {
                 
                 // Connect to the effects chain
                 source1.connect(gain1);
-                gain1.connect(filter1);
+                gain1.connect(panner1);
+                panner1.connect(filter1);
                 
                 filter1.connect(reverb1.convolver);
                 reverb1.convolver.connect(reverb1.wet);
@@ -1881,8 +1892,7 @@ audioFile1.addEventListener('change', async (e) => {
                 delay1.wet.connect(finalMix1);
                 delay1.dry.connect(finalMix1);
                 
-                finalMix1.connect(merger, 0, 0);
-                finalMix1.connect(merger, 0, 1);
+                finalMix1.connect(merger);
                 
                 console.log('Track 1 audio source connected successfully');
             } catch (err) {
@@ -1997,7 +2007,8 @@ audioFile2.addEventListener('change', async (e) => {
                 
                 // Connect to the effects chain
                 source2.connect(gain2);
-                gain2.connect(filter2);
+                gain2.connect(panner2);
+                panner2.connect(filter2);
                 
                 filter2.connect(reverb2.convolver);
                 reverb2.convolver.connect(reverb2.wet);
@@ -2015,8 +2026,7 @@ audioFile2.addEventListener('change', async (e) => {
                 delay2.wet.connect(finalMix2);
                 delay2.dry.connect(finalMix2);
                 
-                finalMix2.connect(merger, 0, 0);
-                finalMix2.connect(merger, 0, 1);
+                finalMix2.connect(merger);
                 
                 console.log('Track 2 audio source connected successfully');
             } catch (err) {
@@ -2904,6 +2914,37 @@ volumeSlider2.addEventListener('input', (e) => {
     volumeValue2.textContent = volume + '%';
 });
 
+// Pan sliders
+panSlider1.addEventListener('input', (e) => {
+    const pan = parseInt(e.target.value);
+    if (panner1) {
+        panner1.pan.value = pan / 100; // Convert to -1.0 to 1.0 range
+    }
+    // Update label
+    if (pan === 0) {
+        panValue1.textContent = 'Center';
+    } else if (pan < 0) {
+        panValue1.textContent = `L ${Math.abs(pan)}%`;
+    } else {
+        panValue1.textContent = `R ${pan}%`;
+    }
+});
+
+panSlider2.addEventListener('input', (e) => {
+    const pan = parseInt(e.target.value);
+    if (panner2) {
+        panner2.pan.value = pan / 100; // Convert to -1.0 to 1.0 range
+    }
+    // Update label
+    if (pan === 0) {
+        panValue2.textContent = 'Center';
+    } else if (pan < 0) {
+        panValue2.textContent = `L ${Math.abs(pan)}%`;
+    } else {
+        panValue2.textContent = `R ${pan}%`;
+    }
+});
+
 // Effects controls for Track 1
 filterSlider1.addEventListener('input', (e) => {
     const freq = parseInt(e.target.value);
@@ -3046,6 +3087,21 @@ masterVolumeSlider.addEventListener('input', (e) => {
         gainMaster.gain.value = volume;
     }
     masterVolumeValue.textContent = e.target.value + '%';
+});
+
+masterPanSlider.addEventListener('input', (e) => {
+    const pan = parseInt(e.target.value);
+    if (pannerMaster) {
+        pannerMaster.pan.value = pan / 100; // Convert to -1.0 to 1.0 range
+    }
+    // Update label
+    if (pan === 0) {
+        masterPanValue.textContent = 'Center';
+    } else if (pan < 0) {
+        masterPanValue.textContent = `L ${Math.abs(pan)}%`;
+    } else {
+        masterPanValue.textContent = `R ${pan}%`;
+    }
 });
 
 // === Zoom Controls ===

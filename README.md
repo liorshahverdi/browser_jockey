@@ -1,7 +1,22 @@
-# Browser Jockey (https://browser-jockey.onrender.com/)
+# Browser Jockey (https://br## Features
+
+- 🎧 **Professional DJ Layout** - Authentic DJ mixer design with real equipment aesthetics
+  - 🎛️ Dual decks side-by-side (cyan/magenta color coding)
+  - 🎚️ Vertical faders for volume and tempo control (like real DJ mixers)
+  - 🔄 Horizontal pan controls for stereo positioning
+  - 🎛️ Center mixer section with dual track controls
+  - 🏆 Master output with integrated recording section
+  - ✨ Glowing effects and neon accents matching DJ equipment
+- 🎚️ **Stereo Panning** - Full L/R stereo control for each track and master output
+  - Track 1 & 2 independent panning
+  - Master pan for global stereo positioning
+  - Real-time visual feedback (L/R percentage display)
+- 🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneouslyockey.onrender.com/)
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, and professional DJ controls.
 
-**Latest Update (v3.7.0)**: Added drag-and-drop effect chains for Track 1, Track 2, and Master output! Reorder effects visually, toggle them on/off with dynamic slider visibility, and apply professional mastering effects to the final mix. Master channel features a distinctive golden theme. See [EFFECT_CHAIN_FEATURE.md](EFFECT_CHAIN_FEATURE.md), [EFFECT_CHAIN_ENHANCEMENT.md](EFFECT_CHAIN_ENHANCEMENT.md), and [MASTER_EFFECT_CHAIN.md](MASTER_EFFECT_CHAIN.md) for details.
+**Latest Update (v3.8.0)**: Complete professional DJ mixer redesign! Features authentic DJ layout with dual decks, vertical faders, and stereo panning controls. Interface now mirrors real DJ equipment with side-by-side decks (cyan/magenta), center mixer section, vertical volume/tempo sliders, and horizontal pan controls for precise stereo positioning. Recording integrated into master output section for streamlined workflow.
+
+**v3.7.0**: Added drag-and-drop effect chains for Track 1, Track 2, and Master output! Reorder effects visually, toggle them on/off with dynamic slider visibility, and apply professional mastering effects to the final mix. Master channel features a distinctive golden theme. See [EFFECT_CHAIN_FEATURE.md](EFFECT_CHAIN_FEATURE.md), [EFFECT_CHAIN_ENHANCEMENT.md](EFFECT_CHAIN_ENHANCEMENT.md), and [MASTER_EFFECT_CHAIN.md](MASTER_EFFECT_CHAIN.md) for details.
 
 **v3.6.1**: Significantly improved reverse loop smoothness with adaptive update frequency, time accumulator pattern, and real-time visual feedback. Progress bar now smoothly moves backwards during reverse playback. See [REVERSE_LOOP_SMOOTHNESS_FIX.md](REVERSE_LOOP_SMOOTHNESS_FIX.md) and [REVERSE_LOOP_PROGRESS_VISUAL.md](REVERSE_LOOP_PROGRESS_VISUAL.md) for details.
 
@@ -26,7 +41,11 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 
 ## Features
 
-- 🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneously
+- � **Professional DJ Layout** - Classic DJ setup with dual decks, center mixer, and master output
+  - 🎛️ Dual decks side-by-side (cyan/magenta color coding)
+  - 🎚️ Center mixer section with dual track controls
+  - 🏆 Master output with integrated recording
+- �🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneously
 - ▶️▶️ **Dual Track Controls** - Play both tracks at once, or play both and record simultaneously
 - 🎵 **BPM Detection** - Automatic tempo detection for each track
 - 🎹 **Key Detection** - Per-track musical key analysis
@@ -42,6 +61,9 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
   - 🏆 Master effect chain with golden theme for final mix processing
 - 🎚️ **Audio Effects** - Reverb, delay, and filters (low/high/band pass)
 - 🎛️ **Master Output Effects** - Apply professional mastering effects to the final mixed output
+- ⏺️ **Master Recording** - Record your mix directly from master output
+  - 💾 Export as WebM, WAV, or MP3
+  - 📥 Load recordings back to tracks for layering
 - 💾 **Export** - Export full stems or loop regions as WAV or MP3 files
 - 🎵 **Format Options** - Choose between WAV (lossless) or MP3 (compressed 128kbps) export
 - 🎤 **Microphone Input** - Live mic input with volume control and monitoring
@@ -50,15 +72,12 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 - 🎨 **3D Visualization** - Real-time WebGL visualization with Three.js (Circle/Bars/Sphere modes)
 - 🌈 **Dynamic Heat Map Colors** - Circle mode bars change color based on energy (blue→cyan→green→yellow→red)
 - 🎨 **Musical Key Colors** - Visualization colors based on detected key
-- 🎙️ **Recording** - Record your live mix with waveform display
-- 📥 **Load Recording to Tracks** - Load recorded output back into Track 1 or Track 2 for layering and live looping
-- 🎹 **Keyboard Sampler** - Play tracks/loops/recordings on pentatonic scales using keyboard (Q-I, A-K keys)
+-  **Keyboard Sampler** - Play tracks/loops/recordings on pentatonic scales using keyboard (Q-I, A-K keys)
   - 🎼 Multiple scales: Pentatonic Major/Minor, Chromatic
   - 🎵 Transposable to any root note (C through B)
   - 🎚️ Independent volume control for mixing with tracks
   - 🎯 2-octave range with pitch shifting
   - 📦 Sample from any track, loop region, or recording
-- 📱 **Professional Layout** - Side-by-side dual deck DJ interface
 - 🎨 **Customizable Colors** - Personalize waveform colors for each track
 - 🏗️ **Modular Architecture** - Clean ES6 modules for maintainability (see [MODULES.md](MODULES.md))
 - 🐛 **Production Ready** - Comprehensive error handling and live performance optimizations

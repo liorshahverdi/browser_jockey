@@ -41,6 +41,10 @@ export function initAudioEffects(context, trackNumber) {
     const gain = context.createGain();
     gain.gain.value = 1.0;
     
+    // Create stereo panner (for left/right panning)
+    const panner = context.createStereoPanner();
+    panner.pan.value = 0; // Center by default
+    
     // Create reverb
     const reverb = createReverb(context);
     const reverbWet = context.createGain();
@@ -63,6 +67,7 @@ export function initAudioEffects(context, trackNumber) {
     
     return { 
         gain, 
+        panner,
         reverb: { convolver: reverb, wet: reverbWet, dry: reverbDry }, 
         delay: { node: delay, feedback, wet: delayWet, dry: delayDry }, 
         filter 
@@ -71,13 +76,14 @@ export function initAudioEffects(context, trackNumber) {
 
 // Connect effects chain for a track
 export function connectEffectsChain(source, effects, merger, audioContext) {
-    const { gain, filter, reverb, delay } = effects;
+    const { gain, panner, filter, reverb, delay } = effects;
     
     // Effects chain:
-    // source -> gain -> filter -> reverb (wet/dry) -> delay (wet/dry) -> merger
+    // source -> gain -> panner -> filter -> reverb (wet/dry) -> delay (wet/dry) -> merger
     
     source.connect(gain);
-    gain.connect(filter);
+    gain.connect(panner);
+    panner.connect(filter);
     
     // Reverb path
     filter.connect(reverb.convolver);
@@ -103,8 +109,8 @@ export function connectEffectsChain(source, effects, merger, audioContext) {
     delay.wet.connect(finalMix);
     delay.dry.connect(finalMix);
     
-    finalMix.connect(merger, 0, 0);
-    finalMix.connect(merger, 0, 1);
+    // Connect to merger - let the panner's stereo output go through naturally
+    finalMix.connect(merger);
     
     return { reverbMix, finalMix };
 }
