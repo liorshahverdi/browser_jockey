@@ -47,15 +47,16 @@ A dual-track DJ mixing web application with 3D audio visualization, XY oscillosc
 **v3.6.0**: Added Dual Track Controls - new buttons to play both tracks simultaneously and to play both tracks while recording. Perfect for live mixing and creating layered recordings! See [DUAL_TRACK_CONTROLS_FEATURE.md](DUAL_TRACK_CONTROLS_FEATURE.md) for details.
 
 ## Screenshots
-![Browser Jockey - Dual Track Interface](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
+
+![Browser Jockey - Dual Track Interface](https://raw.githubusercontent.com/lshahverdi/browser_jockey/main/app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
 
 *Professional dual-track DJ interface with 3D visualization and XY oscilloscope*
 
-![Browser Jockey - Circle Visualization Mode](app/screenshots/app_screenshot_2025_10_22_at_23_02_10.png)
+![Browser Jockey - Circle Visualization Mode](https://raw.githubusercontent.com/lshahverdi/browser_jockey/main/app/screenshots/app_screenshot_2025_10_22_at_23_02_10.png)
 
 *Circle mode with dynamic heat map colors responding to audio energy*
 
-![Browser Jockey - Sphere Visualization Mode](app/screenshots/app_screenshot_2025_10_22_at_23_02_25.png)
+![Browser Jockey - Sphere Visualization Mode](https://raw.githubusercontent.com/lshahverdi/browser_jockey/main/app/screenshots/app_screenshot_2025_10_22_at_23_02_25.png)
 
 *Sphere mode with immersive 3D audio-reactive geometry*
 
