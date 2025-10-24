@@ -7,9 +7,10 @@
  * Enable microphone input
  * @param {AudioContext} audioContext - Web Audio API context
  * @param {ChannelMergerNode} merger - Audio merger node to connect to
+ * @param {boolean} connectToMerger - Whether to connect to merger (default: true)
  * @returns {Promise<Object>} Microphone state object
  */
-export async function enableMicrophone(audioContext, merger) {
+export async function enableMicrophone(audioContext, merger, connectToMerger = true) {
     try {
         // Request microphone access
         const micStream = await navigator.mediaDevices.getUserMedia({ 
@@ -35,8 +36,8 @@ export async function enableMicrophone(audioContext, merger) {
         micSource.connect(micGain);
         micGain.connect(micAnalyser);
         
-        // Connect to merger/destination if available
-        if (merger) {
+        // Connect to merger/destination if available and requested
+        if (merger && connectToMerger) {
             micGain.connect(merger);
         }
         

@@ -1,10 +1,21 @@
 # Browser Jockey
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browserjockey.onrender.com/)
+[![Live Demo](https://img.shields.io/b- 🎤 **Advanced Microphone System** - Professional microphone input with extensive features
+  - 🎙️ Live mic input with volume control and real-time waveform monitoring
+  - ⏺️ **Standalone Recording** - Record directly from microphone without any tracks loaded
+  - 💾 Export mic recordings as WAV or MP3
+  - 📥 **Load to Tracks** - Load mic recordings directly to Track 1 or Track 2
+  - 🔀 **Flexible Routing** - Use microphone OR tracks as sources for effects
+  - 🎛️ **Master Routing Control** - Toggle Track 1, Track 2, Microphone, or Keyboard Sampler to master output
+- 🤖 **Vocoder Effect** - Robot voice effect with advanced routingo-live-brightgreen)](https://browserjockey.onrender.com/)
 
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, and authentic DJ controls.
 
-**Latest Update (v3.10.0)**: Added professional DJ crossfader with three modes (Track1↔Track2, Track1↔Mic, Track2↔Mic)! Features equal-power crossfade curves for smooth transitions, dynamic mode switching, and full three-column DJ layout (Track 1 | Mixer | Track 2). Master section reorganized with compact volume/pan controls. Includes critical bug fix for crossfader gain node references.
+**Latest Update (v3.10.4)**: Enhanced UI with improved track controls layout and microphone master routing! Track control buttons now use CSS Grid for even distribution with larger, premium styling (80px min size). Waveform color picker relocated to upload section for better UX. Control buttons repositioned below BPM/Key info for logical flow. Added microphone to master output routing controls for precise mixing.
+
+**v3.10.3**: UI improvements - Enhanced track control buttons with CSS Grid layout for even spacing, larger premium button styling, improved visual effects with backdrop blur and multi-layer shadows, relocated waveform color picker to upload section, and repositioned control buttons below track info.
+
+**v3.10.0**: Added professional DJ crossfader with three modes (Track1↔Track2, Track1↔Mic, Track2↔Mic)! Features equal-power crossfade curves for smooth transitions, dynamic mode switching, and full three-column DJ layout (Track 1 | Mixer | Track 2). Master section reorganized with compact volume/pan controls. Includes critical bug fix for crossfader gain node references.
 
 **v3.9.0**: Major microphone and effects routing enhancements! Added standalone microphone recording (record directly from mic without tracks), flexible vocoder/auto-tune routing (use mic OR tracks as sources), load microphone recordings to tracks, side-by-side tempo/volume controls for compact layout, and master output routing toggles for precise mixing control. Includes comprehensive bug fixes for audio node routing and AudioContext initialization.
 
@@ -95,7 +106,8 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
   - 🎯 2-octave range with pitch shifting
   - 📦 Sample from any track, loop region, or recording
 - 🎨 **Customizable Colors** - Personalize waveform colors for each track
-- 🏗️ **Modular Architecture** - Clean ES6 modules for maintainability (see [MODULES.md](MODULES.md))
+- � **Enhanced UI/UX** - Premium button styling with CSS Grid distribution, larger controls (80px), backdrop blur effects, and logical layout organization
+- �🏗️ **Modular Architecture** - Clean ES6 modules for maintainability (see [MODULES.md](MODULES.md))
 - 🐛 **Production Ready** - Comprehensive error handling and live performance optimizations
 
 ## Prerequisites

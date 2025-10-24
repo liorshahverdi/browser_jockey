@@ -253,6 +253,7 @@ const keyboardVisual = document.getElementById('keyboardVisual');
 // Master channel elements
 const routeTrack1 = document.getElementById('routeTrack1');
 const routeTrack2 = document.getElementById('routeTrack2');
+const routeMicrophone = document.getElementById('routeMicrophone');
 const routeSampler = document.getElementById('routeSampler');
 const filterSliderMaster = document.getElementById('filterSliderMaster');
 const filterValueMaster = document.getElementById('filterValueMaster');
@@ -767,8 +768,11 @@ async function enableMicrophone() {
             initAudioContext();
         }
         
+        // Check if microphone should be routed to master output
+        const shouldRoute = routeMicrophone.checked;
+        
         // Use module to enable microphone
-        micState = await enableMicrophoneModule(audioContext, merger);
+        micState = await enableMicrophoneModule(audioContext, merger, shouldRoute);
         micEnabled = true;
         
         // Update UI
@@ -1626,6 +1630,35 @@ function toggleSamplerRouting(enabled) {
         if (enabled) {
             try {
                 samplerGain.connect(merger);
+            } catch (e) {
+                // Already connected or other error
+            }
+        }
+    }
+}
+
+function toggleMicRouting(enabled) {
+    if (!micState || !micState.micGain || !merger) {
+        console.warn('Microphone or merger not initialized');
+        return;
+    }
+    
+    try {
+        if (enabled) {
+            // Connect microphone to merger
+            micState.micGain.connect(merger);
+            console.log('Microphone routed to master');
+        } else {
+            // Disconnect microphone from merger
+            micState.micGain.disconnect(merger);
+            console.log('Microphone disconnected from master');
+        }
+    } catch (error) {
+        console.error('Error toggling microphone routing:', error);
+        // Reconnect on error
+        if (enabled) {
+            try {
+                micState.micGain.connect(merger);
             } catch (e) {
                 // Already connected or other error
             }
@@ -3695,6 +3728,10 @@ routeTrack1.addEventListener('change', (e) => {
 
 routeTrack2.addEventListener('change', (e) => {
     toggleTrackRouting(2, e.target.checked);
+});
+
+routeMicrophone.addEventListener('change', (e) => {
+    toggleMicRouting(e.target.checked);
 });
 
 routeSampler.addEventListener('change', (e) => {

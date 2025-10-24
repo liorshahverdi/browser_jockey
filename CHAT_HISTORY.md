@@ -1,15 +1,158 @@
 # Browser Jockey - Development Chat History
 
 ## Project Overview
-A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, professional crossfader with multiple modes, and comprehensive audio routing management.
+A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, professional crossfader with multiple modes, comprehensive audio routing management, and enhanced UI with premium controls.
 
-**Latest Version: v3.10.0** - Professional Crossfader + Layout Refinements + Bug Fixes
+**Latest Version: v3.10.4** - Enhanced UI + Microphone Master Routing
 
 ---
 
 ## Session Timeline
 
-### Latest Session: Professional Crossfader + Three-Column Layout (v3.10.0)
+### Latest Session: Enhanced UI + Microphone Master Routing (v3.10.4)
+**Date**: October 24, 2025
+
+**User Requests**:
+1. "i think the buttons in div.track-controls can be distributed more evenly across each track column width"
+2. "can we make those buttons look better? and larger?"
+3. "a few more improvements.. the custom waveform color setting should be to the right of the choose audio and track label. next, the buttons should be right below the BPM and key"
+4. "add the microphone to the master output routing"
+
+**Features Implemented**:
+
+**1. Enhanced Track Controls Button Layout**
+- Changed from Flexbox to CSS Grid for even distribution
+- `grid-template-columns: repeat(auto-fit, minmax(80px, 1fr))`
+- Buttons automatically fill available space evenly across track width
+- Responsive grid adapts to container width
+- Increased gap between buttons (15px instead of 12px)
+
+**2. Premium Button Styling**
+- **Larger Size**: Minimum 80px width/height (up from 70px)
+- **Bigger Icons**: Font size increased to 2.2rem (from 1.8rem)
+- **Enhanced Padding**: 20px/28px (up from 16px/24px)
+- **Improved Visual Depth**:
+  - Higher opacity gradient (0.9 instead of 0.8)
+  - Multi-layer box shadows with color accents
+  - Backdrop blur for glass-morphism effect
+  - Inset highlights for 3D appearance
+- **Rounder Corners**: 16px border-radius (from 12px)
+- **More Prominent Borders**: 0.4 opacity (from 0.3)
+- **Enhanced Hover Effects**:
+  - Larger lift (4px instead of 3px)
+  - Scale increase to 1.08 (from 1.05)
+  - Multi-layered glowing shadows
+  - Brighter inset highlights
+
+**3. Waveform Color Picker Relocation**
+- Moved from below track info to **upload section**
+- Positioned on the right side next to file name
+- Added `margin-left: auto` to push to right edge
+- Added `justify-content: space-between` to upload section
+- Enhanced background and border styling
+- Better visual hierarchy and space utilization
+
+**4. Track Controls Repositioning**
+- Moved from separate `track-controls-panel` to within `track-main-content`
+- Now positioned **directly below BPM/Key info**
+- More logical flow: upload → waveform → zoom → track info → controls
+- Applied consistently to both Track 1 and Track 2
+- Improved UX with related controls grouped together
+
+**5. Microphone Master Routing**
+- Added microphone routing checkbox to Master Output section
+- New `routeMicrophone` toggle between Track 2 and Sampler
+- Toggle microphone routing to master output on/off
+- **Use Cases**:
+  - Solo recording (disable tracks, enable only mic)
+  - Background vocals (mix mic with tracks)
+  - Effects processing without master routing
+  - Precise control over mix sources
+- **Integration**:
+  - Works with crossfader (when mic in crossfader mode)
+  - Compatible with vocoder/autotune effects
+  - Respects volume and monitoring settings
+  - Master recording only includes routed sources
+
+**Implementation Details**:
+
+**HTML Changes** (`app/templates/index.html`):
+- Added microphone routing checkbox:
+  ```html
+  <label class="routing-toggle">
+      <input type="checkbox" id="routeMicrophone" checked>
+      <span>🎤 Microphone</span>
+  </label>
+  ```
+- Relocated waveform color picker to upload section
+- Moved track-controls div to track-main-content
+
+**CSS Changes** (`app/static/css/style.css`):
+- Updated `.track-controls` to use CSS Grid
+- Enhanced `.control-btn-small` styling (size, shadows, blur)
+- Updated `.waveform-color-picker` positioning
+- Modified `.upload-section` layout
+
+**JavaScript Changes** (`app/static/js/visualizer-dual.js`):
+- Added `routeMicrophone` DOM reference
+- Created `toggleMicRouting(enabled)` function
+- Added event listener for mic routing toggle
+- Updated `enableMicrophone()` to respect routing state
+- Pass routing state to microphone module
+
+**Microphone Module Changes** (`app/static/js/modules/microphone.js`):
+- Updated `enableMicrophone()` signature to accept `connectToMerger` parameter
+- Conditional connection to merger based on routing state
+- Maintains backward compatibility with default value
+
+**Technical Achievements**:
+- CSS Grid provides automatic even distribution
+- Premium UI with modern effects (backdrop blur, multi-layer shadows)
+- Logical component organization
+- Flexible microphone routing architecture
+- Clean separation of concerns
+
+**Documentation Created**:
+- MICROPHONE_MASTER_ROUTING.md - Complete mic routing documentation
+
+**See Also**:
+- [MICROPHONE_MASTER_ROUTING.md](MICROPHONE_MASTER_ROUTING.md) - Microphone routing details
+
+---
+
+### Session: UI Button Enhancements (v3.10.3)
+**Date**: October 24, 2025
+
+**User Request**: "i think the buttons in div.track-controls can be distributed more evenly across each track column width" and "can we make those buttons look better? and larger?"
+
+**Features Implemented**:
+
+**1. CSS Grid Button Distribution**
+- Changed `.track-controls` from Flexbox to CSS Grid
+- Grid template: `repeat(auto-fit, minmax(80px, 1fr))`
+- Buttons automatically distribute evenly across full width
+- Responsive and adapts to container size
+
+**2. Enhanced Button Styling**
+- Increased minimum size to 80px (from 70px)
+- Larger font size: 2.2rem (from 1.8rem)
+- Enhanced padding: 20px/28px (from 16px/24px)
+- Improved shadows with multiple layers
+- Added backdrop blur effect
+- Rounder corners: 16px (from 12px)
+- Better hover effects with larger scale
+
+**3. Container Improvements**
+- Darker background (0.4 opacity)
+- Larger gaps (15px between buttons)
+- More padding (20px around buttons)
+- Enhanced shadow with inset highlight
+
+**Documentation**: Changes documented in commit message
+
+---
+
+### Session: Professional Crossfader + Three-Column Layout (v3.10.0)
 **Date**: October 24, 2025
 
 **User Requests**:
