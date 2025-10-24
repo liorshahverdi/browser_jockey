@@ -47,6 +47,11 @@
                                 <input type="file" id="audioFile1" accept="audio/*,video/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.wma,.aiff,.aif,.opus,.webm,.oga,.mp4,.avi,.mov" hidden>
                             </label>
                             <span id="fileName1" class="file-name">No file selected</span>
+                            <div class="waveform-color-picker">
+                                <label for="waveformColor1">Waveform Color:</label>
+                                <input type="color" id="waveformColor1" value="#00ffff" title="Choose waveform color">
+                                <button id="resetColor1" class="reset-color-btn" title="Reset to default">↺</button>
+                            </div>
                         </div>
                         <div class="waveform-container">
                             <canvas id="waveform1" class="waveform-canvas"></canvas>
@@ -66,14 +71,6 @@
                             <span class="key-display-inline">Key: <span id="key1">--</span></span>
                             <span class="duration-display"><span id="currentTime1">0:00</span> / <span id="duration1">0:00</span></span>
                         </div>
-                        <div class="waveform-color-picker">
-                            <label for="waveformColor1">Waveform Color:</label>
-                            <input type="color" id="waveformColor1" value="#00ffff" title="Choose waveform color">
-                            <button id="resetColor1" class="reset-color-btn" title="Reset to default">↺</button>
-                        </div>
-                    </div>
-                    
-                    <div class="track-controls-panel">
                         <div class="track-controls">
                             <button id="playBtn1" class="control-btn-small" disabled>▶️</button>
                             <button id="pauseBtn1" class="control-btn-small" disabled>⏸️</button>
@@ -82,6 +79,9 @@
                             <button id="reverseLoopBtn1" class="control-btn-small reverse-loop-btn" disabled title="Enable reverse loop">🔁⏪</button>
                             <button id="clearLoopBtn1" class="control-btn-small" disabled title="Clear loop points">❌</button>
                         </div>
+                    </div>
+                    
+                    <div class="track-controls-panel">
                         <div class="quick-loop-section" style="display: none;" id="quickLoopSection1">
                             <label class="quick-loop-label">Quick Loop:</label>
                             <div class="quick-loop-buttons">
@@ -365,6 +365,11 @@
                                 <input type="file" id="audioFile2" accept="audio/*,video/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.wma,.aiff,.aif,.opus,.webm,.oga,.mp4,.avi,.mov" hidden>
                             </label>
                             <span id="fileName2" class="file-name">No file selected</span>
+                            <div class="waveform-color-picker">
+                                <label for="waveformColor2">Waveform Color:</label>
+                                <input type="color" id="waveformColor2" value="#ff00ff" title="Choose waveform color">
+                                <button id="resetColor2" class="reset-color-btn" title="Reset to default">↺</button>
+                            </div>
                         </div>
                         <div class="waveform-container">
                             <canvas id="waveform2" class="waveform-canvas"></canvas>
@@ -384,14 +389,6 @@
                             <span class="key-display-inline">Key: <span id="key2">--</span></span>
                             <span class="duration-display"><span id="currentTime2">0:00</span> / <span id="duration2">0:00</span></span>
                         </div>
-                        <div class="waveform-color-picker">
-                            <label for="waveformColor2">Waveform Color:</label>
-                            <input type="color" id="waveformColor2" value="#ff00ff" title="Choose waveform color">
-                            <button id="resetColor2" class="reset-color-btn" title="Reset to default">↺</button>
-                        </div>
-                    </div>
-                    
-                    <div class="track-controls-panel">
                         <div class="track-controls">
                             <button id="playBtn2" class="control-btn-small" disabled>▶️</button>
                             <button id="pauseBtn2" class="control-btn-small" disabled>⏸️</button>
@@ -400,6 +397,9 @@
                             <button id="reverseLoopBtn2" class="control-btn-small reverse-loop-btn" disabled title="Enable reverse loop">🔁⏪</button>
                             <button id="clearLoopBtn2" class="control-btn-small" disabled title="Clear loop points">❌</button>
                         </div>
+                    </div>
+                    
+                    <div class="track-controls-panel">
                         <div class="quick-loop-section" style="display: none;" id="quickLoopSection2">
                             <label class="quick-loop-label">Quick Loop:</label>
                             <div class="quick-loop-buttons">
