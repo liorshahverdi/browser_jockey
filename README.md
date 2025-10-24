@@ -50,9 +50,9 @@ A dual-track DJ mixing web application with 3D audio visualization, XY oscillosc
 
 ![Browser Jockey](app/screenshots/Screenshot%202025-10-24%20at%2014.18.13.png)
 
-![Browser Jockey XY Oscilloscope](app/screenshots/Screenshot%202025-10-24%20at%2014.19.06.png)
+![Master Output](app/screenshots/Screenshot%202025-10-24%20at%2015.26.33.png)
 
-![Browser Jockey Effects Chain](app/screenshots/Screenshot%202025-10-24%20at%2014.19.30.png)
+![Browser Jockey Effects Chain](app/screenshots/Screenshot%202025-10-24%20at%2015.28.00.png)
 
 
 
