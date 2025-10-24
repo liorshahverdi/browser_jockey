@@ -1,4 +1,4 @@
-# Browser Jockey (https://br## Features
+# Browser Jockey
 
 - 🎧 **Professional DJ Layout** - Authentic DJ mixer design with real equipment aesthetics
   - 🎛️ Dual decks side-by-side (cyan/magenta color coding)
