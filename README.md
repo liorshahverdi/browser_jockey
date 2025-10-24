@@ -1,21 +1,11 @@
 # Browser Jockey (https://browser-jockey.onrender.com/)
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, and professional DJ controls.
 
-**Latest Update (v3.6.1)**: Significantly improved reverse loop smoothness with adaptive update frequency, time accumulator pattern, and real-time visual feedback. Progress bar now smoothly moves backwards during reverse playback. See [REVERSE_LOOP_SMOOTHNESS_FIX.md](REVERSE_LOOP_SMOOTHNESS_FIX.md) and [REVERSE_LOOP_PROGRESS_VISUAL.md](REVERSE_LOOP_PROGRESS_VISUAL.md) for details.
+**Latest Update (v3.7.0)**: Added drag-and-drop effect chains for Track 1, Track 2, and Master output! Reorder effects visually, toggle them on/off with dynamic slider visibility, and apply professional mastering effects to the final mix. Master channel features a distinctive golden theme. See [EFFECT_CHAIN_FEATURE.md](EFFECT_CHAIN_FEATURE.md), [EFFECT_CHAIN_ENHANCEMENT.md](EFFECT_CHAIN_ENHANCEMENT.md), and [MASTER_EFFECT_CHAIN.md](MASTER_EFFECT_CHAIN.md) for details.
+
+**v3.6.1**: Significantly improved reverse loop smoothness with adaptive update frequency, time accumulator pattern, and real-time visual feedback. Progress bar now smoothly moves backwards during reverse playback. See [REVERSE_LOOP_SMOOTHNESS_FIX.md](REVERSE_LOOP_SMOOTHNESS_FIX.md) and [REVERSE_LOOP_PROGRESS_VISUAL.md](REVERSE_LOOP_PROGRESS_VISUAL.md) for details.
 
 **v3.6.0**: Added Dual Track Controls - new buttons to play both tracks simultaneously and to play both tracks while recording. Perfect for live mixing and creating layered recordings! See [DUAL_TRACK_CONTROLS_FEATURE.md](DUAL_TRACK_CONTROLS_FEATURE.md) for details.
-
-**v3.5.5**: Fixed loop marker UX issue - loop markers now properly reset to start point when toggling loop mode off/on, ensuring consistent and predictable behavior. See [LOOP_MARKER_UX_FIX.md](LOOP_MARKER_UX_FIX.md) for details.
-
-**v3.5.4**: Fixed recording blob access bug - download and load-to-track functions now properly access the recording blob by using `recordingState.blob` directly, eliminating "No recording available" errors.
-
-**Previous Update (v3.5.3)**: Fixed recording export functionality - added MP3 export support using lamejs encoder. Export function now properly handles all three formats: WebM (original), WAV (lossless), and MP3 (compressed 128kbps).
-
-**v3.5.2**: Fixed reverse loop animation bug - prevents duplicate animation loops and restores proper UI state when toggling between forward and reverse modes.
-
-**v3.5**: Added IP geolocation logging with intelligent caching to track visitor locations (city, region, country) from requests. Perfect for monitoring your app's global reach on Render deployment.
-
-**v3.4**: Complete code refactoring with 9 modular ES6 modules for improved maintainability and reusability. See [MODULES.md](MODULES.md) and [REFACTORING_STATUS.md](REFACTORING_STATUS.md) for details.
 
 ## Screenshots
 
@@ -45,7 +35,13 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 - ⚡ **Quick Loops** - Auto-create 1, 2, 4, or 8 bar loops based on BPM
 - 🎚️ **Seamless Loop Control** - Toggle between forward/reverse during playback with no audio cuts
 - 🔍 **Waveform Zoom** - Zoom up to 20x with drag-to-pan
+- 🔗 **Drag-and-Drop Effect Chains** - Visually reorder effects for Track 1, Track 2, and Master output
+  - 🎚️ Filter, Reverb, Delay per track
+  - ✓/✗ Toggle effects on/off with dynamic slider visibility
+  - ⋮⋮ Drag to reorder effect processing
+  - 🏆 Master effect chain with golden theme for final mix processing
 - 🎚️ **Audio Effects** - Reverb, delay, and filters (low/high/band pass)
+- 🎛️ **Master Output Effects** - Apply professional mastering effects to the final mixed output
 - 💾 **Export** - Export full stems or loop regions as WAV or MP3 files
 - 🎵 **Format Options** - Choose between WAV (lossless) or MP3 (compressed 128kbps) export
 - 🎤 **Microphone Input** - Live mic input with volume control and monitoring

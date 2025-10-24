@@ -1,15 +1,114 @@
 # Browser Jockey - Development Chat History
 
 ## Project Overview
-A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, and dual track controls.
+A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, and drag-and-drop effect chains with master output processing.
 
-**Latest Version: v3.6.1** - Improved Reverse Loop Smoothness & Visual Feedback
+**Latest Version: v3.7.0** - Drag-and-Drop Effect Chains with Master Channel
 
 ---
 
 ## Session Timeline
 
-### Latest Session: Reverse Loop Smoothness Improvements (v3.6.1)
+### Latest Session: Drag-and-Drop Effect Chains + Master Channel (v3.7.0)
+**Date**: October 23, 2025
+
+**User Requests**:
+1. "add a feature to drag and drop an effect chain in the UI before routing to the output."
+2. "the effect chain looks better but i still want the sliders for each effect to be visible when the toggle for that effect is turned on"
+3. "now add an effect chain for the master channel too"
+
+**Features Implemented**:
+
+**1. Track Effect Chains** (v3.7.0 - Part 1)
+- Visual drag-and-drop interface for effect ordering (Filter, Reverb, Delay)
+- Purple theme for track effect chains
+- Drag handles (⋮⋮) for intuitive reordering
+- Toggle buttons (✓/✗) to enable/disable effects
+- Reset button to restore default order
+- Smooth animations and hover effects
+
+**2. Dynamic Slider Visibility** (v3.7.0 - Part 2)
+- Effect sliders automatically show/hide based on toggle state
+- Enabled effects (✓): Sliders visible
+- Disabled effects (✗): Sliders hidden with smooth fade animation
+- Handles multi-control effects (delay has amount + time)
+- 300ms fade transitions for professional feel
+
+**3. Master Effect Chain** (v3.7.0 - Part 3)
+- New master output section with distinctive golden theme
+- Drag-and-drop effect chain for final mix
+- Master effects: Filter, Reverb, Delay
+- Master volume control for overall output level
+- Signal flow: Both tracks → Merger → Master Effects → Output
+
+**Technical Implementation**:
+
+**Files Created**:
+- `app/static/js/modules/effect-chain.js` - EffectChain class with drag-drop logic
+  - `constructor(trackNumber, audioContext)` - Supports 1, 2, or 'Master'
+  - `initializeUI()` - Creates drag-drop interface
+  - `render()` - Updates visual representation
+  - `handleDragStart/End/Over/Drop()` - Drag and drop logic
+  - `toggleEffect(index)` - Enable/disable with slider visibility
+  - `updateEffectControlsVisibility()` - Show/hide sliders with animation
+  - `getEffectControlIds(effectId)` - Maps effects to DOM controls
+  - `resetToDefault()` - Restore default order
+  - `notifyOrderChange()` - Dispatch custom event
+
+**Files Modified**:
+- `app/templates/index.html`:
+  - Added effect chain containers for tracks 1, 2, and Master
+  - Added unique IDs to all effect controls (filterControl1, reverbControl1, etc.)
+  - Created master effects section with golden theme
+  
+- `app/static/css/style.css`:
+  - `.effect-chain-container` - Purple theme for tracks
+  - `.effect-chain-item` - Draggable effect items with states
+  - `.effect-control` - Added transitions for smooth show/hide
+  - `.master-effects-section` - Golden theme for master (#ffd700)
+  - `#effectChainMaster` - Gold-themed effect chain overrides
+  
+- `app/static/js/visualizer-dual.js`:
+  - Added master effect nodes: `gainMaster`, `filterMaster`, `reverbMaster`, `delayMaster`
+  - Created effect chain managers: `effectChain1`, `effectChain2`, `effectChainMaster`
+  - Rerouted audio: Merger → Master Effects → Output
+  - Added event listeners for master effect controls
+  - DOM element references for master controls
+
+**Audio Routing Architecture**:
+```
+Track 1: Source → Gain → Filter → Reverb → Delay → Merger
+                                                      ↓
+Track 2: Source → Gain → Filter → Reverb → Delay → Merger
+                                                      ↓
+Master:  Merger → Filter → Reverb → Delay → Master Gain → Speakers/Recording
+```
+
+**Documentation Created**:
+- `EFFECT_CHAIN_FEATURE.md` - Complete feature documentation
+- `EFFECT_CHAIN_ENHANCEMENT.md` - Dynamic slider visibility details
+- `MASTER_EFFECT_CHAIN.md` - Master channel documentation
+
+**Key Features**:
+- ✅ Drag and drop to reorder effects (all 3 channels)
+- ✅ Toggle effects on/off with visual feedback
+- ✅ Dynamic slider visibility based on toggle state
+- ✅ Smooth 300ms fade animations
+- ✅ Purple theme for track chains, gold theme for master
+- ✅ Professional mastering workflow
+- ✅ Master volume control for final output
+- ✅ Independent effect chains per channel
+
+**Impact**:
+- Professional DJ/producer workflow
+- Visual effect routing management
+- Reduced UI clutter with dynamic controls
+- Master effects for cohesive final mix
+- Clear visual hierarchy (purple tracks, gold master)
+
+---
+
+### Session: Reverse Loop Smoothness Improvements (v3.6.1)
 **Date**: October 23, 2025
 
 **User Request**: "reverse looping does not sound smooth enough. investigate and fix."
