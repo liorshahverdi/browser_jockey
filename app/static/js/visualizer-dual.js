@@ -575,13 +575,13 @@ function playBothTracks() {
         if (loopState1.reverse && loopState1.enabled) {
             stopReversePlayback(loopState1);
             loopState1.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement1, loopState1);
+            animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
         }
         
         if (loopState2.reverse && loopState2.enabled) {
             stopReversePlayback(loopState2);
             loopState2.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement2, loopState2);
+            animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
         }
     });
 }
@@ -609,13 +609,13 @@ function playBothAndRecord() {
         if (loopState1.reverse && loopState1.enabled) {
             stopReversePlayback(loopState1);
             loopState1.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement1, loopState1);
+            animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
         }
         
         if (loopState2.reverse && loopState2.enabled) {
             stopReversePlayback(loopState2);
             loopState2.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement2, loopState2);
+            animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
         }
     });
 }
@@ -2320,15 +2320,9 @@ waveform2.parentElement.addEventListener('mousemove', (e) => {
     }
 });
 
-// Update time and progress for Track 1
-audioElement1.addEventListener('loadedmetadata', () => {
-    duration1Display.textContent = formatTime(audioElement1.duration);
-});
-
-audioElement1.addEventListener('timeupdate', () => {
-    currentTime1Display.textContent = formatTime(audioElement1.currentTime);
+// Helper function to update waveform progress for Track 1
+function updateWaveformProgress1() {
     if (audioElement1.duration) {
-        // Calculate progress relative to visible waveform when zoomed
         const currentTime = audioElement1.currentTime;
         const duration = audioElement1.duration;
         
@@ -2349,21 +2343,12 @@ audioElement1.addEventListener('timeupdate', () => {
             // Playhead is after visible range
             waveformProgress1.style.width = '100%';
         }
-        
-        // Handle loop playback
-        handleLoopPlayback(audioElement1, loopState1, isDraggingMarker1);
     }
-});
+}
 
-// Update time and progress for Track 2
-audioElement2.addEventListener('loadedmetadata', () => {
-    duration2Display.textContent = formatTime(audioElement2.duration);
-});
-
-audioElement2.addEventListener('timeupdate', () => {
-    currentTime2Display.textContent = formatTime(audioElement2.currentTime);
+// Helper function to update waveform progress for Track 2
+function updateWaveformProgress2() {
     if (audioElement2.duration) {
-        // Calculate progress relative to visible waveform when zoomed
         const currentTime = audioElement2.currentTime;
         const duration = audioElement2.duration;
         
@@ -2384,7 +2369,36 @@ audioElement2.addEventListener('timeupdate', () => {
             // Playhead is after visible range
             waveformProgress2.style.width = '100%';
         }
-        
+    }
+}
+
+// Update time and progress for Track 1
+audioElement1.addEventListener('loadedmetadata', () => {
+    duration1Display.textContent = formatTime(audioElement1.duration);
+});
+
+audioElement1.addEventListener('timeupdate', () => {
+    currentTime1Display.textContent = formatTime(audioElement1.currentTime);
+    // Update progress bar (will be smooth during reverse playback via callback)
+    updateWaveformProgress1();
+    
+    if (audioElement1.duration) {
+        // Handle loop playback
+        handleLoopPlayback(audioElement1, loopState1, isDraggingMarker1);
+    }
+});
+
+// Update time and progress for Track 2
+audioElement2.addEventListener('loadedmetadata', () => {
+    duration2Display.textContent = formatTime(audioElement2.duration);
+});
+
+audioElement2.addEventListener('timeupdate', () => {
+    currentTime2Display.textContent = formatTime(audioElement2.currentTime);
+    // Update progress bar (will be smooth during reverse playback via callback)
+    updateWaveformProgress2();
+    
+    if (audioElement2.duration) {
         // Handle loop playback
         handleLoopPlayback(audioElement2, loopState2, isDraggingMarker2);
     }
@@ -2401,7 +2415,7 @@ playBtn1.addEventListener('click', () => {
             // Stop any existing animation first to prevent duplicates
             stopReversePlayback(loopState1);
             loopState1.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement1, loopState1);
+            animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
         }
     });
 });
@@ -2416,7 +2430,7 @@ playBtn2.addEventListener('click', () => {
             // Stop any existing animation first to prevent duplicates
             stopReversePlayback(loopState2);
             loopState2.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement2, loopState2);
+            animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
         }
     });
 });
@@ -2529,7 +2543,7 @@ reverseLoopBtn1.addEventListener('click', () => {
         // Only start reverse animation if playing
         if (!audioElement1.paused) {
             loopState1.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement1, loopState1);
+            animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
         }
     } else {
         // Stop reverse animation but keep loop points
@@ -2572,7 +2586,7 @@ reverseLoopBtn2.addEventListener('click', () => {
         // Only start reverse animation if playing
         if (!audioElement2.paused) {
             loopState2.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement2, loopState2);
+            animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
         }
     } else {
         // Stop reverse animation but keep loop points

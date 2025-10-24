@@ -69,34 +69,96 @@ export function clearLoopPoints(loopState, loopRegion, loopMarkerStart, loopMark
     loopMarkerEnd.style.display = 'none';
 }
 
-// Reverse playback animation function
-export function animateReversePlayback(audioElement, loopState) {
+// Reverse playback animation function with maximum smoothness
+export function animateReversePlayback(audioElement, loopState, updateProgressCallback = null) {
     if (!loopState.reverse || !loopState.enabled || audioElement.paused) {
         return;
     }
     
     const now = performance.now();
-    const deltaTime = (now - (loopState.lastReverseTime || now)) / 1000; // Convert to seconds
+    
+    // Initialize timing on first run
+    if (!loopState.lastReverseTime) {
+        loopState.lastReverseTime = now;
+        loopState.reverseAccumulator = 0;
+    }
+    
+    const deltaTime = (now - loopState.lastReverseTime) / 1000; // Convert to seconds
     loopState.lastReverseTime = now;
     
-    // Decrease currentTime based on playback rate
+    // Use accumulator to handle fractional time updates for smoothness
     const playbackRate = Math.abs(audioElement.playbackRate || 1.0);
-    const newTime = audioElement.currentTime - (deltaTime * playbackRate);
+    loopState.reverseAccumulator = (loopState.reverseAccumulator || 0) + (deltaTime * playbackRate);
     
-    // Check if we've reached the start of the loop
-    if (newTime <= loopState.start) {
-        audioElement.currentTime = loopState.end;
-        loopState.lastReverseTime = performance.now(); // Reset timing after loop
-    } else if (newTime > loopState.end) {
-        // If we're somehow past the end, wrap to end (handles edge case)
-        audioElement.currentTime = loopState.end;
-        loopState.lastReverseTime = performance.now();
-    } else {
-        audioElement.currentTime = newTime;
+    // Adaptive update frequency: faster playback = more frequent updates
+    // This balances smoothness with performance
+    const MIN_TIME_STEP = Math.max(0.005, 0.015 / playbackRate); // 5-15ms range based on speed
+    
+    if (loopState.reverseAccumulator >= MIN_TIME_STEP) {
+        const currentTime = audioElement.currentTime;
+        const timeStep = loopState.reverseAccumulator;
+        loopState.reverseAccumulator = 0;
+        
+        // Calculate new position
+        let newTime = currentTime - timeStep;
+        
+        // Check if we've reached or passed the start of the loop
+        if (newTime <= loopState.start) {
+            // Calculate overshoot to maintain perfect timing and avoid gaps
+            const overshoot = loopState.start - newTime;
+            const loopDuration = loopState.end - loopState.start;
+            
+            // Wrap to end, accounting for overshoot for seamless looping
+            newTime = loopState.end - (overshoot % loopDuration);
+            
+            // Ensure we stay within bounds
+            if (newTime > loopState.end || newTime < loopState.start) {
+                newTime = loopState.end - 0.001; // Small offset to prevent immediate re-trigger
+            }
+            
+            // Only seek if the media is ready to prevent buffer issues
+            if (audioElement.readyState >= audioElement.HAVE_CURRENT_DATA) {
+                try {
+                    audioElement.currentTime = newTime;
+                    // Update progress bar immediately after seeking
+                    if (updateProgressCallback) {
+                        updateProgressCallback();
+                    }
+                } catch (e) {
+                    console.warn('Reverse loop seek failed:', e);
+                }
+            }
+        } else if (newTime > loopState.end) {
+            // If we're somehow past the end, clamp to end (handles edge case)
+            if (audioElement.readyState >= audioElement.HAVE_CURRENT_DATA) {
+                try {
+                    audioElement.currentTime = loopState.end - 0.001;
+                    // Update progress bar
+                    if (updateProgressCallback) {
+                        updateProgressCallback();
+                    }
+                } catch (e) {
+                    console.warn('Reverse loop clamp failed:', e);
+                }
+            }
+        } else {
+            // Normal reverse playback - only update if media is ready
+            if (audioElement.readyState >= audioElement.HAVE_CURRENT_DATA) {
+                try {
+                    audioElement.currentTime = newTime;
+                    // Update progress bar for smooth visual feedback
+                    if (updateProgressCallback) {
+                        updateProgressCallback();
+                    }
+                } catch (e) {
+                    console.warn('Reverse playback update failed:', e);
+                }
+            }
+        }
     }
     
     // Continue animation
-    loopState.reverseAnimationId = requestAnimationFrame(() => animateReversePlayback(audioElement, loopState));
+    loopState.reverseAnimationId = requestAnimationFrame(() => animateReversePlayback(audioElement, loopState, updateProgressCallback));
 }
 
 // Stop reverse playback animation
@@ -106,6 +168,7 @@ export function stopReversePlayback(loopState) {
         loopState.reverseAnimationId = null;
     }
     loopState.lastReverseTime = 0;
+    loopState.reverseAccumulator = 0; // Clear accumulator
 }
 
 // Check and handle loop playback

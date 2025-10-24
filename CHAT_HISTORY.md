@@ -3,11 +3,60 @@
 ## Project Overview
 A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, and dual track controls.
 
-**Latest Version: v3.6.0** - Added Dual Track Controls (Play Both Tracks + Play Both & Record)
+**Latest Version: v3.6.1** - Improved Reverse Loop Smoothness & Visual Feedback
 
 ---
 
 ## Session Timeline
+
+### Latest Session: Reverse Loop Smoothness Improvements (v3.6.1)
+**Date**: October 23, 2025
+
+**User Request**: "reverse looping does not sound smooth enough. investigate and fix."
+
+**Problem Identified**:
+- Reverse playback was choppy with audible gaps and stuttering
+- Manual `currentTime` manipulation caused audio buffer discontinuities
+- Fixed update rate (~60fps) didn't adapt to playback speed
+- Progress bar didn't visually reflect reverse playback direction
+
+**Solution Implemented**:
+1. **Time Accumulator Pattern**: Accumulates time deltas and updates only when reaching meaningful thresholds
+2. **Adaptive Update Frequency**: 5-15ms range that adapts based on playback speed (faster = more frequent updates)
+3. **Precise Loop Wrapping**: Overshoot calculation eliminates audio gaps at loop boundaries
+4. **Media Readiness Checks**: Prevents buffer underruns by checking audio element state
+5. **Visual Feedback**: Progress bar now smoothly moves backwards during reverse playback
+
+**Technical Details**:
+- Modified `animateReversePlayback()` in `loop-controls.js` with accumulator pattern
+- Added `updateWaveformProgress1()` and `updateWaveformProgress2()` helper functions
+- Progress callback updates bar ~66-200 times/sec (adaptive) vs ~4 times/sec before
+- All reverse playback calls now include progress update callbacks
+
+**Files Modified**:
+- `app/static/js/modules/loop-controls.js` - Enhanced reverse playback animation
+- `app/static/js/visualizer-dual.js` - Added progress helpers and updated all calls
+
+**Documentation Created**:
+- `REVERSE_LOOP_SMOOTHNESS_FIX.md` - Technical explanation of improvements
+- `REVERSE_LOOP_PROGRESS_VISUAL.md` - Visual feedback implementation details
+- `REVERSE_PLAYBACK_ARCHITECTURE.md` - Future enhancement architecture (buffer-based approach)
+- `REVERSE_LOOP_TESTING.md` - Testing procedures
+
+**Impact**:
+- ✅ Significantly smoother reverse playback
+- ✅ Seamless loop wrapping with minimal gaps
+- ✅ Better performance at different tempo settings
+- ✅ Clear visual indication of reverse mode
+- ✅ Professional-quality user experience
+
+**Follow-up Discussion**:
+- Explained full architecture change needed for perfect reverse (AudioBufferSourceNode)
+- Documented hybrid approach: normal playback uses MediaElementSource, reverse uses reversed buffers
+- Estimated 6-8 days for full implementation vs current 80/20 solution
+- Current improvements provide 80% benefit for 20% effort
+
+---
 
 ### 1. Initial Setup
 **User Request**: "Help me set up a boilerplate flask web app for an audio visualizer"
