@@ -48,17 +48,11 @@ A dual-track DJ mixing web application with 3D audio visualization, XY oscillosc
 
 ## Screenshots
 
-![Browser Jockey - Dual Track Interface](https://raw.githubusercontent.com/lshahverdi/browser_jockey/main/app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
+![Browser Jockey](app/screenshots/Screenshot%202025-10-24%20at%2014.18.13.png)
 
-*Professional dual-track DJ interface with 3D visualization and XY oscilloscope*
+![Browser Jockey XY Oscilloscope](app/screenshots/Screenshot%202025-10-24%20at%2014.19.06.png)
 
-![Browser Jockey - Circle Visualization Mode](https://raw.githubusercontent.com/lshahverdi/browser_jockey/main/app/screenshots/app_screenshot_2025_10_22_at_23_02_10.png)
-
-*Circle mode with dynamic heat map colors responding to audio energy*
-
-![Browser Jockey - Sphere Visualization Mode](https://raw.githubusercontent.com/lshahverdi/browser_jockey/main/app/screenshots/app_screenshot_2025_10_22_at_23_02_25.png)
-
-*Sphere mode with immersive 3D audio-reactive geometry*
+![Browser Jockey Effects Chain](app/screenshots/Screenshot%202025-10-24%20at%2014.19.30.png)
 
 
 
