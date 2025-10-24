@@ -179,6 +179,13 @@ const recordedAudio = document.getElementById('recordedAudio');
 const playBothBtn = document.getElementById('playBothBtn');
 const playBothRecordBtn = document.getElementById('playBothRecordBtn');
 
+// Crossfader elements
+const crossfader = document.getElementById('crossfader');
+const crossfaderValue = document.getElementById('crossfaderValue');
+const crossfaderMode = document.getElementById('crossfaderMode');
+const crossfaderLabelLeft = document.getElementById('crossfaderLabelLeft');
+const crossfaderLabelRight = document.getElementById('crossfaderLabelRight');
+
 // Microphone elements
 const enableMicBtn = document.getElementById('enableMicBtn');
 const disableMicBtn = document.getElementById('disableMicBtn');
@@ -669,6 +676,75 @@ function playBothAndRecord() {
             animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
         }
     });
+}
+
+// ==================== Crossfader Functions ====================
+
+// Update crossfader labels based on mode
+function updateCrossfaderMode(mode) {
+    switch(mode) {
+        case 'track1-track2':
+            crossfaderLabelLeft.textContent = 'Track 1';
+            crossfaderLabelRight.textContent = 'Track 2';
+            break;
+        case 'track1-mic':
+            crossfaderLabelLeft.textContent = 'Track 1';
+            crossfaderLabelRight.textContent = 'Microphone';
+            break;
+        case 'track2-mic':
+            crossfaderLabelLeft.textContent = 'Track 2';
+            crossfaderLabelRight.textContent = 'Microphone';
+            break;
+    }
+    // Apply current crossfader position to new mode
+    updateCrossfader(parseInt(crossfader.value));
+}
+
+// Update crossfader and adjust volumes
+function updateCrossfader(value) {
+    const mode = crossfaderMode.value;
+    
+    // Calculate fade curves (equal power crossfade)
+    const leftGain = Math.cos((value / 100) * (Math.PI / 2));
+    const rightGain = Math.sin((value / 100) * (Math.PI / 2));
+    
+    // Update display
+    const leftPercent = Math.round(leftGain * 100);
+    const rightPercent = Math.round(rightGain * 100);
+    crossfaderValue.textContent = `${leftPercent}% / ${rightPercent}%`;
+    
+    // Apply gains based on mode
+    switch(mode) {
+        case 'track1-track2':
+            // Crossfade between Track 1 and Track 2
+            if (gain1) gain1.gain.value = leftGain * (volumeSlider1.value / 100);
+            if (gain2) gain2.gain.value = rightGain * (volumeSlider2.value / 100);
+            // Reset mic gain if it was previously affected
+            if (micGainNode && micStream) {
+                micGainNode.gain.value = micVolumeSlider.value / 100;
+            }
+            break;
+            
+        case 'track1-mic':
+            // Crossfade between Track 1 and Microphone
+            if (gain1) gain1.gain.value = leftGain * (volumeSlider1.value / 100);
+            if (micGainNode && micStream) {
+                micGainNode.gain.value = rightGain * (micVolumeSlider.value / 100);
+            }
+            // Reset Track 2 to its normal volume
+            if (gain2) gain2.gain.value = volumeSlider2.value / 100;
+            break;
+            
+        case 'track2-mic':
+            // Crossfade between Track 2 and Microphone
+            if (gain2) gain2.gain.value = leftGain * (volumeSlider2.value / 100);
+            if (micGainNode && micStream) {
+                micGainNode.gain.value = rightGain * (micVolumeSlider.value / 100);
+            }
+            // Reset Track 1 to its normal volume
+            if (gain1) gain1.gain.value = volumeSlider1.value / 100;
+            break;
+    }
 }
 
 // Enable microphone input
@@ -3300,6 +3376,15 @@ loadToTrack2Btn.addEventListener('click', loadRecordingToTrack2);
 playBothBtn.addEventListener('click', playBothTracks);
 playBothRecordBtn.addEventListener('click', playBothAndRecord);
 
+// Crossfader handlers
+crossfader.addEventListener('input', (e) => {
+    updateCrossfader(parseInt(e.target.value));
+});
+
+crossfaderMode.addEventListener('change', (e) => {
+    updateCrossfaderMode(e.target.value);
+});
+
 // Microphone button handlers
 enableMicBtn.addEventListener('click', enableMicrophone);
 disableMicBtn.addEventListener('click', disableMicrophone);
@@ -3404,20 +3489,18 @@ tempoSlider2.addEventListener('input', (e) => {
 // Volume sliders
 volumeSlider1.addEventListener('input', (e) => {
     const volume = parseInt(e.target.value);
-    if (gain1) {
-        gain1.gain.value = volume / 100;
-    }
-    audioElement1.volume = volume / 100; // Fallback for when effects not initialized
     volumeValue1.textContent = volume + '%';
+    audioElement1.volume = volume / 100; // Fallback for when effects not initialized
+    // Apply volume through crossfader to maintain crossfade position
+    updateCrossfader(parseInt(crossfader.value));
 });
 
 volumeSlider2.addEventListener('input', (e) => {
     const volume = parseInt(e.target.value);
-    if (gain2) {
-        gain2.gain.value = volume / 100;
-    }
-    audioElement2.volume = volume / 100; // Fallback for when effects not initialized
     volumeValue2.textContent = volume + '%';
+    audioElement2.volume = volume / 100; // Fallback for when effects not initialized
+    // Apply volume through crossfader to maintain crossfade position
+    updateCrossfader(parseInt(crossfader.value));
 });
 
 // Pan sliders

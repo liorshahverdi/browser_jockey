@@ -24,9 +24,9 @@
         </header>
         
         <div class="controls">
-            <!-- DJ Layout: Two Decks Side by Side -->
+            <!-- DJ Layout: Three Column Layout (Track 1 | Mixer | Track 2) -->
             <div class="dj-decks-container">
-            <div class="dual-track-section">
+                <!-- Left Column: Track 1 -->
                 <div class="track-upload">
                     <label>Track 1</label>
                     
@@ -141,6 +141,200 @@
                     </div>
                 </div>
                 
+                <!-- Center Column: DJ Mixer Section -->
+                <div class="dj-mixer-section">
+                    <div class="mixer-header">🎛️ DJ MIXER</div>
+                
+                <!-- Dual Track Controls -->
+                <div class="dual-track-controls-section">
+                    <div class="dual-controls-header">🎚️ Dual Track Controls</div>
+                    <div class="dual-controls-buttons">
+                        <button id="playBothBtn" class="control-btn dual-control-btn" disabled>
+                            <span class="dual-icon">▶️▶️</span> Play Both Tracks
+                        </button>
+                        <button id="playBothRecordBtn" class="control-btn dual-control-btn" disabled>
+                            <span class="dual-icon">▶️⏺️</span> Play Both & Record
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Crossfader Section -->
+                <div class="crossfader-section">
+                    <div class="crossfader-header">⚡ Crossfader</div>
+                    <div class="crossfader-mode-select">
+                        <label>Mode:</label>
+                        <select id="crossfaderMode" class="crossfader-mode-dropdown">
+                            <option value="track1-track2" selected>Track 1 ↔ Track 2</option>
+                            <option value="track1-mic">Track 1 ↔ Microphone</option>
+                            <option value="track2-mic">Track 2 ↔ Microphone</option>
+                        </select>
+                    </div>
+                    <div class="crossfader-control">
+                        <div class="crossfader-labels">
+                            <span class="crossfader-label-left" id="crossfaderLabelLeft">Track 1</span>
+                            <span class="crossfader-label-center">CENTER</span>
+                            <span class="crossfader-label-right" id="crossfaderLabelRight">Track 2</span>
+                        </div>
+                        <input type="range" id="crossfader" min="0" max="100" step="1" value="50" class="crossfader-slider">
+                        <div class="crossfader-value">
+                            <span id="crossfaderValue">50% / 50%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="microphone-section">
+                    <div class="mic-header">🎤 Microphone Input</div>
+                    <div class="mic-controls">
+                        <button id="enableMicBtn" class="control-btn">
+                            <span class="mic-icon">🎤</span> Enable Microphone
+                        </button>
+                        <button id="disableMicBtn" class="control-btn" disabled style="display: none;">
+                            <span class="mic-icon">🔇</span> Disable Microphone
+                        </button>
+                        <div class="mic-volume-control" style="display: none;" id="micVolumeControl">
+                            <label>Mic Volume: <span id="micVolumeValue">100%</span></label>
+                            <input type="range" id="micVolumeSlider" min="0" max="100" step="1" value="100" class="volume-slider">
+                        </div>
+                        <div class="mic-monitoring" style="display: none;" id="micMonitoring">
+                            <label>
+                                <input type="checkbox" id="micMonitorCheckbox">
+                                Monitor (hear yourself)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Microphone Recording Section -->
+                    <div class="mic-recording-section" style="display: none;" id="micRecordingSection">
+                        <div class="mic-recording-header">🎙️ Microphone Recording</div>
+                        <div class="mic-recording-controls">
+                            <button id="micRecordBtn" class="control-btn">
+                                <span>⏺️</span> Record Mic
+                            </button>
+                            <button id="micStopBtn" class="control-btn" disabled style="display: none;">
+                                <span>⏹️</span> Stop Recording
+                            </button>
+                            <span id="micRecordingTime" class="recording-time" style="display: none;">0:00</span>
+                        </div>
+                        <div class="mic-recording-waveform-container" style="display: none;" id="micRecordingWaveformContainer">
+                            <canvas id="micRecordingWaveform" class="waveform-canvas"></canvas>
+                        </div>
+                        <div class="mic-recording-playback" style="display: none;" id="micRecordingPlayback">
+                            <audio id="micRecordingAudio" controls></audio>
+                            <div class="mic-recording-actions">
+                                <div class="mic-recording-load">
+                                    <label>Load to Track:</label>
+                                    <button id="micLoadToTrack1Btn" class="load-track-btn">🎵 Track 1</button>
+                                    <button id="micLoadToTrack2Btn" class="load-track-btn">🎵 Track 2</button>
+                                </div>
+                                <div class="mic-recording-export">
+                                    <button id="micExportWavBtn" class="export-btn">💾 Export as WAV</button>
+                                    <button id="micExportMp3Btn" class="export-btn">💾 Export as MP3</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="vocoder-section" style="display: none;" id="vocoderSection">
+                        <div class="vocoder-header">🤖 Vocoder Effect</div>
+                        <div class="vocoder-controls">
+                            <div class="vocoder-control">
+                                <label>Modulator (Voice):</label>
+                                <select id="vocoderModulator" class="vocoder-select">
+                                    <option value="mic" selected>Microphone</option>
+                                    <option value="track1">Track 1</option>
+                                    <option value="track2">Track 2</option>
+                                </select>
+                            </div>
+                            <div class="vocoder-control">
+                                <label>Carrier Source:</label>
+                                <select id="vocoderCarrier" class="vocoder-select">
+                                    <option value="track1">Track 1</option>
+                                    <option value="track2">Track 2</option>
+                                    <option value="mix" selected>Both Tracks (Mix)</option>
+                                    <option value="mic">Microphone (Feedback)</option>
+                                </select>
+                            </div>
+                            <button id="enableVocoderBtn" class="vocoder-btn">
+                                Enable Vocoder
+                            </button>
+                            <button id="disableVocoderBtn" class="vocoder-btn" disabled style="display: none;">
+                                Disable Vocoder
+                            </button>
+                            <div class="vocoder-settings" style="display: none;" id="vocoderSettings">
+                                <div class="vocoder-control">
+                                    <label>Dry/Wet Mix: <span id="vocoderMixValue">100%</span></label>
+                                    <input type="range" id="vocoderMixSlider" min="0" max="100" step="1" value="100" class="effect-slider">
+                                </div>
+                                <div class="vocoder-control">
+                                    <label>Bands: <span id="vocoderBandsValue">16</span></label>
+                                    <input type="range" id="vocoderBandsSlider" min="8" max="32" step="8" value="16" class="effect-slider">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="autotune-section" style="display: none;" id="autotuneSection">
+                        <div class="autotune-header">🎵 Auto-Tune Effect</div>
+                        <div class="autotune-controls">
+                            <div class="autotune-control">
+                                <label>Audio Source:</label>
+                                <select id="autotuneSource" class="autotune-select">
+                                    <option value="mic" selected>Microphone</option>
+                                    <option value="track1">Track 1</option>
+                                    <option value="track2">Track 2</option>
+                                </select>
+                            </div>
+                            <button id="enableAutotuneBtn" class="autotune-btn">
+                                Enable Auto-Tune
+                            </button>
+                            <button id="disableAutotuneBtn" class="autotune-btn" disabled style="display: none;">
+                                Disable Auto-Tune
+                            </button>
+                            <div class="autotune-settings" style="display: none;" id="autotuneSettings">
+                                <div class="autotune-control">
+                                    <label>Key:</label>
+                                    <select id="autotuneKey" class="autotune-select">
+                                        <option value="C">C</option>
+                                        <option value="C#">C#</option>
+                                        <option value="D">D</option>
+                                        <option value="D#">D#</option>
+                                        <option value="E">E</option>
+                                        <option value="F">F</option>
+                                        <option value="F#">F#</option>
+                                        <option value="G">G</option>
+                                        <option value="G#">G#</option>
+                                        <option value="A" selected>A</option>
+                                        <option value="A#">A#</option>
+                                        <option value="B">B</option>
+                                    </select>
+                                </div>
+                                <div class="autotune-control">
+                                    <label>Scale:</label>
+                                    <select id="autotuneScale" class="autotune-select">
+                                        <option value="major" selected>Major</option>
+                                        <option value="minor">Minor</option>
+                                        <option value="chromatic">Chromatic</option>
+                                    </select>
+                                </div>
+                                <div class="autotune-control">
+                                    <label>Correction Speed: <span id="autotuneSpeedValue">50ms</span></label>
+                                    <input type="range" id="autotuneSpeedSlider" min="0" max="200" step="10" value="50" class="effect-slider">
+                                </div>
+                                <div class="autotune-control">
+                                    <label>Strength: <span id="autotuneStrengthValue">100%</span></label>
+                                    <input type="range" id="autotuneStrengthSlider" min="0" max="100" step="5" value="100" class="effect-slider">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mic-waveform-container" style="display: none;" id="micWaveformContainer">
+                        <label>Mic Input Level:</label>
+                        <canvas id="micWaveform" class="waveform-canvas" style="height: 60px;"></canvas>
+                    </div>
+                </div>
+                
+                </div>
+                
+                <!-- Right Column: Track 2 -->
                 <div class="track-upload">
                     <label>Track 2</label>
                     
@@ -255,179 +449,6 @@
                     </div>
                 </div>
             </div>
-            </div>
-            
-            <!-- DJ Center Mixer Section -->
-            <div class="dj-mixer-section">
-                <div class="mixer-header">🎛️ DJ MIXER</div>
-            
-            <!-- Dual Track Controls -->
-            <div class="dual-track-controls-section">
-                <div class="dual-controls-header">🎚️ Dual Track Controls</div>
-                <div class="dual-controls-buttons">
-                    <button id="playBothBtn" class="control-btn dual-control-btn" disabled>
-                        <span class="dual-icon">▶️▶️</span> Play Both Tracks
-                    </button>
-                    <button id="playBothRecordBtn" class="control-btn dual-control-btn" disabled>
-                        <span class="dual-icon">▶️⏺️</span> Play Both & Record
-                    </button>
-                </div>
-            </div>
-            
-            <div class="microphone-section">
-                <div class="mic-header">🎤 Microphone Input</div>
-                <div class="mic-controls">
-                    <button id="enableMicBtn" class="control-btn">
-                        <span class="mic-icon">🎤</span> Enable Microphone
-                    </button>
-                    <button id="disableMicBtn" class="control-btn" disabled style="display: none;">
-                        <span class="mic-icon">🔇</span> Disable Microphone
-                    </button>
-                    <div class="mic-volume-control" style="display: none;" id="micVolumeControl">
-                        <label>Mic Volume: <span id="micVolumeValue">100%</span></label>
-                        <input type="range" id="micVolumeSlider" min="0" max="100" step="1" value="100" class="volume-slider">
-                    </div>
-                    <div class="mic-monitoring" style="display: none;" id="micMonitoring">
-                        <label>
-                            <input type="checkbox" id="micMonitorCheckbox">
-                            Monitor (hear yourself)
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Microphone Recording Section -->
-                <div class="mic-recording-section" style="display: none;" id="micRecordingSection">
-                    <div class="mic-recording-header">🎙️ Microphone Recording</div>
-                    <div class="mic-recording-controls">
-                        <button id="micRecordBtn" class="control-btn">
-                            <span>⏺️</span> Record Mic
-                        </button>
-                        <button id="micStopBtn" class="control-btn" disabled style="display: none;">
-                            <span>⏹️</span> Stop Recording
-                        </button>
-                        <span id="micRecordingTime" class="recording-time" style="display: none;">0:00</span>
-                    </div>
-                    <div class="mic-recording-waveform-container" style="display: none;" id="micRecordingWaveformContainer">
-                        <canvas id="micRecordingWaveform" class="waveform-canvas"></canvas>
-                    </div>
-                    <div class="mic-recording-playback" style="display: none;" id="micRecordingPlayback">
-                        <audio id="micRecordingAudio" controls></audio>
-                        <div class="mic-recording-actions">
-                            <div class="mic-recording-load">
-                                <label>Load to Track:</label>
-                                <button id="micLoadToTrack1Btn" class="load-track-btn">🎵 Track 1</button>
-                                <button id="micLoadToTrack2Btn" class="load-track-btn">🎵 Track 2</button>
-                            </div>
-                            <div class="mic-recording-export">
-                                <button id="micExportWavBtn" class="export-btn">💾 Export as WAV</button>
-                                <button id="micExportMp3Btn" class="export-btn">💾 Export as MP3</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="vocoder-section" style="display: none;" id="vocoderSection">
-                    <div class="vocoder-header">🤖 Vocoder Effect</div>
-                    <div class="vocoder-controls">
-                        <div class="vocoder-control">
-                            <label>Modulator (Voice):</label>
-                            <select id="vocoderModulator" class="vocoder-select">
-                                <option value="mic" selected>Microphone</option>
-                                <option value="track1">Track 1</option>
-                                <option value="track2">Track 2</option>
-                            </select>
-                        </div>
-                        <div class="vocoder-control">
-                            <label>Carrier Source:</label>
-                            <select id="vocoderCarrier" class="vocoder-select">
-                                <option value="track1">Track 1</option>
-                                <option value="track2">Track 2</option>
-                                <option value="mix" selected>Both Tracks (Mix)</option>
-                                <option value="mic">Microphone (Feedback)</option>
-                            </select>
-                        </div>
-                        <button id="enableVocoderBtn" class="vocoder-btn">
-                            Enable Vocoder
-                        </button>
-                        <button id="disableVocoderBtn" class="vocoder-btn" disabled style="display: none;">
-                            Disable Vocoder
-                        </button>
-                        <div class="vocoder-settings" style="display: none;" id="vocoderSettings">
-                            <div class="vocoder-control">
-                                <label>Dry/Wet Mix: <span id="vocoderMixValue">100%</span></label>
-                                <input type="range" id="vocoderMixSlider" min="0" max="100" step="1" value="100" class="effect-slider">
-                            </div>
-                            <div class="vocoder-control">
-                                <label>Bands: <span id="vocoderBandsValue">16</span></label>
-                                <input type="range" id="vocoderBandsSlider" min="8" max="32" step="8" value="16" class="effect-slider">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="autotune-section" style="display: none;" id="autotuneSection">
-                    <div class="autotune-header">🎵 Auto-Tune Effect</div>
-                    <div class="autotune-controls">
-                        <div class="autotune-control">
-                            <label>Audio Source:</label>
-                            <select id="autotuneSource" class="autotune-select">
-                                <option value="mic" selected>Microphone</option>
-                                <option value="track1">Track 1</option>
-                                <option value="track2">Track 2</option>
-                            </select>
-                        </div>
-                        <button id="enableAutotuneBtn" class="autotune-btn">
-                            Enable Auto-Tune
-                        </button>
-                        <button id="disableAutotuneBtn" class="autotune-btn" disabled style="display: none;">
-                            Disable Auto-Tune
-                        </button>
-                        <div class="autotune-settings" style="display: none;" id="autotuneSettings">
-                            <div class="autotune-control">
-                                <label>Key:</label>
-                                <select id="autotuneKey" class="autotune-select">
-                                    <option value="C">C</option>
-                                    <option value="C#">C#</option>
-                                    <option value="D">D</option>
-                                    <option value="D#">D#</option>
-                                    <option value="E">E</option>
-                                    <option value="F">F</option>
-                                    <option value="F#">F#</option>
-                                    <option value="G">G</option>
-                                    <option value="G#">G#</option>
-                                    <option value="A" selected>A</option>
-                                    <option value="A#">A#</option>
-                                    <option value="B">B</option>
-                                </select>
-                            </div>
-                            <div class="autotune-control">
-                                <label>Scale:</label>
-                                <select id="autotuneScale" class="autotune-select">
-                                    <option value="major" selected>Major</option>
-                                    <option value="minor">Minor</option>
-                                    <option value="chromatic">Chromatic</option>
-                                </select>
-                            </div>
-                            <div class="autotune-control">
-                                <label>Correction Speed: <span id="autotuneSpeedValue">50ms</span></label>
-                                <input type="range" id="autotuneSpeedSlider" min="0" max="200" step="10" value="50" class="effect-slider">
-                            </div>
-                            <div class="autotune-control">
-                                <label>Strength: <span id="autotuneStrengthValue">100%</span></label>
-                                <input type="range" id="autotuneStrengthSlider" min="0" max="100" step="5" value="100" class="effect-slider">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mic-waveform-container" style="display: none;" id="micWaveformContainer">
-                    <label>Mic Input Level:</label>
-                    <canvas id="micWaveform" class="waveform-canvas" style="height: 60px;"></canvas>
-                </div>
-            </div>
-            
-                                </div>
-                </div>
-            </div>
-            </div>
             
             <!-- Keyboard Sampler Section -->
             <div class="keyboard-sampler-section">
@@ -535,40 +556,50 @@
                     </div>
                 </div>
                 
-                <div class="effect-chain-container" id="effectChainMaster">
-                    <!-- Master effect chain UI will be dynamically generated here -->
-                </div>
-                <div class="effects-section">
-                    <div class="effects-header">🎛️ Master Effects</div>
-                    <div id="filterControlMaster" class="effect-control">
-                        <label>Filter: <span id="filterValueMaster">20kHz</span></label>
-                        <input type="range" id="filterSliderMaster" min="20" max="20000" step="10" value="20000" class="effect-slider">
-                        <select id="filterTypeMaster" class="filter-type-select">
-                            <option value="lowpass">Low Pass</option>
-                            <option value="highpass">High Pass</option>
-                            <option value="bandpass">Band Pass</option>
-                        </select>
+                <!-- Main Controls Row (Volume/Pan left, Effects right) -->
+                <div class="master-controls-row">
+                    <!-- Left Side: Volume and Pan -->
+                    <div class="master-volume-pan-section">
+                        <div class="master-volume-control">
+                            <label>Master Volume: <span id="masterVolumeValue">100%</span></label>
+                            <input type="range" id="masterVolumeSlider" min="0" max="100" step="1" value="100" class="volume-slider">
+                        </div>
+                        <div class="master-pan-control">
+                            <label>Master Pan: <span id="masterPanValue">Center</span></label>
+                            <input type="range" id="masterPanSlider" min="-100" max="100" step="1" value="0" class="pan-slider">
+                        </div>
                     </div>
-                    <div id="reverbControlMaster" class="effect-control">
-                        <label>Reverb: <span id="reverbValueMaster">0%</span></label>
-                        <input type="range" id="reverbSliderMaster" min="0" max="100" step="1" value="0" class="effect-slider">
+                    
+                    <!-- Right Side: Effects -->
+                    <div class="master-effects-wrapper">
+                        <div class="effect-chain-container" id="effectChainMaster">
+                            <!-- Master effect chain UI will be dynamically generated here -->
+                        </div>
+                        <div class="effects-section">
+                            <div class="effects-header">🎛️ Master Effects</div>
+                            <div id="filterControlMaster" class="effect-control">
+                                <label>Filter: <span id="filterValueMaster">20kHz</span></label>
+                                <input type="range" id="filterSliderMaster" min="20" max="20000" step="10" value="20000" class="effect-slider">
+                                <select id="filterTypeMaster" class="filter-type-select">
+                                    <option value="lowpass">Low Pass</option>
+                                    <option value="highpass">High Pass</option>
+                                    <option value="bandpass">Band Pass</option>
+                                </select>
+                            </div>
+                            <div id="reverbControlMaster" class="effect-control">
+                                <label>Reverb: <span id="reverbValueMaster">0%</span></label>
+                                <input type="range" id="reverbSliderMaster" min="0" max="100" step="1" value="0" class="effect-slider">
+                            </div>
+                            <div id="delayControlMaster" class="effect-control">
+                                <label>Delay: <span id="delayValueMaster">0%</span></label>
+                                <input type="range" id="delaySliderMaster" min="0" max="100" step="1" value="0" class="effect-slider">
+                            </div>
+                            <div id="delayTimeControlMaster" class="effect-control">
+                                <label>Delay Time: <span id="delayTimeValueMaster">300ms</span></label>
+                                <input type="range" id="delayTimeSliderMaster" min="50" max="2000" step="50" value="300" class="effect-slider">
+                            </div>
+                        </div>
                     </div>
-                    <div id="delayControlMaster" class="effect-control">
-                        <label>Delay: <span id="delayValueMaster">0%</span></label>
-                        <input type="range" id="delaySliderMaster" min="0" max="100" step="1" value="0" class="effect-slider">
-                    </div>
-                    <div id="delayTimeControlMaster" class="effect-control">
-                        <label>Delay Time: <span id="delayTimeValueMaster">300ms</span></label>
-                        <input type="range" id="delayTimeSliderMaster" min="50" max="2000" step="50" value="300" class="effect-slider">
-                    </div>
-                </div>
-                <div class="master-volume-control">
-                    <label>Master Volume: <span id="masterVolumeValue">100%</span></label>
-                    <input type="range" id="masterVolumeSlider" min="0" max="100" step="1" value="100" class="volume-slider">
-                </div>
-                <div class="master-pan-control">
-                    <label>Master Pan: <span id="masterPanValue">Center</span></label>
-                    <input type="range" id="masterPanSlider" min="-100" max="100" step="1" value="0" class="pan-slider">
                 </div>
                 
                 <!-- Recording Section -->

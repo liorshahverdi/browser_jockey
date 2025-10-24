@@ -1,20 +1,12 @@
 # Browser Jockey
 
-- 🎧 **Professional DJ Layout** - Authentic DJ mixer design with real equipment aesthetics
-  - 🎛️ Dual decks side-by-side (cyan/magenta color coding)
-  - 🎚️ Vertical faders for volume and tempo control (like real DJ mixers)
-  - 🔄 Horizontal pan controls for stereo positioning
-  - 🎛️ Center mixer section with dual track controls
-  - 🏆 Master output with integrated recording section
-  - ✨ Glowing effects and neon accents matching DJ equipment
-- 🎚️ **Stereo Panning** - Full L/R stereo control for each track and master output
-  - Track 1 & 2 independent panning
-  - Master pan for global stereo positioning
-  - Real-time visual feedback (L/R percentage display)
-- 🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneouslyockey.onrender.com/)
-A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, and professional DJ controls.
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browserjockey.onrender.com/)
 
-**Latest Update (v3.9.0)**: Major microphone and effects routing enhancements! Added standalone microphone recording (record directly from mic without tracks), flexible vocoder/auto-tune routing (use mic OR tracks as sources), load microphone recordings to tracks, side-by-side tempo/volume controls for compact layout, and master output routing toggles for precise mixing control. Includes comprehensive bug fixes for audio node routing and AudioContext initialization.
+A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, and authentic DJ controls.
+
+**Latest Update (v3.10.0)**: Added professional DJ crossfader with three modes (Track1↔Track2, Track1↔Mic, Track2↔Mic)! Features equal-power crossfade curves for smooth transitions, dynamic mode switching, and full three-column DJ layout (Track 1 | Mixer | Track 2). Master section reorganized with compact volume/pan controls. Includes critical bug fix for crossfader gain node references.
+
+**v3.9.0**: Major microphone and effects routing enhancements! Added standalone microphone recording (record directly from mic without tracks), flexible vocoder/auto-tune routing (use mic OR tracks as sources), load microphone recordings to tracks, side-by-side tempo/volume controls for compact layout, and master output routing toggles for precise mixing control. Includes comprehensive bug fixes for audio node routing and AudioContext initialization.
 
 **v3.8.0**: Complete professional DJ mixer redesign! Features authentic DJ layout with dual decks, vertical faders, and stereo panning controls. Interface now mirrors real DJ equipment with side-by-side decks (cyan/magenta), center mixer section, vertical volume/tempo sliders, and horizontal pan controls for precise stereo positioning. Recording integrated into master output section for streamlined workflow.
 
@@ -43,13 +35,18 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
 
 ## Features
 
-- 🎧 **Professional DJ Layout** - Classic DJ setup with dual decks, center mixer, and master output
+- 🎧 **Professional DJ Layout** - Authentic three-column DJ mixer design
   - 🎛️ Dual decks side-by-side (cyan/magenta color coding)
   - 🎚️ Vertical faders for volume and tempo (like real DJ mixers)
   - 🔄 Horizontal pan controls for stereo positioning
-  - 🎚️ Center mixer section with dual track controls
-  - 🏆 Master output with integrated recording
+  - �️ Center mixer section with crossfader and dual track controls
+  - 🏆 Master output with integrated recording section
   - ✨ Glowing effects and neon accents matching DJ equipment
+- ⚡ **Professional Crossfader** - Smooth transitions with equal-power curves
+  - 🔀 Three modes: Track1↔Track2, Track1↔Mic, Track2↔Mic
+  - 📊 Equal-power crossfade algorithm (constant perceived loudness)
+  - 🎨 Visual gradient slider with dynamic labels
+  - 🎚️ Respects individual volume slider settings
 - 🎚️ **Stereo Panning** - Full L/R stereo control for each track and master output
 - 🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneously
 - ▶️▶️ **Dual Track Controls** - Play both tracks at once, or play both and record simultaneously

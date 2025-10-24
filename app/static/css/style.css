@@ -13,9 +13,9 @@ body {
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 10px;
 }
 
 .page-header {
@@ -132,7 +132,16 @@ h1 {
 
 /* DJ Layout Containers */
 .dj-decks-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr; /* Track 1 (wide) | Mixer (narrow) | Track 2 (wide) */
+    gap: 10px;
     margin-bottom: 25px;
+}
+
+@media (max-width: 1400px) {
+    .dj-decks-container {
+        grid-template-columns: 1fr; /* Stack vertically on smaller screens */
+    }
 }
 
 .dj-mixer-section {
@@ -140,7 +149,6 @@ h1 {
     border: 3px solid rgba(255, 255, 255, 0.2);
     border-radius: 15px;
     padding: 20px;
-    margin-bottom: 25px;
     box-shadow: 
         0 8px 32px rgba(0, 0, 0, 0.5),
         inset 0 2px 10px rgba(255, 255, 255, 0.1);
@@ -159,13 +167,6 @@ h1 {
     background: rgba(0, 255, 255, 0.1);
     border-radius: 8px;
     border: 2px solid rgba(0, 255, 255, 0.3);
-}
-
-.dual-track-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 0;
 }
 
 .track-upload {
@@ -1093,6 +1094,161 @@ h1 {
     display: inline-block;
     margin-right: 8px;
     font-size: 1.2rem;
+}
+
+/* Crossfader Section */
+.crossfader-section {
+    margin-top: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.1));
+    border-radius: 10px;
+    border: 2px solid rgba(128, 0, 255, 0.4);
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(128, 0, 255, 0.2);
+}
+
+.crossfader-header {
+    font-size: 1.15rem;
+    font-weight: 900;
+    font-family: 'Orbitron', sans-serif;
+    color: rgba(200, 100, 255, 0.95);
+    margin-bottom: 15px;
+    text-shadow: 0 0 15px rgba(200, 100, 255, 0.7);
+    text-align: center;
+    letter-spacing: 0.08em;
+}
+
+.crossfader-mode-select {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.crossfader-mode-select label {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    margin-right: 10px;
+    font-size: 0.95rem;
+}
+
+.crossfader-mode-dropdown {
+    padding: 8px 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(128, 0, 255, 0.4);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 200px;
+}
+
+.crossfader-mode-dropdown:hover {
+    border-color: rgba(200, 100, 255, 0.6);
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 10px rgba(128, 0, 255, 0.3);
+}
+
+.crossfader-mode-dropdown:focus {
+    outline: none;
+    border-color: rgba(200, 100, 255, 0.8);
+    box-shadow: 0 0 15px rgba(128, 0, 255, 0.5);
+}
+
+.crossfader-control {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.crossfader-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.crossfader-label-left {
+    color: rgba(0, 255, 255, 0.9);
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+}
+
+.crossfader-label-center {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+}
+
+.crossfader-label-right {
+    color: rgba(255, 0, 255, 0.9);
+    text-shadow: 0 0 8px rgba(255, 0, 255, 0.6);
+}
+
+.crossfader-slider {
+    width: 100%;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, 
+        rgba(0, 255, 255, 0.8) 0%, 
+        rgba(128, 128, 255, 0.4) 50%, 
+        rgba(255, 0, 255, 0.8) 100%
+    );
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+        0 0 15px rgba(128, 0, 255, 0.3),
+        inset 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.crossfader-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00ffff, #ff00ff);
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(200, 100, 255, 1);
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    transition: transform 0.2s;
+}
+
+.crossfader-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 25px rgba(200, 100, 255, 1);
+}
+
+.crossfader-slider::-moz-range-thumb {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00ffff, #ff00ff);
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(200, 100, 255, 1);
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    transition: transform 0.2s;
+}
+
+.crossfader-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 25px rgba(200, 100, 255, 1);
+}
+
+.crossfader-value {
+    text-align: center;
+    margin-top: 5px;
+}
+
+.crossfader-value span {
+    font-weight: 700;
+    color: rgba(200, 100, 255, 0.95);
+    text-shadow: 0 0 10px rgba(200, 100, 255, 0.6);
+    font-size: 0.95rem;
 }
 
 .microphone-section {
@@ -2459,26 +2615,41 @@ h1 {
     text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
 }
 
+/* Master Controls Row - Volume/Pan left, Effects right */
+.master-controls-row {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+@media (max-width: 1000px) {
+    .master-controls-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Volume and Pan Section */
+.master-volume-pan-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
 .master-volume-control {
-    margin-top: 15px;
-    padding: 20px 15px;
+    padding: 15px;
     background: rgba(255, 215, 0, 0.1);
     border-radius: 8px;
     border: 2px solid rgba(255, 215, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 220px;
 }
 
 .master-volume-control label {
     display: block;
     font-weight: 700;
     color: rgba(255, 215, 0, 0.9);
-    margin-bottom: 12px;
-    font-size: 1.05em;
+    margin-bottom: 10px;
+    font-size: 0.95em;
     text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
-    text-align: center;
 }
 
 .master-volume-control span {
@@ -2487,21 +2658,7 @@ h1 {
 }
 
 .master-volume-control input[type="range"] {
-    writing-mode: bt-lr; /* IE */
-    -webkit-appearance: slider-vertical; /* Webkit */
-    appearance: slider-vertical; /* Standard */
-    width: 10px;
-    height: 160px;
-    padding: 0;
-    margin: 10px 0;
-    background: linear-gradient(180deg, 
-        rgba(255, 215, 0, 0.7) 0%, 
-        rgba(255, 140, 0, 0.6) 50%,
-        rgba(100, 100, 100, 0.6) 100%
-    );
-    border-radius: 5px;
-    outline: none;
-    cursor: pointer;
+    width: 100%;
 }
 
 .master-volume-control input[type="range"]::-webkit-slider-thumb {
@@ -2528,7 +2685,6 @@ h1 {
 
 /* Master Pan Control */
 .master-pan-control {
-    margin-top: 15px;
     padding: 15px;
     background: rgba(255, 215, 0, 0.1);
     border-radius: 8px;
@@ -2539,10 +2695,9 @@ h1 {
     display: block;
     font-weight: 700;
     color: rgba(255, 215, 0, 0.9);
-    margin-bottom: 8px;
-    font-size: 1.05em;
+    margin-bottom: 10px;
+    font-size: 0.95em;
     text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
-    text-align: center;
 }
 
 .master-pan-control span {
@@ -2592,6 +2747,13 @@ h1 {
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.9);
     border: 3px solid rgba(255, 255, 255, 0.9);
     transition: transform 0.2s;
+}
+
+/* Master Effects Wrapper (right side) */
+.master-effects-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 /* Master effect chain - gold theme */
