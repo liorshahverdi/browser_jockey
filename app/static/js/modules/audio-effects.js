@@ -1,4 +1,73 @@
-// Audio effects (reverb, delay, filter)
+// Audio effects (reverb, delay, filter, ADSR envelope)
+
+// Create ADSR envelope effect
+export function createADSREnvelope(context) {
+    // Create nodes for ADSR envelope
+    const envelope = context.createGain();
+    envelope.gain.value = 0; // Start at zero
+    
+    // ADSR parameters (in seconds and 0-1)
+    const parameters = {
+        attack: 0.01,    // Attack time in seconds
+        decay: 0.1,      // Decay time in seconds
+        sustain: 0.8,    // Sustain level (0-1)
+        release: 0.3,    // Release time in seconds
+        enabled: false,  // Whether envelope is actively applied
+        targetGain: 1.0  // Target gain level for sustain
+    };
+    
+    return { envelope, parameters };
+}
+
+// Trigger ADSR envelope (start attack phase)
+export function triggerADSRAttack(adsrEffect, audioContext, targetGain = 1.0) {
+    const { envelope, parameters } = adsrEffect;
+    const now = audioContext.currentTime;
+    
+    // Cancel any scheduled changes
+    envelope.gain.cancelScheduledValues(now);
+    
+    // Start from current value
+    envelope.gain.setValueAtTime(envelope.gain.value, now);
+    
+    // Attack: ramp to target gain
+    envelope.gain.linearRampToValueAtTime(targetGain, now + parameters.attack);
+    
+    // Decay: ramp down to sustain level
+    const sustainGain = targetGain * parameters.sustain;
+    envelope.gain.linearRampToValueAtTime(sustainGain, now + parameters.attack + parameters.decay);
+    
+    parameters.enabled = true;
+    parameters.targetGain = targetGain;
+}
+
+// Trigger ADSR release (start release phase)
+export function triggerADSRRelease(adsrEffect, audioContext) {
+    const { envelope, parameters } = adsrEffect;
+    const now = audioContext.currentTime;
+    
+    // Cancel any scheduled changes
+    envelope.gain.cancelScheduledValues(now);
+    
+    // Start release from current value
+    const currentGain = envelope.gain.value;
+    envelope.gain.setValueAtTime(currentGain, now);
+    
+    // Release: ramp to zero
+    envelope.gain.linearRampToValueAtTime(0, now + parameters.release);
+    
+    parameters.enabled = false;
+}
+
+// Update ADSR parameters
+export function updateADSRParameters(adsrEffect, attack, decay, sustain, release) {
+    const { parameters } = adsrEffect;
+    
+    if (attack !== undefined) parameters.attack = attack;
+    if (decay !== undefined) parameters.decay = decay;
+    if (sustain !== undefined) parameters.sustain = sustain;
+    if (release !== undefined) parameters.release = release;
+}
 
 // Create reverb effect using convolution
 export function createReverb(context) {
@@ -65,12 +134,16 @@ export function initAudioEffects(context, trackNumber) {
     filter.frequency.value = 20000; // Wide open by default
     filter.Q.value = 1.0;
     
+    // Create ADSR envelope
+    const adsr = createADSREnvelope(context);
+    
     return { 
         gain, 
         panner,
         reverb: { convolver: reverb, wet: reverbWet, dry: reverbDry }, 
         delay: { node: delay, feedback, wet: delayWet, dry: delayDry }, 
-        filter 
+        filter,
+        adsr
     };
 }
 

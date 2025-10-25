@@ -1,13 +1,149 @@
 # Browser Jockey - Development Chat History
 
 ## Project Overview
-A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, XY oscilloscope (Lissajous mode), BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, professional crossfader with multiple modes, comprehensive audio routing management, enhanced UI with premium controls, WebM loop marker support, and real-time stereo phase visualization.
+A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, XY oscilloscope (Lissajous mode), BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, professional crossfader with multiple modes, comprehensive audio routing management, enhanced UI with premium controls, WebM loop marker support, real-time stereo phase visualization, ADSR envelope effects, and camera theremin with adaptive wave detection.
 
-**Latest Version: v3.11.0** - XY Oscilloscope Visualization
+**Latest Version: v3.12.0** - ADSR Envelopes & Camera Theremin
 
 ---
 
 ## Session Timeline
+
+### Latest Session: ADSR Envelopes & Camera Theremin Optimization (v3.12.0)
+**Date**: October 25, 2025
+
+**User Requests**:
+1. "add ADSR effects (Attack, Decay, Sustain, Release) to the 2 tracks, keyboard sampler, and master output as well. Integrate into the effect drag and drop chains too"
+2. "create a new tag, update README with all the latest unmentioned features, integrate any new summary docs into updated CHAT_HISTORY then push"
+3. "hand or wave detection isnt working working with the theremin and selecting track 1"
+4. Multiple iterations on detection sensitivity and lighting adaptation
+
+**Features Implemented**:
+
+**1. ADSR Envelope System**
+- Professional envelope shaping for Track 1, Track 2, Master output, and Keyboard Sampler
+- Attack (1-2000ms), Decay (1-2000ms), Sustain (0-100%), Release (1-5000ms)
+- Manual trigger buttons for precise control
+- Integrated into drag-and-drop effect chains with 📊 icon
+- Conditional sampler ADSR (enable/disable per note)
+
+**2. Camera Theremin Optimization**
+- Adaptive wave detection with adjustable sensitivity (0.5x-3.0x)
+- Hand detection requirement toggle (wave-only mode as default)
+- Visual feedback system with color-coded status (cyan→orange→green)
+- Relaxed detection thresholds for varied lighting conditions
+- Enhanced logging and debugging capabilities
+- Performance optimization with canvas willReadFrequently attribute
+
+**Implementation Details**:
+
+**ADSR System** (`app/static/js/modules/audio-effects.js`):
+- `createADSREnvelope(context)`: Creates GainNode with default parameters
+- `triggerADSRAttack(adsr, audioContext)`: Exponential ramp attack→decay→sustain
+- `triggerADSRRelease(adsr, audioContext)`: Exponential ramp to zero
+- `updateADSRParameters(adsr, attack, decay, sustain, release)`: Updates envelope parameters
+- Signal routing: Track → ADSR GainNode → Effects chain → Master
+
+**Effect Chain Integration** (`app/static/js/modules/effect-chain.js`):
+- Added `{ id: 'adsr', name: 'ADSR', icon: '📊' }` to availableEffects
+- `connectEffectsInOrder()`: Routes signal through ADSR gain node
+- `getEffectControlIds()`: Maps 'adsr' to control panel IDs
+- `resetToDefault()`: Includes ADSR in default chain
+
+**Sampler ADSR** (`app/static/js/modules/sampler.js`):
+- Modified `playSamplerNote()` with conditional ADSR application
+- Parameters: adsrEnabled, adsrAttack, adsrDecay, adsrSustain, adsrRelease
+- If enabled: Creates envelope, triggers attack, schedules release
+- If disabled: Uses traditional exponential decay
+- Smart release timing to fit within sample duration
+
+**Theremin Wave Detection** (`app/static/js/modules/theremin.js`):
+- **State Variables**:
+  - `detectionSensitivity`: 1.5 (default), user-adjustable multiplier
+  - `requireHandDetection`: false (default), allows wave-only activation
+  - `positionHistory`: Array of last 30 X positions (0.5s at 60fps)
+  
+- **Detection Algorithm**:
+  - Direction change counting: 2+ changes required (relaxed from 3)
+  - Movement range: 15%+ screen width (relaxed from 20%)
+  - Total movement: 0.3+ (relaxed from 0.5)
+  
+- **Adaptive Threshold Calculation**:
+  ```javascript
+  const baseMultiplier = 2.0 / thereminState.detectionSensitivity;
+  const dynamicThreshold = Math.max(
+      thereminState.baselineScore * baseMultiplier,
+      avgRecentScore * (0.6 / thereminState.detectionSensitivity)
+  );
+  ```
+  - At 1.5x sensitivity: threshold reduced by 1.5x for easier activation
+  - At 2.0x sensitivity: threshold reduced by 2.0x for very bright rooms
+  
+- **Sound Trigger Logic**:
+  ```javascript
+  const shouldPlaySound = thereminState.requireHandDetection 
+      ? (thereminState.handDetected && thereminState.waveActive)
+      : thereminState.waveActive;
+  ```
+  
+- **Visual Feedback**:
+  - Detection status bar repositioned to bottom-left (y = height - 30)
+  - Color-coded crosshair: cyan (searching) → orange (hand detected) → green (active)
+  - Console logging every 3 seconds: confidence, maxScore, threshold, baseline
+
+**UI Controls** (`app/templates/index.html`):
+- **Track 1 ADSR**: 4 sliders (attack1, decay1, sustain1, release1) + trigger button
+- **Track 2 ADSR**: 4 sliders (attack2, decay2, sustain2, release2) + trigger button
+- **Master ADSR**: 4 sliders + trigger button
+- **Sampler ADSR**: Enable checkbox + 4 sliders
+- **Theremin Sensitivity**: Slider (0.5x-3.0x, default 1.5x) with value display
+- **Hand Detection Requirement**: Checkbox (default unchecked for wave-only mode)
+
+**Event Listeners** (`app/static/js/visualizer-dual.js`):
+- Track 1 ADSR: 8 listeners (4 sliders + trigger)
+- Track 2 ADSR: 8 listeners (4 sliders + trigger)
+- Master ADSR: 8 listeners (4 sliders + trigger)
+- Sampler ADSR: 5 listeners (enable + 4 sliders)
+- Theremin sensitivity: 1 listener (slider with value display update)
+- Theremin hand requirement: 1 listener (checkbox toggle)
+- Total: 31 new event listeners
+
+**Styling** (`app/static/css/style.css`):
+- `.adsr-controls`: Orange/amber themed container (border: rgba(255,170,0,0.4))
+- `.adsr-header`: Title with glow effect
+- `.adsr-param`: Parameter row layout
+- `.adsr-trigger-btn`: Orange gradient button with hover glow
+- `.sampler-adsr-toggle`: Checkbox styling
+
+**Bug Fixes**:
+1. **Wave Detection Too Strict**: Relaxed thresholds from 3→2 changes, 20%→15% range, 0.5→0.3 movement
+2. **Lighting Sensitivity**: Added adjustable sensitivity multiplier with adaptive threshold calculation
+3. **Status Bar Positioning**: Fixed undefined vHeight variable, moved to bottom-left to avoid overlay
+4. **Canvas Performance**: Added `{ willReadFrequently: true }` to detection canvas context
+5. **User Expectation**: Made wave-only mode the default (unchecked hand detection requirement)
+
+**Documentation Created**:
+- `ADSR_ENVELOPE_EFFECT.md`: Complete technical reference (400+ lines)
+- `ADSR_CREATIVE_USE_CASES.md`: 15 use cases with settings, genres, advanced techniques (400+ lines)
+- `RELEASE_NOTES_v3.12.md`: Comprehensive v3.12.0 release documentation (600+ lines)
+
+**Testing Results**:
+- ✅ ADSR triggers produce correct attack→decay→sustain envelope
+- ✅ ADSR release ramps smoothly to zero
+- ✅ Sampler ADSR applies conditionally when enabled
+- ✅ Wave detection works in varied lighting with adjustable sensitivity
+- ✅ Wave-only mode allows activation without hand detection
+- ✅ Detection status bar visible at bottom-left
+- ✅ Console logging provides clear debugging information
+- ✅ All 31 event listeners working correctly
+
+**Git Operations**:
+- Tag: v3.12.0
+- Commit message: "Add ADSR envelope effects and adaptive theremin wave detection (v3.12.0)"
+- Documentation updated: README.md, CHAT_HISTORY.md
+- New files: RELEASE_NOTES_v3.12.md
+
+---
 
 ### Latest Session: XY Oscilloscope Visualization (v3.11.0)
 **Date**: October 24, 2025

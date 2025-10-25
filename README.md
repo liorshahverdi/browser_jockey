@@ -1,5 +1,29 @@
 # Browser Jockey
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browser-jockey.onrender.com/) (disclaimer - running on a free render instance so might not always be up. But feel free to clone this repo and run locally by following the guidelines below! Feedback/suggestions always welcome at liorshahverdi@gmail.com)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](h- 🤖 **Vocoder Effect** - Robot voice effect with advanced routing
+  - 8-32 frequency bands with adjustable mix
+  - Select modulator source: Microphone, Track 1, or Track 2
+  - Select carrier source: Microphone (Feedback), Track 1, Track 2, or Both Tracks (Mix)
+  - Mic-to-mic feedback for creative robotic effects
+- 🎵 **Auto-Tune Effect** - Real-time pitch correction with flexible sources
+  - Select audio source: Microphone, Track 1, or Track 2
+  - Key/scale selection with adjustable correction speed and strength
+  - Works standalone or with tracks
+- 📊 **ADSR Envelope Effects** - Professional envelope shaping for dynamic control
+  - 📈 Attack (1-2000ms), Decay (1-2000ms), Sustain (0-100%), Release (1-5000ms)
+  - 🎚️ Available for Track 1, Track 2, Master output, and Keyboard Sampler
+  - 🔘 Manual trigger buttons for precise envelope activation
+  - 🔗 Integrated into drag-and-drop effect chains
+  - 🎹 Conditional sampler ADSR (enable/disable per note)
+  - 💡 15+ creative use cases documented (plucks, pads, stabs, gates, swells)
+- 📹 **Camera Theremin** - Motion-controlled instrument using webcam
+  - 👋 Wave detection with adjustable sensitivity (0.5x-3.0x)
+  - 🎛️ Three control modes: Pitch & Volume, Filter & Resonance, ADSR Envelope
+  - 🎵 Audio sources: Built-in oscillator, Track 1, or Track 2
+  - 💡 Adaptive motion detection for varied lighting conditions
+  - 🎨 Wave-only mode (no hand detection required) for easier activation
+  - 🌊 Visual feedback: Cyan (searching) → Orange (wave to activate) → Green (active)
+  - 🎚️ Master volume, vibrato controls, pitch range selection
+  - 🔊 Routes to master output with individual routing toggleowser-jockey.onrender.com/) (disclaimer - running on a free render instance so might not always be up. But feel free to clone this repo and run locally by following the guidelines below! Feedback/suggestions always welcome at liorshahverdi@gmail.com)
 
 - 🎤 **Advanced Microphone System** - Professional microphone input with extensive features
 - 🎵 **Format Options** - Choose between WAV (lossless) or MP3 (compressed 128kbps) export
@@ -25,9 +49,11 @@
   - 🎛️ **Master Routing Control** - Toggle Track 1, Track 2, Microphone, or Keyboard Sampler to master output
 - 🤖 **Vocoder Effect** - Robot voice effect with advanced routingo-live-brightgreen)](https://browserjockey.onrender.com/)
 
-A dual-track DJ mixing web application with 3D audio visualization, XY oscilloscope, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, and authentic DJ controls.
+A dual-track DJ mixing web application with 3D audio visualization, XY oscilloscope, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, camera theremin with adaptive wave detection, ADSR envelope effects, keyboard sampler, and authentic DJ controls.
 
-**Latest Update (v3.11.0)**: Added XY Oscilloscope (Lissajous mode) visualization! Beautiful Cartesian coordinate system with (0,0) at center, displaying stereo phase relationships and audio patterns in real-time. Features animated XY plotting with phase offset for dynamic Lissajous curves, radial color gradients (magenta to cyan), motion blur trails, glow effects, and grid overlay. Perfect for visualizing stereo correlation and harmonic relationships between tracks!
+**Latest Update (v3.12.0)**: Added comprehensive ADSR envelope effects and camera theremin with adaptive wave detection! ADSR envelopes (Attack, Decay, Sustain, Release) now available for Track 1, Track 2, Master output, and Keyboard Sampler with trigger buttons and draggable effect chain integration. Camera theremin features adaptive motion detection with adjustable sensitivity (0.5x-3.0x) for different lighting conditions, wave-only detection mode (no hand detection required), and three control mapping modes: Pitch & Volume, Filter & Resonance, and ADSR Envelope modulation. Visual feedback system with color-coded status indicators and real-time waveform progress. Perfect for expressive performance and creative sound design!
+
+**v3.11.0**: Added XY Oscilloscope (Lissajous mode) visualization! Beautiful Cartesian coordinate system with (0,0) at center, displaying stereo phase relationships and audio patterns in real-time. Features animated XY plotting with phase offset for dynamic Lissajous curves, radial color gradients (magenta to cyan), motion blur trails, glow effects, and grid overlay. Perfect for visualizing stereo correlation and harmonic relationships between tracks!
 
 **v3.10.5**: Fixed critical bug where loop markers weren't setting on recorded .webm files! Now properly waits for audio metadata to load before allowing loop marker placement. Added duration validation to prevent silent failures. Includes better error handling with console warnings when duration is unavailable. Perfect for live looping workflows with recorded content.
 

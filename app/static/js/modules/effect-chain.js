@@ -14,6 +14,7 @@ export class EffectChain {
         // Available effect types
         this.availableEffects = [
             { id: 'filter', name: 'Filter', icon: '🎚️' },
+            { id: 'adsr', name: 'ADSR', icon: '📊' },
             { id: 'reverb', name: 'Reverb', icon: '🌊' },
             { id: 'delay', name: 'Delay', icon: '⏱️' }
         ];
@@ -46,6 +47,7 @@ export class EffectChain {
     resetToDefault() {
         this.effects = [
             { id: 'filter', name: 'Filter', icon: '🎚️', enabled: true },
+            { id: 'adsr', name: 'ADSR', icon: '📊', enabled: false },
             { id: 'reverb', name: 'Reverb', icon: '🌊', enabled: true },
             { id: 'delay', name: 'Delay', icon: '⏱️', enabled: true }
         ];
@@ -262,6 +264,12 @@ export function connectEffectsInOrder(source, effectsConfig, effectNodes, merger
             case 'filter':
                 currentNode.connect(effectNodes.filter);
                 currentNode = effectNodes.filter;
+                break;
+            
+            case 'adsr':
+                // ADSR envelope gain
+                currentNode.connect(effectNodes.adsr.envelope);
+                currentNode = effectNodes.adsr.envelope;
                 break;
                 
             case 'reverb':

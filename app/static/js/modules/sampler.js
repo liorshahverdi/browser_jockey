@@ -2,7 +2,7 @@
 import { scales, keyboardMap } from './constants.js';
 
 // Play a sampler note
-export function playSamplerNote(samplerAudioBuffer, scaleIndex, isUpperOctave, samplerScale, samplerRoot, samplerVolume, audioContext, recordingDestination, noteNames) {
+export function playSamplerNote(samplerAudioBuffer, scaleIndex, isUpperOctave, samplerScale, samplerRoot, samplerVolume, audioContext, recordingDestination, noteNames, adsrEnabled = false, adsrParams = null) {
     if (!samplerAudioBuffer) return;
     
     // Get the scale intervals
@@ -31,8 +31,34 @@ export function playSamplerNote(samplerAudioBuffer, scaleIndex, isUpperOctave, s
     
     // Create gain for this note
     const noteGain = audioContext.createGain();
-    noteGain.gain.setValueAtTime(samplerVolume, audioContext.currentTime);
-    noteGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + samplerAudioBuffer.duration);
+    
+    // Apply ADSR envelope if enabled
+    if (adsrEnabled && adsrParams) {
+        const now = audioContext.currentTime;
+        
+        // Attack phase
+        noteGain.gain.setValueAtTime(0, now);
+        noteGain.gain.linearRampToValueAtTime(samplerVolume, now + adsrParams.attack);
+        
+        // Decay phase
+        const sustainLevel = samplerVolume * adsrParams.sustain;
+        noteGain.gain.linearRampToValueAtTime(sustainLevel, now + adsrParams.attack + adsrParams.decay);
+        
+        // Calculate when to start release (at the end of the buffer duration)
+        const releaseStartTime = now + samplerAudioBuffer.duration - adsrParams.release;
+        
+        // Sustain (hold at sustain level until release)
+        noteGain.gain.setValueAtTime(sustainLevel, releaseStartTime);
+        
+        // Release phase
+        noteGain.gain.linearRampToValueAtTime(0.001, releaseStartTime + adsrParams.release);
+        
+        console.log(`Playing note with ADSR: A=${adsrParams.attack}s D=${adsrParams.decay}s S=${adsrParams.sustain} R=${adsrParams.release}s`);
+    } else {
+        // Standard exponential decay (original behavior)
+        noteGain.gain.setValueAtTime(samplerVolume, audioContext.currentTime);
+        noteGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + samplerAudioBuffer.duration);
+    }
     
     // Connect: source -> gain -> destination (speakers)
     source.connect(noteGain);

@@ -123,6 +123,30 @@
                                     <option value="bandpass">Band Pass</option>
                                 </select>
                             </div>
+                            <div id="adsrControl1" class="effect-control" style="display: none;">
+                                <div class="adsr-header">
+                                    <label>📊 ADSR Envelope</label>
+                                    <button id="adsrTrigger1" class="adsr-trigger-btn" title="Trigger envelope">⚡ Trigger</button>
+                                </div>
+                                <div class="adsr-controls">
+                                    <div class="adsr-param">
+                                        <label>Attack: <span id="adsrAttackValue1">10ms</span></label>
+                                        <input type="range" id="adsrAttackSlider1" min="1" max="2000" step="1" value="10" class="effect-slider">
+                                    </div>
+                                    <div class="adsr-param">
+                                        <label>Decay: <span id="adsrDecayValue1">100ms</span></label>
+                                        <input type="range" id="adsrDecaySlider1" min="1" max="2000" step="1" value="100" class="effect-slider">
+                                    </div>
+                                    <div class="adsr-param">
+                                        <label>Sustain: <span id="adsrSustainValue1">80%</span></label>
+                                        <input type="range" id="adsrSustainSlider1" min="0" max="100" step="1" value="80" class="effect-slider">
+                                    </div>
+                                    <div class="adsr-param">
+                                        <label>Release: <span id="adsrReleaseValue1">300ms</span></label>
+                                        <input type="range" id="adsrReleaseSlider1" min="1" max="5000" step="1" value="300" class="effect-slider">
+                                    </div>
+                                </div>
+                            </div>
                             <div id="reverbControl1" class="effect-control">
                                 <label>Reverb: <span id="reverbValue1">0%</span></label>
                                 <input type="range" id="reverbSlider1" min="0" max="100" step="1" value="0" class="effect-slider">
@@ -441,6 +465,30 @@
                                     <option value="bandpass">Band Pass</option>
                                 </select>
                             </div>
+                            <div id="adsrControl2" class="effect-control" style="display: none;">
+                                <div class="adsr-header">
+                                    <label>📊 ADSR Envelope</label>
+                                    <button id="adsrTrigger2" class="adsr-trigger-btn" title="Trigger envelope">⚡ Trigger</button>
+                                </div>
+                                <div class="adsr-controls">
+                                    <div class="adsr-param">
+                                        <label>Attack: <span id="adsrAttackValue2">10ms</span></label>
+                                        <input type="range" id="adsrAttackSlider2" min="1" max="2000" step="1" value="10" class="effect-slider">
+                                    </div>
+                                    <div class="adsr-param">
+                                        <label>Decay: <span id="adsrDecayValue2">100ms</span></label>
+                                        <input type="range" id="adsrDecaySlider2" min="1" max="2000" step="1" value="100" class="effect-slider">
+                                    </div>
+                                    <div class="adsr-param">
+                                        <label>Sustain: <span id="adsrSustainValue2">80%</span></label>
+                                        <input type="range" id="adsrSustainSlider2" min="0" max="100" step="1" value="80" class="effect-slider">
+                                    </div>
+                                    <div class="adsr-param">
+                                        <label>Release: <span id="adsrReleaseValue2">300ms</span></label>
+                                        <input type="range" id="adsrReleaseSlider2" min="1" max="5000" step="1" value="300" class="effect-slider">
+                                    </div>
+                                </div>
+                            </div>
                             <div id="reverbControl2" class="effect-control">
                                 <label>Reverb: <span id="reverbValue2">0%</span></label>
                                 <input type="range" id="reverbSlider2" min="0" max="100" step="1" value="0" class="effect-slider">
@@ -514,6 +562,31 @@
                         <label>Sampler Volume: <span id="samplerVolumeValue">60%</span></label>
                         <input type="range" id="samplerVolumeSlider" min="0" max="100" step="1" value="60" class="sampler-volume-slider">
                     </div>
+                    <div class="sampler-adsr-control">
+                        <div class="adsr-header">
+                            <label>📊 ADSR Envelope</label>
+                            <input type="checkbox" id="samplerADSREnable" class="adsr-enable-checkbox">
+                            <label for="samplerADSREnable" class="adsr-enable-label">Enable</label>
+                        </div>
+                        <div class="adsr-controls" id="samplerADSRControls" style="display: none;">
+                            <div class="adsr-param">
+                                <label>Attack: <span id="samplerADSRAttackValue">10ms</span></label>
+                                <input type="range" id="samplerADSRAttackSlider" min="1" max="2000" step="1" value="10" class="effect-slider">
+                            </div>
+                            <div class="adsr-param">
+                                <label>Decay: <span id="samplerADSRDecayValue">100ms</span></label>
+                                <input type="range" id="samplerADSRDecaySlider" min="1" max="2000" step="1" value="100" class="effect-slider">
+                            </div>
+                            <div class="adsr-param">
+                                <label>Sustain: <span id="samplerADSRSustainValue">80%</span></label>
+                                <input type="range" id="samplerADSRSustainSlider" min="0" max="100" step="1" value="80" class="effect-slider">
+                            </div>
+                            <div class="adsr-param">
+                                <label>Release: <span id="samplerADSRReleaseValue">300ms</span></label>
+                                <input type="range" id="samplerADSRReleaseSlider" min="1" max="5000" step="1" value="300" class="effect-slider">
+                            </div>
+                        </div>
+                    </div>
                     <div class="sampler-info">
                         <button id="enableSamplerBtn" class="control-btn sampler-btn" disabled>
                             <span class="sampler-icon">🎹</span> Enable Sampler
@@ -549,6 +622,96 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Camera Theremin Section -->
+            <div class="camera-theremin-section">
+                <div class="theremin-header">🎥 Camera Theremin</div>
+                <div class="theremin-controls">
+                    <div class="theremin-info">
+                        <p class="theremin-help-text">Use your hand motion to control the theremin! Move up/down for pitch, left/right for volume.</p>
+                    </div>
+                    <div class="theremin-buttons">
+                        <button id="enableThereminBtn" class="control-btn theremin-btn">
+                            <span class="theremin-icon">🎥</span> Enable Theremin
+                        </button>
+                        <button id="disableThereminBtn" class="control-btn theremin-btn" style="display: none;">
+                            <span class="theremin-icon">⏹️</span> Disable Theremin
+                        </button>
+                    </div>
+                    <div class="theremin-video-container" id="thereminVideoContainer" style="display: none;">
+                        <div class="theremin-video-wrapper">
+                            <video id="thereminVideo" autoplay playsinline muted></video>
+                            <canvas id="thereminCanvas"></canvas>
+                            <div class="theremin-display-overlay" id="thereminDisplayOverlay">
+                                <div class="theremin-value"><span id="thereminFreqLabel">Freq</span>: <span id="thereminFreqDisplay">--</span> Hz</div>
+                                <div class="theremin-value"><span id="thereminVolLabel">Vol</span>: <span id="thereminVolDisplay">--</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="theremin-settings" id="thereminSettings" style="display: none;">
+                        <div class="theremin-setting">
+                            <label>Control Mapping:</label>
+                            <select id="thereminMappingMode" class="theremin-select">
+                                <option value="pitch-volume" selected>Pitch & Volume (Classic)</option>
+                                <option value="filter-resonance">Filter & Resonance</option>
+                                <option value="adsr">ADSR Envelope</option>
+                            </select>
+                            <div class="theremin-mapping-help" id="thereminMappingHelp">
+                                <small>↕️ Pitch | ↔️ Volume</small>
+                            </div>
+                        </div>
+                        <div class="theremin-setting">
+                            <label>Volume: <span id="thereminVolumeValue">50%</span></label>
+                            <input type="range" id="thereminVolumeSlider" min="0" max="100" step="1" value="50" class="theremin-slider">
+                        </div>
+                        <div class="theremin-setting">
+                            <label>Audio Source:</label>
+                            <select id="thereminAudioSource" class="theremin-select">
+                                <option value="oscillator" selected>Oscillator (Synthesizer)</option>
+                                <option value="track1">Track 1</option>
+                                <option value="track2">Track 2</option>
+                            </select>
+                        </div>
+                        <div class="theremin-setting" id="thereminWaveformSetting">
+                            <label>Waveform:</label>
+                            <select id="thereminWaveform" class="theremin-select">
+                                <option value="sine" selected>Sine (Pure)</option>
+                                <option value="triangle">Triangle (Soft)</option>
+                                <option value="sawtooth">Sawtooth (Bright)</option>
+                                <option value="square">Square (Retro)</option>
+                            </select>
+                        </div>
+                        <div class="theremin-setting">
+                            <label>Pitch Range:</label>
+                            <select id="thereminRange" class="theremin-select">
+                                <option value="low">Low (100-800Hz)</option>
+                                <option value="medium" selected>Medium (200-2000Hz)</option>
+                                <option value="high">High (400-4000Hz)</option>
+                                <option value="wide">Wide (100-4000Hz)</option>
+                            </select>
+                        </div>
+                        <div class="theremin-setting">
+                            <label>Vibrato Rate: <span id="thereminVibratoRateValue">5Hz</span></label>
+                            <input type="range" id="thereminVibratoRate" min="0" max="15" step="0.5" value="5" class="theremin-slider">
+                        </div>
+                        <div class="theremin-setting">
+                            <label>Vibrato Depth: <span id="thereminVibratoDepthValue">10Hz</span></label>
+                            <input type="range" id="thereminVibratoDepth" min="0" max="50" step="1" value="10" class="theremin-slider">
+                        </div>
+                        <div class="theremin-setting">
+                            <label>Detection Sensitivity: <span id="thereminSensitivityValue">1.5x</span></label>
+                            <input type="range" id="thereminSensitivity" min="0.5" max="3.0" step="0.1" value="1.5" class="theremin-slider">
+                            <small style="opacity: 0.7;">Adjust for lighting conditions</small>
+                        </div>
+                        <div class="theremin-setting">
+                            <label class="routing-toggle">
+                                <input type="checkbox" id="thereminRequireHand">
+                                <span>Require hand detection (disable for easier activation)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <!-- Master Channel Effects -->
@@ -576,6 +739,10 @@
                         <label class="routing-toggle">
                             <input type="checkbox" id="routeSampler" checked>
                             <span>🎹 Sampler</span>
+                        </label>
+                        <label class="routing-toggle">
+                            <input type="checkbox" id="routeTheremin" checked>
+                            <span>🎥 Theremin</span>
                         </label>
                     </div>
                 </div>
@@ -609,6 +776,30 @@
                                     <option value="highpass">High Pass</option>
                                     <option value="bandpass">Band Pass</option>
                                 </select>
+                            </div>
+                            <div id="adsrControlMaster" class="effect-control" style="display: none;">
+                                <div class="adsr-header">
+                                    <label>📊 ADSR Envelope</label>
+                                    <button id="adsrTriggerMaster" class="adsr-trigger-btn" title="Trigger envelope">⚡ Trigger</button>
+                                </div>
+                                <div class="adsr-controls">
+                                    <div class="adsr-param">
+                                        <label>Attack: <span id="adsrAttackValueMaster">10ms</span></label>
+                                        <input type="range" id="adsrAttackSliderMaster" min="1" max="2000" step="1" value="10" class="effect-slider">
+                                    </div>
+                                    <div class="adsr-param">
+                                        <label>Decay: <span id="adsrDecayValueMaster">100ms</span></label>
+                                        <input type="range" id="adsrDecaySliderMaster" min="1" max="2000" step="1" value="100" class="effect-slider">
+                                    </div>
+                                    <div class="adsr-param">
+                                        <label>Sustain: <span id="adsrSustainValueMaster">80%</span></label>
+                                        <input type="range" id="adsrSustainSliderMaster" min="0" max="100" step="1" value="80" class="effect-slider">
+                                    </div>
+                                    <div class="adsr-param">
+                                        <label>Release: <span id="adsrReleaseValueMaster">300ms</span></label>
+                                        <input type="range" id="adsrReleaseSliderMaster" min="1" max="5000" step="1" value="300" class="effect-slider">
+                                    </div>
+                                </div>
                             </div>
                             <div id="reverbControlMaster" class="effect-control">
                                 <label>Reverb: <span id="reverbValueMaster">0%</span></label>

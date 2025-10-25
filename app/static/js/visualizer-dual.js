@@ -20,7 +20,10 @@ import {
     createReverb, 
     createDelay, 
     initAudioEffects, 
-    connectEffectsChain 
+    connectEffectsChain,
+    triggerADSRAttack,
+    triggerADSRRelease,
+    updateADSRParameters
 } from './modules/audio-effects.js';
 import { EffectChain, connectEffectsInOrder } from './modules/effect-chain.js';
 import { 
@@ -58,6 +61,20 @@ import {
     enableSampler, 
     disableSampler 
 } from './modules/sampler.js';
+import {
+    enableTheremin,
+    disableTheremin,
+    changeThereminWaveform,
+    changeThereminRange,
+    changeThereminVibrato,
+    changeThereminVolume,
+    setThereminAudioSource,
+    setThereminMappingMode,
+    getThereminRoutingGain,
+    changeThereminSensitivity,
+    changeThereminHandRequirement,
+    cleanupTheremin
+} from './modules/theremin.js';
 
 // Get DOM elements for Track 1
 const audioFile1 = document.getElementById('audioFile1');
@@ -250,11 +267,32 @@ const enableSamplerBtn = document.getElementById('enableSamplerBtn');
 const disableSamplerBtn = document.getElementById('disableSamplerBtn');
 const keyboardVisual = document.getElementById('keyboardVisual');
 
+// Camera Theremin elements
+const enableThereminBtn = document.getElementById('enableThereminBtn');
+const disableThereminBtn = document.getElementById('disableThereminBtn');
+const thereminVideoContainer = document.getElementById('thereminVideoContainer');
+const thereminVideo = document.getElementById('thereminVideo');
+const thereminCanvas = document.getElementById('thereminCanvas');
+const thereminSettings = document.getElementById('thereminSettings');
+const thereminVolumeSlider = document.getElementById('thereminVolumeSlider');
+const thereminVolumeValue = document.getElementById('thereminVolumeValue');
+const thereminAudioSource = document.getElementById('thereminAudioSource');
+const thereminWaveform = document.getElementById('thereminWaveform');
+const thereminRange = document.getElementById('thereminRange');
+const thereminVibratoRate = document.getElementById('thereminVibratoRate');
+const thereminVibratoRateValue = document.getElementById('thereminVibratoRateValue');
+const thereminVibratoDepth = document.getElementById('thereminVibratoDepth');
+const thereminVibratoDepthValue = document.getElementById('thereminVibratoDepthValue');
+const thereminSensitivity = document.getElementById('thereminSensitivity');
+const thereminSensitivityValue = document.getElementById('thereminSensitivityValue');
+const thereminRequireHand = document.getElementById('thereminRequireHand');
+
 // Master channel elements
 const routeTrack1 = document.getElementById('routeTrack1');
 const routeTrack2 = document.getElementById('routeTrack2');
 const routeMicrophone = document.getElementById('routeMicrophone');
 const routeSampler = document.getElementById('routeSampler');
+const routeTheremin = document.getElementById('routeTheremin');
 const filterSliderMaster = document.getElementById('filterSliderMaster');
 const filterValueMaster = document.getElementById('filterValueMaster');
 const filterTypeMaster = document.getElementById('filterTypeMaster');
@@ -298,13 +336,24 @@ let autotuneEnabled = false;
 let autotuneState = null;
 
 // Audio effects nodes for Track 1
-let gain1, reverb1, delay1, filter1, panner1;
+let gain1, reverb1, delay1, filter1, panner1, adsr1;
 let reverbWet1, delayWet1;
 
 // Audio effects nodes for Track 2
-let gain2, reverb2, delay2, filter2, panner2;
+let gain2, reverb2, delay2, filter2, panner2, adsr2;
 let reverbWet2, delayWet2;
 
+// Master effect nodes
+let adsrMaster;
+
+// Sampler ADSR state
+let samplerADSREnabled = false;
+let samplerADSRParams = {
+    attack: 0.01,
+    decay: 0.1,
+    sustain: 0.8,
+    release: 0.3
+};
 // Master effects nodes
 let gainMaster, reverbMaster, delayMaster, filterMaster, pannerMaster;
 let reverbWetMaster, delayWetMaster;
@@ -778,16 +827,16 @@ function updateCrossfader(value) {
             if (gain1) gain1.gain.value = leftGain * (volumeSlider1.value / 100);
             if (gain2) gain2.gain.value = rightGain * (volumeSlider2.value / 100);
             // Reset mic gain if it was previously affected
-            if (micGainNode && micStream) {
-                micGainNode.gain.value = micVolumeSlider.value / 100;
+            if (micState && micState.micGain && micState.micStream) {
+                micState.micGain.gain.value = micVolumeSlider.value / 100;
             }
             break;
             
         case 'track1-mic':
             // Crossfade between Track 1 and Microphone
             if (gain1) gain1.gain.value = leftGain * (volumeSlider1.value / 100);
-            if (micGainNode && micStream) {
-                micGainNode.gain.value = rightGain * (micVolumeSlider.value / 100);
+            if (micState && micState.micGain && micState.micStream) {
+                micState.micGain.gain.value = rightGain * (micVolumeSlider.value / 100);
             }
             // Reset Track 2 to its normal volume
             if (gain2) gain2.gain.value = volumeSlider2.value / 100;
@@ -796,8 +845,8 @@ function updateCrossfader(value) {
         case 'track2-mic':
             // Crossfade between Track 2 and Microphone
             if (gain2) gain2.gain.value = leftGain * (volumeSlider2.value / 100);
-            if (micGainNode && micStream) {
-                micGainNode.gain.value = rightGain * (micVolumeSlider.value / 100);
+            if (micState && micState.micGain && micState.micStream) {
+                micState.micGain.gain.value = rightGain * (micVolumeSlider.value / 100);
             }
             // Reset Track 1 to its normal volume
             if (gain1) gain1.gain.value = volumeSlider1.value / 100;
@@ -1711,6 +1760,37 @@ function toggleMicRouting(enabled) {
     }
 }
 
+function toggleThereminRouting(enabled) {
+    const thereminGain = getThereminRoutingGain();
+    
+    if (!thereminGain || !merger) {
+        console.warn('Theremin or merger not initialized');
+        return;
+    }
+    
+    try {
+        if (enabled) {
+            // Connect theremin to merger
+            thereminGain.connect(merger);
+            console.log('Theremin routed to master');
+        } else {
+            // Disconnect theremin from merger
+            thereminGain.disconnect(merger);
+            console.log('Theremin disconnected from master');
+        }
+    } catch (error) {
+        console.error('Error toggling theremin routing:', error);
+        // Reconnect on error
+        if (enabled) {
+            try {
+                thereminGain.connect(merger);
+            } catch (e) {
+                // Already connected or other error
+            }
+        }
+    }
+}
+
 // Keyboard Sampler Functions
 async function loadSamplerSource() {
     samplerSource = samplerSourceSelect.value;
@@ -1874,7 +1954,9 @@ function playSamplerNoteWrapper(scaleIndex, isUpperOctave = false) {
         samplerVolume,
         audioContext,
         recordingDestination,
-        noteNames
+        noteNames,
+        samplerADSREnabled,
+        samplerADSRParams
     );
 }
 
@@ -2010,6 +2092,7 @@ function initAudioContext() {
         reverbMaster = effectsMaster.reverb;
         delayMaster = effectsMaster.delay;
         filterMaster = effectsMaster.filter;
+        adsrMaster = effectsMaster.adsr;
         
         // Connect merger to master effects chain
         // merger -> filterMaster -> pannerMaster -> reverbMaster -> delayMaster -> gainMaster -> analyser/destination
@@ -2053,6 +2136,7 @@ function initAudioContext() {
         reverb1 = effects1.reverb;
         delay1 = effects1.delay;
         filter1 = effects1.filter;
+        adsr1 = effects1.adsr;
         
         const effects2 = initAudioEffects(audioContext, 2);
         gain2 = effects2.gain;
@@ -2060,6 +2144,7 @@ function initAudioContext() {
         reverb2 = effects2.reverb;
         delay2 = effects2.delay;
         filter2 = effects2.filter;
+        adsr2 = effects2.adsr;
         
         // Initialize effect chain managers
         effectChain1 = new EffectChain(1, audioContext);
@@ -2493,7 +2578,7 @@ function createCircleVisualization() {
         const randomHeight = 0.8 + Math.random() * 0.4;
         const geometry = new THREE.BoxGeometry(0.5, 1 * randomHeight, 0.5);
         const hueOffset = (i / numBars) * 120 - 60;
-        const hue = (baseHue + hueOffset + 360) % 360;
+        const hue = Math.round((baseHue + hueOffset + 360) % 360);
         
         const material = new THREE.MeshPhongMaterial({
             color: new THREE.Color(`hsl(${hue}, 100%, 50%)`),
@@ -2542,7 +2627,7 @@ function createBarsVisualization() {
         const randomDepth = 0.8 + Math.random() * 0.4;
         const geometry = new THREE.BoxGeometry(randomWidth, 1, randomDepth);
         const hueOffset = (i / numBars) * 120 - 60;
-        const hue = (baseHue + hueOffset + 360) % 360;
+        const hue = Math.round((baseHue + hueOffset + 360) % 360);
         
         const material = new THREE.MeshPhongMaterial({
             color: new THREE.Color(`hsl(${hue}, 100%, 50%)`),
@@ -2588,7 +2673,7 @@ function createSphereVisualization() {
         const randomSize = 0.3 + Math.random() * 0.4;
         const geometry = new THREE.SphereGeometry(randomSize, 16, 16);
         const hueOffset = (i / numSpheres) * 120 - 60;
-        const hue = (baseHue + hueOffset + 360) % 360;
+        const hue = Math.round((baseHue + hueOffset + 360) % 360);
         
         const material = new THREE.MeshPhongMaterial({
             color: new THREE.Color(`hsl(${hue}, 100%, 50%)`),
@@ -3781,9 +3866,289 @@ samplerVolumeSlider.addEventListener('input', (e) => {
     samplerVolumeValue.textContent = volume + '%';
 });
 
+// === Sampler ADSR Controls ===
+const samplerADSREnable = document.getElementById('samplerADSREnable');
+const samplerADSRControls = document.getElementById('samplerADSRControls');
+const samplerADSRAttackSlider = document.getElementById('samplerADSRAttackSlider');
+const samplerADSRDecaySlider = document.getElementById('samplerADSRDecaySlider');
+const samplerADSRSustainSlider = document.getElementById('samplerADSRSustainSlider');
+const samplerADSRReleaseSlider = document.getElementById('samplerADSRReleaseSlider');
+
+if (samplerADSREnable) {
+    samplerADSREnable.addEventListener('change', (e) => {
+        samplerADSREnabled = e.target.checked;
+        if (samplerADSRControls) {
+            samplerADSRControls.style.display = samplerADSREnabled ? 'flex' : 'none';
+        }
+        console.log('Sampler ADSR:', samplerADSREnabled ? 'enabled' : 'disabled');
+    });
+}
+
+if (samplerADSRAttackSlider) {
+    samplerADSRAttackSlider.addEventListener('input', (e) => {
+        samplerADSRParams.attack = parseInt(e.target.value) / 1000;
+        document.getElementById('samplerADSRAttackValue').textContent = e.target.value + 'ms';
+    });
+}
+
+if (samplerADSRDecaySlider) {
+    samplerADSRDecaySlider.addEventListener('input', (e) => {
+        samplerADSRParams.decay = parseInt(e.target.value) / 1000;
+        document.getElementById('samplerADSRDecayValue').textContent = e.target.value + 'ms';
+    });
+}
+
+if (samplerADSRSustainSlider) {
+    samplerADSRSustainSlider.addEventListener('input', (e) => {
+        samplerADSRParams.sustain = parseInt(e.target.value) / 100;
+        document.getElementById('samplerADSRSustainValue').textContent = e.target.value + '%';
+    });
+}
+
+if (samplerADSRReleaseSlider) {
+    samplerADSRReleaseSlider.addEventListener('input', (e) => {
+        samplerADSRParams.release = parseInt(e.target.value) / 1000;
+        document.getElementById('samplerADSRReleaseValue').textContent = e.target.value + 'ms';
+    });
+}
+
 // Global keyboard event listeners for sampler
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
+
+// ============================================
+// Camera Theremin Event Listeners
+// ============================================
+
+// Debug: Check if theremin elements exist
+console.log('Theremin elements initialization:', {
+    enableBtn: !!enableThereminBtn,
+    disableBtn: !!disableThereminBtn,
+    videoContainer: !!thereminVideoContainer,
+    video: !!thereminVideo,
+    canvas: !!thereminCanvas,
+    settings: !!thereminSettings
+});
+
+if (!enableThereminBtn) {
+    console.error('Enable theremin button not found!');
+}
+
+// Theremin enable/disable
+if (enableThereminBtn) {
+    enableThereminBtn.addEventListener('click', async () => {
+        console.log('Enable theremin button clicked');
+        
+        // Initialize audio context if not already done
+        if (!audioContext) {
+            console.log('Initializing audio context for theremin...');
+            initAudioContext();
+        }
+        
+        console.log('Elements found:', {
+            enableBtn: !!enableThereminBtn,
+            disableBtn: !!disableThereminBtn,
+            videoContainer: !!thereminVideoContainer,
+            videoElement: !!thereminVideo,
+            canvasElement: !!thereminCanvas,
+            settingsContainer: !!thereminSettings
+        });
+        
+        const thereminElements = {
+            enableBtn: enableThereminBtn,
+            disableBtn: disableThereminBtn,
+            videoContainer: thereminVideoContainer,
+            videoElement: thereminVideo,
+            canvasElement: thereminCanvas,
+            settingsContainer: thereminSettings
+        };
+        
+        console.log('Calling enableTheremin with audioContext:', audioContext);
+        const success = await enableTheremin(audioContext, thereminElements, recordingDestination, merger);
+        console.log('enableTheremin returned:', success);
+        if (!success) {
+            console.error('Failed to enable theremin');
+        }
+    });
+}
+
+if (disableThereminBtn) {
+    disableThereminBtn.addEventListener('click', () => {
+        const thereminElements = {
+            enableBtn: enableThereminBtn,
+            disableBtn: disableThereminBtn,
+            videoContainer: thereminVideoContainer,
+            videoElement: thereminVideo,
+            canvasElement: thereminCanvas,
+            settingsContainer: thereminSettings
+        };
+        
+        disableTheremin(thereminElements);
+    });
+}
+
+// Theremin volume control
+if (thereminVolumeSlider && thereminVolumeValue) {
+    thereminVolumeSlider.addEventListener('input', (e) => {
+        const volume = parseInt(e.target.value) / 100; // Convert to 0-1 range
+        thereminVolumeValue.textContent = e.target.value + '%';
+        changeThereminVolume(volume);
+    });
+}
+
+// Theremin audio source selector
+if (thereminAudioSource) {
+    thereminAudioSource.addEventListener('change', (e) => {
+        const sourceType = e.target.value;
+        console.log('Changing theremin audio source to:', sourceType);
+        
+        // Get the appropriate source node based on selection
+        let sourceNode = null;
+        
+        if (sourceType === 'track1') {
+            if (source1) {
+                sourceNode = source1;
+                console.log('Using Track 1 as theremin source');
+            } else {
+                console.warn('Track 1 source not available - load a file on Track 1 first');
+                alert('Please load an audio file on Track 1 first');
+                thereminAudioSource.value = 'oscillator'; // Reset to oscillator
+                return;
+            }
+        } else if (sourceType === 'track2') {
+            if (source2) {
+                sourceNode = source2;
+                console.log('Using Track 2 as theremin source');
+            } else {
+                console.warn('Track 2 source not available - load a file on Track 2 first');
+                alert('Please load an audio file on Track 2 first');
+                thereminAudioSource.value = 'oscillator'; // Reset to oscillator
+                return;
+            }
+        } else if (sourceType === 'oscillator') {
+            console.log('Using oscillator as theremin source');
+        }
+        
+        setThereminAudioSource(sourceType, sourceNode);
+        
+        // Show/hide waveform selector (only for oscillator mode)
+        const waveformSetting = document.getElementById('thereminWaveformSetting');
+        if (waveformSetting) {
+            waveformSetting.style.display = sourceType === 'oscillator' ? 'block' : 'none';
+        }
+        
+        // Update frequency/filter label in display
+        const freqLabel = document.getElementById('thereminFreqLabel');
+        if (freqLabel) {
+            freqLabel.textContent = sourceType === 'oscillator' ? 'Freq' : 'Filter';
+        }
+        
+        // Update help text to explain the mode
+        const helpText = document.querySelector('.theremin-help-text');
+        if (helpText) {
+            if (sourceType === 'oscillator') {
+                helpText.textContent = 'Use your hand motion to control the theremin! Move up/down for pitch, left/right for volume.';
+            } else {
+                helpText.textContent = `Modulating ${sourceType.toUpperCase()}: Move up/down to control filter brightness, left/right for volume.`;
+            }
+        }
+    });
+}
+
+// Theremin waveform change
+if (thereminWaveform) {
+    thereminWaveform.addEventListener('change', (e) => {
+        changeThereminWaveform(e.target.value);
+        console.log('Theremin waveform changed to:', e.target.value);
+    });
+}
+
+// Theremin mapping mode selector
+const thereminMappingMode = document.getElementById('thereminMappingMode');
+if (thereminMappingMode) {
+    thereminMappingMode.addEventListener('change', (e) => {
+        const mode = e.target.value;
+        console.log('Changing theremin mapping mode to:', mode);
+        setThereminMappingMode(mode);
+        
+        // Update the help text below the selector
+        const helpText = document.getElementById('thereminMappingHelp');
+        if (helpText) {
+            const helpMessages = {
+                'pitch-volume': '<small>↕️ Pitch | ↔️ Volume</small>',
+                'filter-resonance': '<small>↕️ Filter Cutoff | ↔️ Resonance (Q)</small>',
+                'adsr': '<small>↕️ Attack (top) / Release (bottom) | ↔️ Decay (left) / Sustain (right)</small>'
+            };
+            helpText.innerHTML = helpMessages[mode] || '';
+        }
+        
+        // Update main help text
+        const mainHelpText = document.querySelector('.theremin-help-text');
+        if (mainHelpText) {
+            const sourceType = thereminAudioSource ? thereminAudioSource.value : 'oscillator';
+            const modeDescriptions = {
+                'pitch-volume': sourceType === 'oscillator' 
+                    ? 'Move up/down for pitch, left/right for volume.' 
+                    : 'Move up/down for filter brightness, left/right for volume.',
+                'filter-resonance': 'Move up/down for filter cutoff, left/right for resonance.',
+                'adsr': 'Move to control envelope: Up/down for Attack/Release, Left/right for Decay/Sustain.'
+            };
+            mainHelpText.textContent = `Use your hand motion to control the theremin! ${modeDescriptions[mode]}`;
+        }
+    });
+}
+
+// Theremin range change
+if (thereminRange) {
+    thereminRange.addEventListener('change', (e) => {
+        const rangeSettings = {
+            'low': { min: 100, max: 800 },
+            'medium': { min: 200, max: 2000 },
+            'high': { min: 400, max: 4000 },
+            'wide': { min: 100, max: 4000 }
+        };
+        
+        const range = rangeSettings[e.target.value];
+        changeThereminRange(range.min, range.max);
+        console.log('Theremin range changed to:', e.target.value, range);
+    });
+}
+
+// Theremin vibrato controls
+if (thereminVibratoRate && thereminVibratoRateValue) {
+    thereminVibratoRate.addEventListener('input', (e) => {
+        const rate = parseFloat(e.target.value);
+        thereminVibratoRateValue.textContent = rate.toFixed(1) + 'Hz';
+        const depth = parseFloat(thereminVibratoDepth.value);
+        changeThereminVibrato(rate, depth);
+    });
+}
+
+if (thereminVibratoDepth && thereminVibratoDepthValue) {
+    thereminVibratoDepth.addEventListener('input', (e) => {
+        const depth = parseFloat(e.target.value);
+        thereminVibratoDepthValue.textContent = depth.toFixed(0) + 'Hz';
+        const rate = parseFloat(thereminVibratoRate.value);
+        changeThereminVibrato(rate, depth);
+    });
+}
+
+if (thereminSensitivity && thereminSensitivityValue) {
+    thereminSensitivity.addEventListener('input', (e) => {
+        const sensitivity = parseFloat(e.target.value);
+        thereminSensitivityValue.textContent = sensitivity.toFixed(1) + 'x';
+        changeThereminSensitivity(sensitivity);
+    });
+}
+
+if (thereminRequireHand) {
+    thereminRequireHand.addEventListener('change', (e) => {
+        changeThereminHandRequirement(e.target.checked);
+    });
+}
+
+// Cleanup theremin on page unload
+window.addEventListener('beforeunload', cleanupTheremin);
 
 // Tempo sliders
 tempoSlider1.addEventListener('input', (e) => {
@@ -3936,6 +4301,118 @@ delayTimeSlider2.addEventListener('input', (e) => {
     delayTimeValue2.textContent = e.target.value + 'ms';
 });
 
+// === ADSR Controls for Track 1 ===
+const adsrAttackSlider1 = document.getElementById('adsrAttackSlider1');
+const adsrDecaySlider1 = document.getElementById('adsrDecaySlider1');
+const adsrSustainSlider1 = document.getElementById('adsrSustainSlider1');
+const adsrReleaseSlider1 = document.getElementById('adsrReleaseSlider1');
+const adsrTrigger1 = document.getElementById('adsrTrigger1');
+
+if (adsrAttackSlider1) {
+    adsrAttackSlider1.addEventListener('input', (e) => {
+        const attack = parseInt(e.target.value) / 1000; // Convert ms to seconds
+        if (adsr1) {
+            updateADSRParameters(adsr1, attack, undefined, undefined, undefined);
+        }
+        document.getElementById('adsrAttackValue1').textContent = e.target.value + 'ms';
+    });
+}
+
+if (adsrDecaySlider1) {
+    adsrDecaySlider1.addEventListener('input', (e) => {
+        const decay = parseInt(e.target.value) / 1000;
+        if (adsr1) {
+            updateADSRParameters(adsr1, undefined, decay, undefined, undefined);
+        }
+        document.getElementById('adsrDecayValue1').textContent = e.target.value + 'ms';
+    });
+}
+
+if (adsrSustainSlider1) {
+    adsrSustainSlider1.addEventListener('input', (e) => {
+        const sustain = parseInt(e.target.value) / 100;
+        if (adsr1) {
+            updateADSRParameters(adsr1, undefined, undefined, sustain, undefined);
+        }
+        document.getElementById('adsrSustainValue1').textContent = e.target.value + '%';
+    });
+}
+
+if (adsrReleaseSlider1) {
+    adsrReleaseSlider1.addEventListener('input', (e) => {
+        const release = parseInt(e.target.value) / 1000;
+        if (adsr1) {
+            updateADSRParameters(adsr1, undefined, undefined, undefined, release);
+        }
+        document.getElementById('adsrReleaseValue1').textContent = e.target.value + 'ms';
+    });
+}
+
+if (adsrTrigger1) {
+    adsrTrigger1.addEventListener('click', () => {
+        if (adsr1 && audioContext) {
+            triggerADSRAttack(adsr1, audioContext, 1.0);
+            console.log('Track 1 ADSR triggered');
+        }
+    });
+}
+
+// === ADSR Controls for Track 2 ===
+const adsrAttackSlider2 = document.getElementById('adsrAttackSlider2');
+const adsrDecaySlider2 = document.getElementById('adsrDecaySlider2');
+const adsrSustainSlider2 = document.getElementById('adsrSustainSlider2');
+const adsrReleaseSlider2 = document.getElementById('adsrReleaseSlider2');
+const adsrTrigger2 = document.getElementById('adsrTrigger2');
+
+if (adsrAttackSlider2) {
+    adsrAttackSlider2.addEventListener('input', (e) => {
+        const attack = parseInt(e.target.value) / 1000;
+        if (adsr2) {
+            updateADSRParameters(adsr2, attack, undefined, undefined, undefined);
+        }
+        document.getElementById('adsrAttackValue2').textContent = e.target.value + 'ms';
+    });
+}
+
+if (adsrDecaySlider2) {
+    adsrDecaySlider2.addEventListener('input', (e) => {
+        const decay = parseInt(e.target.value) / 1000;
+        if (adsr2) {
+            updateADSRParameters(adsr2, undefined, decay, undefined, undefined);
+        }
+        document.getElementById('adsrDecayValue2').textContent = e.target.value + 'ms';
+    });
+}
+
+if (adsrSustainSlider2) {
+    adsrSustainSlider2.addEventListener('input', (e) => {
+        const sustain = parseInt(e.target.value) / 100;
+        if (adsr2) {
+            updateADSRParameters(adsr2, undefined, undefined, sustain, undefined);
+        }
+        document.getElementById('adsrSustainValue2').textContent = e.target.value + '%';
+    });
+}
+
+if (adsrReleaseSlider2) {
+    adsrReleaseSlider2.addEventListener('input', (e) => {
+        const release = parseInt(e.target.value) / 1000;
+        if (adsr2) {
+            updateADSRParameters(adsr2, undefined, undefined, undefined, release);
+        }
+        document.getElementById('adsrReleaseValue2').textContent = e.target.value + 'ms';
+    });
+}
+
+if (adsrTrigger2) {
+    adsrTrigger2.addEventListener('click', () => {
+        if (adsr2 && audioContext) {
+            triggerADSRAttack(adsr2, audioContext, 1.0);
+            console.log('Track 2 ADSR triggered');
+        }
+    });
+}
+
 // === Master Channel Effect Controls ===
 
 filterSliderMaster.addEventListener('input', (e) => {
@@ -3982,6 +4459,62 @@ delayTimeSliderMaster.addEventListener('input', (e) => {
     delayTimeValueMaster.textContent = e.target.value + 'ms';
 });
 
+// === ADSR Controls for Master ===
+const adsrAttackSliderMaster = document.getElementById('adsrAttackSliderMaster');
+const adsrDecaySliderMaster = document.getElementById('adsrDecaySliderMaster');
+const adsrSustainSliderMaster = document.getElementById('adsrSustainSliderMaster');
+const adsrReleaseSliderMaster = document.getElementById('adsrReleaseSliderMaster');
+const adsrTriggerMaster = document.getElementById('adsrTriggerMaster');
+
+if (adsrAttackSliderMaster) {
+    adsrAttackSliderMaster.addEventListener('input', (e) => {
+        const attack = parseInt(e.target.value) / 1000;
+        if (adsrMaster) {
+            updateADSRParameters(adsrMaster, attack, undefined, undefined, undefined);
+        }
+        document.getElementById('adsrAttackValueMaster').textContent = e.target.value + 'ms';
+    });
+}
+
+if (adsrDecaySliderMaster) {
+    adsrDecaySliderMaster.addEventListener('input', (e) => {
+        const decay = parseInt(e.target.value) / 1000;
+        if (adsrMaster) {
+            updateADSRParameters(adsrMaster, undefined, decay, undefined, undefined);
+        }
+        document.getElementById('adsrDecayValueMaster').textContent = e.target.value + 'ms';
+    });
+}
+
+if (adsrSustainSliderMaster) {
+    adsrSustainSliderMaster.addEventListener('input', (e) => {
+        const sustain = parseInt(e.target.value) / 100;
+        if (adsrMaster) {
+            updateADSRParameters(adsrMaster, undefined, undefined, sustain, undefined);
+        }
+        document.getElementById('adsrSustainValueMaster').textContent = e.target.value + '%';
+    });
+}
+
+if (adsrReleaseSliderMaster) {
+    adsrReleaseSliderMaster.addEventListener('input', (e) => {
+        const release = parseInt(e.target.value) / 1000;
+        if (adsrMaster) {
+            updateADSRParameters(adsrMaster, undefined, undefined, undefined, release);
+        }
+        document.getElementById('adsrReleaseValueMaster').textContent = e.target.value + 'ms';
+    });
+}
+
+if (adsrTriggerMaster) {
+    adsrTriggerMaster.addEventListener('click', () => {
+        if (adsrMaster && audioContext) {
+            triggerADSRAttack(adsrMaster, audioContext, 1.0);
+            console.log('Master ADSR triggered');
+        }
+    });
+}
+
 // Master routing handlers
 routeTrack1.addEventListener('change', (e) => {
     toggleTrackRouting(1, e.target.checked);
@@ -3997,6 +4530,10 @@ routeMicrophone.addEventListener('change', (e) => {
 
 routeSampler.addEventListener('change', (e) => {
     toggleSamplerRouting(e.target.checked);
+});
+
+routeTheremin.addEventListener('change', (e) => {
+    toggleThereminRouting(e.target.checked);
 });
 
 masterVolumeSlider.addEventListener('input', (e) => {
@@ -4626,7 +5163,11 @@ function animate() {
                 }
                 
                 // Apply color with smooth transition
-                const targetColor = new THREE.Color(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+                // Round and clamp HSL values to avoid THREE.js parsing errors
+                const roundedHue = Math.round(hue) % 360;
+                const roundedSat = Math.round(Math.max(0, Math.min(100, saturation)));
+                const roundedLight = Math.round(Math.max(0, Math.min(100, lightness)));
+                const targetColor = new THREE.Color(`hsl(${roundedHue}, ${roundedSat}%, ${roundedLight}%)`);
                 bar.material.color.lerp(targetColor, 0.15); // Smooth color transition
                 bar.material.emissive.copy(bar.material.color).multiplyScalar(0.3);
                 
@@ -4900,3 +5441,7 @@ function setupRecordedAudioConnection() {
         console.log('Recorded audio ended - oscilloscope reconnected to tracks');
     });
 }
+
+// Final initialization complete
+console.log('🎵 Browser Jockey initialized successfully');
+console.log('Theremin button element:', enableThereminBtn);
