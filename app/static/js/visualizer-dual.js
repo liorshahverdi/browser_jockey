@@ -1990,8 +1990,10 @@ function initAudioContext() {
         bufferLength = analyser.frequencyBinCount;
         dataArray = new Uint8Array(bufferLength);
         
-        // Create merger to combine both tracks
-        merger = audioContext.createChannelMerger(2);
+        // Create mixer gain node to combine both stereo tracks
+        // Using a GainNode instead of ChannelMerger because both tracks output stereo
+        merger = audioContext.createGain();
+        merger.gain.value = 1.0;
         
         // Create destination for recording
         recordingDestination = audioContext.createMediaStreamDestination();
