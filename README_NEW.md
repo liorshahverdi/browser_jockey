@@ -1,12 +1,10 @@
 # Browser Jockey
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browser-jockey.onrender.com/)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browserjockey.onrender.com/)
 
-A dual-track DJ mixing web application with 3D audio visualization, BPM detection, precise loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, and authentic DJ controls.
+A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, and authentic DJ controls.
 
-**Latest Update (v3.14.0)**: Added Precise Loop Markers with millisecond accuracy! Set loop points with numeric inputs (0.001s precision), interactive time tooltip on hover, intelligent marker adjustment, and fixed zoom click detection. Perfect for chopping tiny segments from tab-captured audio or any track. Works seamlessly at 16x-20x zoom levels. See [PRECISE_LOOP_MARKERS.md](PRECISE_LOOP_MARKERS.md) for details.
-
-**v3.13.0**: Added browser tab audio capture! Capture audio from any browser tab (YouTube, Spotify, etc.) and route it through Track 1, Track 2, or Microphone input with full effects support. Record tab capture to master output, mix with other tracks, apply vocoder/auto-tune, and use the crossfader. Perfect for DJing with streaming services or remixing online content! See [TAB_CAPTURE_FEATURE.md](TAB_CAPTURE_FEATURE.md) for details.
+**Latest Update (v3.13.0)**: Added browser tab audio capture! Capture audio from any browser tab (YouTube, Spotify, etc.) and route it through Track 1, Track 2, or Microphone input with full effects support. Record tab capture to master output, mix with other tracks, apply vocoder/auto-tune, and use the crossfader. Perfect for DJing with streaming services or remixing online content! See [TAB_CAPTURE_FEATURE.md](TAB_CAPTURE_FEATURE.md) for details.
 
 **v3.12.0**: Added ADSR Envelope effects for professional dynamic control! Attack, Decay, Sustain, Release controls for Track 1, Track 2, Master output, and Keyboard Sampler. Manual trigger buttons for precise envelope activation, integrated into drag-and-drop effect chains, conditional sampler ADSR, and 15+ creative use cases documented. See [ADSR_ENVELOPE_EFFECT.md](ADSR_ENVELOPE_EFFECT.md) and [ADSR_CREATIVE_USE_CASES.md](ADSR_CREATIVE_USE_CASES.md).
 
@@ -93,16 +91,6 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
   - 🔊 Routes to master output with individual routing toggle
 - 🎵 **BPM Detection** - Automatic tempo detection for each track
 - 🎹 **Key Detection** - Per-track musical key analysis
-- 🔁 **Precise Loop Markers** - Millisecond-accurate loop point control
-  - 🎯 **Numeric Inputs** - Set exact loop times with 0.001s precision
-  - 🖱️ **Time Tooltip** - Hover to preview exact time before clicking
-  - 🧠 **Smart Adjustment** - Click moves nearest marker automatically
-  - 🔍 **Zoom Compatible** - Works perfectly at 16x-20x zoom levels
-  - ⌨️ **Arrow Key Fine-Tuning** - Adjust by ±0.001s increments
-  - 💡 **In-App Hints** - Clear guidance without reading docs
-  - 🎛️ **Fixed Click Detection** - No more ignored clicks when zoomed
-  - ✨ **Quick Loop Integration** - Refine auto-generated loops manually
-  - 📦 **Perfect for Tab Capture** - Chop tiny segments with precision
 - 🔁 **A-B Loop Markers** - Create precise loops with draggable markers
 - ⏪ **Reverse Loop** - Play loops backwards with seamless toggle (perfect for live performance)
 - ⚡ **Quick Loops** - Auto-create 1, 2, 4, or 8 bar loops based on BPM

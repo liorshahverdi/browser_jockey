@@ -106,6 +106,11 @@ const waveformProgress1 = document.getElementById('waveformProgress1');
 const loopMarkerStart1 = document.getElementById('loopMarkerStart1');
 const loopMarkerEnd1 = document.getElementById('loopMarkerEnd1');
 const loopRegion1 = document.getElementById('loopRegion1');
+const loopStartInput1 = document.getElementById('loopStartInput1');
+const loopEndInput1 = document.getElementById('loopEndInput1');
+const preciseLoopSection1 = document.getElementById('preciseLoopSection1');
+const timeTooltip1 = document.getElementById('timeTooltip1');
+const hoverTime1 = document.getElementById('hoverTime1');
 const bpm1Display = document.getElementById('bpm1');
 const key1Display = document.getElementById('key1');
 const currentTime1Display = document.getElementById('currentTime1');
@@ -151,6 +156,11 @@ const waveformProgress2 = document.getElementById('waveformProgress2');
 const loopMarkerStart2 = document.getElementById('loopMarkerStart2');
 const loopMarkerEnd2 = document.getElementById('loopMarkerEnd2');
 const loopRegion2 = document.getElementById('loopRegion2');
+const loopStartInput2 = document.getElementById('loopStartInput2');
+const loopEndInput2 = document.getElementById('loopEndInput2');
+const preciseLoopSection2 = document.getElementById('preciseLoopSection2');
+const timeTooltip2 = document.getElementById('timeTooltip2');
+const hoverTime2 = document.getElementById('hoverTime2');
 const bpm2Display = document.getElementById('bpm2');
 const key2Display = document.getElementById('key2');
 const currentTime2Display = document.getElementById('currentTime2');
@@ -3702,14 +3712,20 @@ audioFile2.addEventListener('change', async (e) => {
 
 // Waveform click for Track 1 - set loop points or seek
 waveform1.parentElement.addEventListener('click', (e) => {
+    console.log('🖱️ Waveform clicked! Loop enabled:', loopState1.enabled, 'Dragging:', zoomState1.isDragging);
+    
     // Don't handle click if we were dragging
     if (zoomState1.isDragging) {
         zoomState1.isDragging = false;
+        console.log('❌ Click ignored - was dragging');
         return;
     }
     
     // Don't set loop points if clicking on markers
-    if (e.target.classList.contains('loop-marker')) return;
+    if (e.target.classList.contains('loop-marker')) {
+        console.log('❌ Click ignored - clicked on marker');
+        return;
+    }
     
     // Check if duration is valid before proceeding
     if (!audioElement1.duration || isNaN(audioElement1.duration) || !isFinite(audioElement1.duration)) {
@@ -3726,6 +3742,8 @@ waveform1.parentElement.addEventListener('click', (e) => {
     const startTime = zoomState1.offset * audioElement1.duration;
     const time = startTime + (percentage * visibleDuration);
     
+    console.log('📍 Click position:', formatTimeWithMs(time), '(percentage:', (percentage * 100).toFixed(1) + '%)');
+    
     // If a marker is active, move it to clicked position
     if (activeMarker1 && loopState1.enabled) {
         if (activeMarker1 === 'start') {
@@ -3739,29 +3757,63 @@ waveform1.parentElement.addEventListener('click', (e) => {
         }
         activeMarker1 = null; // Deactivate after moving
         updateLoopRegion(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1, audioElement1.duration, zoomState1);
+        updatePreciseLoopInputs(1);
         return;
     }
     
     if (loopState1.enabled) {
-        // Setting loop points
-        if (loopState1.settingPoint === 'start') {
-            loopState1.start = time;
-            loopState1.settingPoint = 'end';
-            console.log('Loop start set at:', formatTime(time));
-        } else {
-            loopState1.end = time;
-            loopState1.settingPoint = 'start';
+        console.log('✅ Loop mode is ON. Current state:', { start: loopState1.start, end: loopState1.end, settingPoint: loopState1.settingPoint });
+        
+        // If both markers are already set, move the nearest one to the new position
+        if (loopState1.start !== null && loopState1.end !== null) {
+            console.log('📌 Both markers already set. Moving nearest marker...');
+            // Calculate which marker is closer to the click position
+            const distToStart = Math.abs(time - loopState1.start);
+            const distToEnd = Math.abs(time - loopState1.end);
+            
+            if (distToStart < distToEnd) {
+                // Move start marker
+                loopState1.start = time;
+                console.log('Loop start (A) moved to:', formatTimeWithMs(time));
+            } else {
+                // Move end marker
+                loopState1.end = time;
+                console.log('Loop end (B) moved to:', formatTimeWithMs(time));
+            }
             
             // Ensure start < end
             if (loopState1.start > loopState1.end) {
                 [loopState1.start, loopState1.end] = [loopState1.end, loopState1.start];
             }
-            console.log('Loop end set at:', formatTime(time));
-            // Enable export loop button when both points are set
-            exportLoop1.disabled = false;
+        } else {
+            // Setting loop points - first click sets A, second click sets B
+            console.log('🎯 In else block - setting points. settingPoint:', loopState1.settingPoint);
+            if (loopState1.settingPoint === 'start') {
+                console.log('🅰️ About to set start marker to:', time);
+                loopState1.start = time;
+                loopState1.settingPoint = 'end';
+                console.log('Loop start (A) set at:', formatTimeWithMs(time));
+                console.log('🅰️ After setting: start =', loopState1.start, ', settingPoint =', loopState1.settingPoint);
+            } else {
+                console.log('🅱️ About to set end marker to:', time);
+                loopState1.end = time;
+                loopState1.settingPoint = 'start';
+                
+                // Ensure start < end
+                if (loopState1.start > loopState1.end) {
+                    [loopState1.start, loopState1.end] = [loopState1.end, loopState1.start];
+                }
+                console.log('Loop end (B) set at:', formatTimeWithMs(time));
+                console.log('🅱️ After setting: end =', loopState1.end, ', settingPoint =', loopState1.settingPoint);
+                // Enable export loop button when both points are set
+                exportLoop1.disabled = false;
+            }
         }
         
+        console.log('📞 About to call updateLoopRegion and updatePreciseLoopInputs');
         updateLoopRegion(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1, audioElement1.duration, zoomState1);
+        updatePreciseLoopInputs(1);
+        console.log('✅ Loop marker update complete');
     } else {
         // Regular seek
         if (audioElement1.duration) {
@@ -3773,7 +3825,7 @@ waveform1.parentElement.addEventListener('click', (e) => {
 // Waveform drag for Track 1 (pan when zoomed)
 waveform1.parentElement.addEventListener('mousedown', (e) => {
     if (zoomState1.level > 1 && !e.target.classList.contains('loop-marker')) {
-        zoomState1.isDragging = true;
+        zoomState1.isDragging = false; // Don't set to true yet - wait for movement
         zoomState1.dragStartX = e.clientX;
         zoomState1.dragStartOffset = zoomState1.offset;
         waveform1.parentElement.style.cursor = 'grabbing';
@@ -3782,14 +3834,52 @@ waveform1.parentElement.addEventListener('mousedown', (e) => {
 });
 
 waveform1.parentElement.addEventListener('mousemove', (e) => {
-    if (zoomState1.isDragging && zoomState1.level > 1) {
-        const rect = waveform1.getBoundingClientRect();
-        const deltaX = e.clientX - zoomState1.dragStartX;
-        const deltaPercent = -(deltaX / rect.width) / zoomState1.level;
+    if (zoomState1.dragStartX !== undefined && zoomState1.level > 1) {
+        const deltaX = Math.abs(e.clientX - zoomState1.dragStartX);
         
-        zoomState1.offset = Math.max(0, Math.min(1 - (1 / zoomState1.level), zoomState1.dragStartOffset + deltaPercent));
-        redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1, waveformColors);
-        updateLoopMarkersAfterZoom(1);
+        // Only consider it dragging if mouse moved more than 3 pixels
+        if (deltaX > 3) {
+            zoomState1.isDragging = true;
+            const rect = waveform1.getBoundingClientRect();
+            const deltaXActual = e.clientX - zoomState1.dragStartX;
+            const deltaPercent = -(deltaXActual / rect.width) / zoomState1.level;
+            
+            zoomState1.offset = Math.max(0, Math.min(1 - (1 / zoomState1.level), zoomState1.dragStartOffset + deltaPercent));
+            redrawWaveformWithZoom(waveform1, zoomState1, zoomLevel1Display, 1, waveformColors);
+            updateLoopMarkersAfterZoom(1);
+        }
+    } else if (audioElement1.duration && timeTooltip1) {
+        // Show time tooltip when hovering over waveform
+        const rect = waveform1.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const percentage = x / rect.width;
+        
+        // Calculate time considering zoom
+        const visibleDuration = audioElement1.duration / zoomState1.level;
+        const startTime = zoomState1.offset * audioElement1.duration;
+        const time = startTime + (percentage * visibleDuration);
+        
+        if (time >= 0 && time <= audioElement1.duration) {
+            timeTooltip1.textContent = formatTimeWithMs(time);
+            timeTooltip1.style.left = x + 'px';
+            timeTooltip1.style.display = 'block';
+            
+            // Update hover time display
+            if (hoverTime1) {
+                hoverTime1.style.display = 'inline';
+                hoverTime1.querySelector('span').textContent = formatTimeWithMs(time);
+            }
+        }
+    }
+});
+
+waveform1.parentElement.addEventListener('mouseleave', () => {
+    // Hide time tooltip when leaving waveform
+    if (timeTooltip1) {
+        timeTooltip1.style.display = 'none';
+    }
+    if (hoverTime1) {
+        hoverTime1.style.display = 'none';
     }
 });
 
@@ -3797,8 +3887,13 @@ waveform1.parentElement.addEventListener('mouseup', () => {
     if (zoomState1.isDragging) {
         setTimeout(() => {
             zoomState1.isDragging = false;
+            zoomState1.dragStartX = undefined;
             waveform1.parentElement.style.cursor = zoomState1.level > 1 ? 'grab' : 'pointer';
         }, 10);
+    } else {
+        // Was just a click, not a drag
+        zoomState1.dragStartX = undefined;
+        waveform1.parentElement.style.cursor = zoomState1.level > 1 ? 'grab' : 'pointer';
     }
 });
 
@@ -3848,29 +3943,53 @@ waveform2.parentElement.addEventListener('click', (e) => {
         }
         activeMarker2 = null; // Deactivate after moving
         updateLoopRegion(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2, audioElement2.duration, zoomState2);
+        updatePreciseLoopInputs(2);
         return;
     }
     
     if (loopState2.enabled) {
-        // Setting loop points
-        if (loopState2.settingPoint === 'start') {
-            loopState2.start = time;
-            loopState2.settingPoint = 'end';
-            console.log('Loop start set at:', formatTime(time));
-        } else {
-            loopState2.end = time;
-            loopState2.settingPoint = 'start';
+        // If both markers are already set, move the nearest one to the new position
+        if (loopState2.start !== null && loopState2.end !== null) {
+            // Calculate which marker is closer to the click position
+            const distToStart = Math.abs(time - loopState2.start);
+            const distToEnd = Math.abs(time - loopState2.end);
+            
+            if (distToStart < distToEnd) {
+                // Move start marker
+                loopState2.start = time;
+                console.log('Loop start (A) moved to:', formatTimeWithMs(time));
+            } else {
+                // Move end marker
+                loopState2.end = time;
+                console.log('Loop end (B) moved to:', formatTimeWithMs(time));
+            }
             
             // Ensure start < end
             if (loopState2.start > loopState2.end) {
                 [loopState2.start, loopState2.end] = [loopState2.end, loopState2.start];
             }
-            console.log('Loop end set at:', formatTime(time));
-            // Enable export loop button when both points are set
-            exportLoop2.disabled = false;
+        } else {
+            // Setting loop points - first click sets A, second click sets B
+            if (loopState2.settingPoint === 'start') {
+                loopState2.start = time;
+                loopState2.settingPoint = 'end';
+                console.log('Loop start (A) set at:', formatTimeWithMs(time));
+            } else {
+                loopState2.end = time;
+                loopState2.settingPoint = 'start';
+                
+                // Ensure start < end
+                if (loopState2.start > loopState2.end) {
+                    [loopState2.start, loopState2.end] = [loopState2.end, loopState2.start];
+                }
+                console.log('Loop end (B) set at:', formatTimeWithMs(time));
+                // Enable export loop button when both points are set
+                exportLoop2.disabled = false;
+            }
         }
         
         updateLoopRegion(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2, audioElement2.duration, zoomState2);
+        updatePreciseLoopInputs(2);
     } else {
         // Regular seek
         if (audioElement2.duration) {
@@ -3882,7 +4001,7 @@ waveform2.parentElement.addEventListener('click', (e) => {
 // Waveform drag for Track 2 (pan when zoomed)
 waveform2.parentElement.addEventListener('mousedown', (e) => {
     if (zoomState2.level > 1 && !e.target.classList.contains('loop-marker')) {
-        zoomState2.isDragging = true;
+        zoomState2.isDragging = false; // Don't set to true yet - wait for movement
         zoomState2.dragStartX = e.clientX;
         zoomState2.dragStartOffset = zoomState2.offset;
         waveform2.parentElement.style.cursor = 'grabbing';
@@ -3891,14 +4010,52 @@ waveform2.parentElement.addEventListener('mousedown', (e) => {
 });
 
 waveform2.parentElement.addEventListener('mousemove', (e) => {
-    if (zoomState2.isDragging && zoomState2.level > 1) {
-        const rect = waveform2.getBoundingClientRect();
-        const deltaX = e.clientX - zoomState2.dragStartX;
-        const deltaPercent = -(deltaX / rect.width) / zoomState2.level;
+    if (zoomState2.dragStartX !== undefined && zoomState2.level > 1) {
+        const deltaX = Math.abs(e.clientX - zoomState2.dragStartX);
         
-        zoomState2.offset = Math.max(0, Math.min(1 - (1 / zoomState2.level), zoomState2.dragStartOffset + deltaPercent));
-        redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2, waveformColors);
-        updateLoopMarkersAfterZoom(2);
+        // Only consider it dragging if mouse moved more than 3 pixels
+        if (deltaX > 3) {
+            zoomState2.isDragging = true;
+            const rect = waveform2.getBoundingClientRect();
+            const deltaXActual = e.clientX - zoomState2.dragStartX;
+            const deltaPercent = -(deltaXActual / rect.width) / zoomState2.level;
+            
+            zoomState2.offset = Math.max(0, Math.min(1 - (1 / zoomState2.level), zoomState2.dragStartOffset + deltaPercent));
+            redrawWaveformWithZoom(waveform2, zoomState2, zoomLevel2Display, 2, waveformColors);
+            updateLoopMarkersAfterZoom(2);
+        }
+    } else if (audioElement2.duration && timeTooltip2) {
+        // Show time tooltip when hovering over waveform
+        const rect = waveform2.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const percentage = x / rect.width;
+        
+        // Calculate time considering zoom
+        const visibleDuration = audioElement2.duration / zoomState2.level;
+        const startTime = zoomState2.offset * audioElement2.duration;
+        const time = startTime + (percentage * visibleDuration);
+        
+        if (time >= 0 && time <= audioElement2.duration) {
+            timeTooltip2.textContent = formatTimeWithMs(time);
+            timeTooltip2.style.left = x + 'px';
+            timeTooltip2.style.display = 'block';
+            
+            // Update hover time display
+            if (hoverTime2) {
+                hoverTime2.style.display = 'inline';
+                hoverTime2.querySelector('span').textContent = formatTimeWithMs(time);
+            }
+        }
+    }
+});
+
+waveform2.parentElement.addEventListener('mouseleave', () => {
+    // Hide time tooltip when leaving waveform
+    if (timeTooltip2) {
+        timeTooltip2.style.display = 'none';
+    }
+    if (hoverTime2) {
+        hoverTime2.style.display = 'none';
     }
 });
 
@@ -3906,14 +4063,20 @@ waveform2.parentElement.addEventListener('mouseup', () => {
     if (zoomState2.isDragging) {
         setTimeout(() => {
             zoomState2.isDragging = false;
+            zoomState2.dragStartX = undefined;
             waveform2.parentElement.style.cursor = zoomState2.level > 1 ? 'grab' : 'pointer';
         }, 10);
+    } else {
+        // Was just a click, not a drag
+        zoomState2.dragStartX = undefined;
+        waveform2.parentElement.style.cursor = zoomState2.level > 1 ? 'grab' : 'pointer';
     }
 });
 
 waveform2.parentElement.addEventListener('mouseleave', () => {
     if (zoomState2.isDragging) {
         zoomState2.isDragging = false;
+        zoomState2.dragStartX = undefined;
         waveform2.parentElement.style.cursor = zoomState2.level > 1 ? 'grab' : 'pointer';
     }
 });
@@ -4330,9 +4493,23 @@ loopBtn1.addEventListener('click', () => {
         quickLoopSection.style.display = loopState1.enabled ? 'block' : 'none';
     }
     
+    // Show/hide precise loop section
+    if (preciseLoopSection1) {
+        preciseLoopSection1.style.display = loopState1.enabled ? 'block' : 'none';
+    }
+    
     if (!loopState1.enabled) {
         // Clear loop points when disabling - use clearLoopPoints to properly reset state
         clearLoopPoints(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1);
+        // Disable and clear inputs
+        if (loopStartInput1) {
+            loopStartInput1.disabled = true;
+            loopStartInput1.value = '';
+        }
+        if (loopEndInput1) {
+            loopEndInput1.disabled = true;
+            loopEndInput1.value = '';
+        }
     }
 });
 
@@ -4349,19 +4526,51 @@ loopBtn2.addEventListener('click', () => {
         quickLoopSection.style.display = loopState2.enabled ? 'block' : 'none';
     }
     
+    // Show/hide precise loop section
+    if (preciseLoopSection2) {
+        preciseLoopSection2.style.display = loopState2.enabled ? 'block' : 'none';
+    }
+    
     if (!loopState2.enabled) {
         // Clear loop points when disabling - use clearLoopPoints to properly reset state
         clearLoopPoints(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2);
+        // Disable and clear inputs
+        if (loopStartInput2) {
+            loopStartInput2.disabled = true;
+            loopStartInput2.value = '';
+        }
+        if (loopEndInput2) {
+            loopEndInput2.disabled = true;
+            loopEndInput2.value = '';
+        }
     }
 });
 
 // Clear loop button handlers
 clearLoopBtn1.addEventListener('click', () => {
     clearLoopPoints(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1);
+    // Clear precise loop inputs
+    if (loopStartInput1) {
+        loopStartInput1.value = '';
+        loopStartInput1.disabled = true;
+    }
+    if (loopEndInput1) {
+        loopEndInput1.value = '';
+        loopEndInput1.disabled = true;
+    }
 });
 
 clearLoopBtn2.addEventListener('click', () => {
     clearLoopPoints(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2);
+    // Clear precise loop inputs
+    if (loopStartInput2) {
+        loopStartInput2.value = '';
+        loopStartInput2.disabled = true;
+    }
+    if (loopEndInput2) {
+        loopEndInput2.value = '';
+        loopEndInput2.disabled = true;
+    }
 });
 
 // Reverse loop button handlers
@@ -4451,6 +4660,82 @@ reverseLoopBtn2.addEventListener('click', () => {
     }
 });
 
+// Precise loop input event listeners for Track 1
+if (loopStartInput1) {
+    loopStartInput1.addEventListener('input', () => {
+        const value = parseFloat(loopStartInput1.value);
+        if (!isNaN(value) && value >= 0 && value <= audioElement1.duration) {
+            loopState1.start = value;
+            // Ensure start is before end
+            if (loopState1.end !== null && loopState1.start > loopState1.end) {
+                loopState1.start = loopState1.end;
+                loopStartInput1.value = loopState1.start.toFixed(3);
+            }
+            updateLoopRegion(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1, audioElement1.duration, zoomState1);
+            console.log('Track 1 Loop start updated to:', loopState1.start);
+        }
+    });
+}
+
+if (loopEndInput1) {
+    loopEndInput1.addEventListener('input', () => {
+        const value = parseFloat(loopEndInput1.value);
+        if (!isNaN(value) && value >= 0 && value <= audioElement1.duration) {
+            loopState1.end = value;
+            // Ensure end is after start
+            if (loopState1.start !== null && loopState1.end < loopState1.start) {
+                loopState1.end = loopState1.start;
+                loopEndInput1.value = loopState1.end.toFixed(3);
+            }
+            updateLoopRegion(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1, audioElement1.duration, zoomState1);
+            console.log('Track 1 Loop end updated to:', loopState1.end);
+            
+            // Enable export button when both points are set
+            if (loopState1.start !== null && loopState1.end !== null) {
+                exportLoop1.disabled = false;
+            }
+        }
+    });
+}
+
+// Precise loop input event listeners for Track 2
+if (loopStartInput2) {
+    loopStartInput2.addEventListener('input', () => {
+        const value = parseFloat(loopStartInput2.value);
+        if (!isNaN(value) && value >= 0 && value <= audioElement2.duration) {
+            loopState2.start = value;
+            // Ensure start is before end
+            if (loopState2.end !== null && loopState2.start > loopState2.end) {
+                loopState2.start = loopState2.end;
+                loopStartInput2.value = loopState2.start.toFixed(3);
+            }
+            updateLoopRegion(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2, audioElement2.duration, zoomState2);
+            console.log('Track 2 Loop start updated to:', loopState2.start);
+        }
+    });
+}
+
+if (loopEndInput2) {
+    loopEndInput2.addEventListener('input', () => {
+        const value = parseFloat(loopEndInput2.value);
+        if (!isNaN(value) && value >= 0 && value <= audioElement2.duration) {
+            loopState2.end = value;
+            // Ensure end is after start
+            if (loopState2.start !== null && loopState2.end < loopState2.start) {
+                loopState2.end = loopState2.start;
+                loopEndInput2.value = loopState2.end.toFixed(3);
+            }
+            updateLoopRegion(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2, audioElement2.duration, zoomState2);
+            console.log('Track 2 Loop end updated to:', loopState2.end);
+            
+            // Enable export button when both points are set
+            if (loopState2.start !== null && loopState2.end !== null) {
+                exportLoop2.disabled = false;
+            }
+        }
+    });
+}
+
 // Quick loop functionality
 function createQuickLoop(trackNumber, numBars) {
     const audioElement = trackNumber === 1 ? audioElement1 : audioElement2;
@@ -4504,6 +4789,9 @@ function createQuickLoop(trackNumber, numBars) {
     
     // Update loop markers
     updateLoopRegion(loopState, loopRegion, loopMarkerStart, loopMarkerEnd, audioElement.duration, zoomState);
+    
+    // Update precise loop inputs
+    updatePreciseLoopInputs(trackNumber);
     
     // Auto-zoom to loop if enabled
     if (autoZoomCheckbox && autoZoomCheckbox.checked) {
@@ -5422,12 +5710,48 @@ zoomResetBtn2.addEventListener('click', () => {
     waveform2.parentElement.style.cursor = 'pointer';
 });
 
+// Helper function to format time with milliseconds (M:SS.mmm)
+function formatTimeWithMs(seconds) {
+    if (isNaN(seconds)) return '0:00.000';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
+    return `${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+}
+
 // Helper function to update loop marker positions after zoom
 function updateLoopMarkersAfterZoom(trackNumber) {
     if (trackNumber === 1 && loopState1.start !== null && loopState1.end !== null) {
         updateLoopRegion(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1, audioElement1.duration, zoomState1);
     } else if (trackNumber === 2 && loopState2.start !== null && loopState2.end !== null) {
         updateLoopRegion(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2, audioElement2.duration, zoomState2);
+    }
+}
+
+// Helper function to update precise loop input values
+function updatePreciseLoopInputs(trackNumber) {
+    if (trackNumber === 1) {
+        if (loopState1.start !== null && loopStartInput1) {
+            loopStartInput1.value = loopState1.start.toFixed(3);
+            loopStartInput1.disabled = false;
+            loopStartInput1.max = audioElement1.duration;
+        }
+        if (loopState1.end !== null && loopEndInput1) {
+            loopEndInput1.value = loopState1.end.toFixed(3);
+            loopEndInput1.disabled = false;
+            loopEndInput1.max = audioElement1.duration;
+        }
+    } else if (trackNumber === 2) {
+        if (loopState2.start !== null && loopStartInput2) {
+            loopStartInput2.value = loopState2.start.toFixed(3);
+            loopStartInput2.disabled = false;
+            loopStartInput2.max = audioElement2.duration;
+        }
+        if (loopState2.end !== null && loopEndInput2) {
+            loopEndInput2.value = loopState2.end.toFixed(3);
+            loopEndInput2.disabled = false;
+            loopEndInput2.max = audioElement2.duration;
+        }
     }
 }
 

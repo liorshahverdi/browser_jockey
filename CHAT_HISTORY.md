@@ -1,15 +1,104 @@
 # Browser Jockey - Development Chat History
 
 ## Project Overview
-A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, XY oscilloscope (Lissajous mode), BPM detection, A-B loop markers, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, professional crossfader with multiple modes, comprehensive audio routing management, enhanced UI with premium controls, WebM loop marker support, real-time stereo phase visualization, ADSR envelope effects, camera theremin with adaptive wave detection, and browser tab audio capture with full effects support.
+A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, XY oscilloscope (Lissajous mode), BPM detection, precise loop markers with millisecond accuracy, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, professional crossfader with multiple modes, comprehensive audio routing management, enhanced UI with premium controls, WebM loop marker support, real-time stereo phase visualization, ADSR envelope effects, camera theremin with adaptive wave detection, and browser tab audio capture with full effects support.
 
-**Latest Version: v3.13.0** - Browser Tab Audio Capture
+**Latest Version: v3.14.0** - Precise Loop Markers & Small Segment Chopping
 
 ---
 
 ## Session Timeline
 
-### Latest Session: Browser Tab Audio Capture (v3.13.0)
+### Latest Session: Precise Loop Markers (v3.14.0)
+**Date**: October 26, 2025
+
+**User Requests**:
+1. "after capturing tab audio and sending to track 1, i tried zooming 10x on the recorded audio there and setting loop markers manually but didn't work. i'd like to be able to chop loops on really small segments of the track"
+2. "can i also click/draw the markers on really small segments now? if not add"
+3. "maybe add a small readable label that displays somewhere that makes sense when looping explaining the shift+click feature"
+4. "ok lets remove the shift+click logic, i think its confusing. lets just make it so that after clicking the loop button the 1st click on the waveform (however zoomed it may be) will set the first marker then the 2nd click will set the next marker"
+5. "whether or not the quick loop button is on i want to draw the loop markers onto any size audio segment of the track"
+6. "i loaded a track to track 1, zoomed in 16x and clicked the loop button but it wont let me set/draw the markers"
+
+**Features Implemented**:
+
+**1. Precise Loop Marker Inputs**
+- Numeric input fields with 0.001s (millisecond) precision
+- Manual entry for exact time values
+- Arrow key fine-tuning (±0.001s increments)
+- Real-time sync with visual markers
+- Auto-validation (start < end)
+- Works at any zoom level (1x-20x)
+
+**2. Interactive Time Tooltip**
+- Hover preview showing exact time before clicking
+- MM:SS.mmm format display
+- Zoom-aware positioning
+- Follows mouse cursor
+- Cyan-themed to match app design
+
+**3. Intelligent Loop Marker System**
+- Initial setup: First click sets A, second click sets B
+- After setup: Click moves nearest marker to new position
+- Distance-based marker selection
+- Auto-swap if start > end
+- Works with quick loop refinement
+
+**4. Fixed Zoom Click Detection**
+- Changed drag detection to require >3px mouse movement
+- Prevents clicks from being treated as drags
+- Works perfectly at 16x-20x zoom levels
+- Pan functionality still works when actually dragging
+- No more "Click ignored - was dragging" issues
+
+**5. Helpful In-App Hints**
+- Visible hint label in precise loop section
+- "💡 Click to set A and B • Click again to adjust nearest marker • Hover to see time"
+- Appears only when loop mode enabled
+- Cyan accent matching theme
+- Clear, concise instructions
+
+**6. Visual Enhancements**
+- Cyan-themed precise loop section
+- Dark semi-transparent tooltip
+- Monospace font for time display
+- Glowing focus effects on inputs
+- Left border accent for visual hierarchy
+
+**Bug Fixes**:
+- Loop markers now work at any zoom level
+- Fixed drag detection interfering with clicks
+- Fixed quick loop adjustment workflow
+- Input validation prevents invalid ranges
+- Proper marker positioning at high zoom
+
+**Technical Implementation**:
+- `formatTimeWithMs()` helper function
+- `updatePreciseLoopInputs()` sync function
+- Smart drag threshold (3px) in mousemove handlers
+- Distance-based nearest marker calculation
+- Enhanced logging for debugging
+
+**Files Modified**:
+- `app/templates/index.html` - Added inputs, tooltips, hints
+- `app/static/css/style.css` - Styling for new components
+- `app/static/js/visualizer-dual.js` - Loop logic, drag detection, helpers
+
+**Documentation**:
+- `PRECISE_LOOP_MARKERS.md` - Complete feature documentation
+- `SMALL_SEGMENT_LOOP_ENHANCEMENT.md` - Technical details
+- `RELEASE_NOTES_v3.14.md` - Full release notes
+
+**Use Cases**:
+- Chop 100ms loops from tab-captured audio
+- Create precise percussion hits
+- Sample-accurate loop points for glitch effects
+- Professional sound design workflows
+- Micro-loop creation for electronic music
+
+---
+
+### Previous Session: Browser Tab Audio Capture (v3.13.0)
 **Date**: January 2025
 
 **User Requests**:
