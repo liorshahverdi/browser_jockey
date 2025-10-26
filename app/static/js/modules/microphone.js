@@ -167,14 +167,41 @@ export function startMicRecording(micState) {
         interval: null
     };
     
-    // Create MediaRecorder from microphone stream
-    const options = { mimeType: 'audio/webm' };
-    try {
-        recordingState.mediaRecorder = new MediaRecorder(micState.micStream, options);
-    } catch (e) {
-        console.error('MediaRecorder error:', e);
-        throw new Error('Recording not supported in this browser');
+    // Try to find a supported MIME type
+    const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4',
+        'audio/mpeg',
+        ''  // Let browser choose
+    ];
+    
+    let selectedMimeType = '';
+    let mediaRecorder = null;
+    
+    for (const mimeType of mimeTypes) {
+        try {
+            if (mimeType === '' || MediaRecorder.isTypeSupported(mimeType)) {
+                const options = mimeType ? { mimeType } : {};
+                mediaRecorder = new MediaRecorder(micState.micStream, options);
+                selectedMimeType = mimeType || 'browser-default';
+                console.log(`Using MIME type: ${selectedMimeType}`);
+                break;
+            }
+        } catch (e) {
+            console.log(`MIME type ${mimeType} not supported:`, e.message);
+            continue;
+        }
     }
+    
+    if (!mediaRecorder) {
+        console.error('No supported MIME type found for MediaRecorder');
+        throw new Error('Recording not supported - no compatible audio format found. This may happen with tab capture streams.');
+    }
+    
+    recordingState.mediaRecorder = mediaRecorder;
+    recordingState.mimeType = selectedMimeType;
     
     recordingState.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -182,7 +209,18 @@ export function startMicRecording(micState) {
         }
     };
     
-    recordingState.mediaRecorder.start();
+    recordingState.mediaRecorder.onerror = (event) => {
+        console.error('MediaRecorder error during recording:', event.error);
+    };
+    
+    try {
+        recordingState.mediaRecorder.start();
+        recordingState.startTime = Date.now();
+        console.log('Microphone recording started with MIME type:', selectedMimeType);
+    } catch (e) {
+        console.error('Error starting MediaRecorder:', e);
+        throw new Error('Failed to start recording: ' + e.message);
+    }
     recordingState.startTime = Date.now();
     
     console.log('Microphone recording started');

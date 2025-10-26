@@ -83,6 +83,7 @@ const audioElement1 = document.getElementById('audioElement1');
 const playBtn1 = document.getElementById('playBtn1');
 const pauseBtn1 = document.getElementById('pauseBtn1');
 const stopBtn1 = document.getElementById('stopBtn1');
+const captureTabAudio1 = document.getElementById('captureTabAudio1');
 
 // Debug: Check if elements exist
 console.log('DOM Elements loaded:', {
@@ -135,6 +136,7 @@ const audioElement2 = document.getElementById('audioElement2');
 const playBtn2 = document.getElementById('playBtn2');
 const pauseBtn2 = document.getElementById('pauseBtn2');
 const stopBtn2 = document.getElementById('stopBtn2');
+const captureTabAudio2 = document.getElementById('captureTabAudio2');
 const loopBtn2 = document.getElementById('loopBtn2');
 const reverseLoopBtn2 = document.getElementById('reverseLoopBtn2');
 const clearLoopBtn2 = document.getElementById('clearLoopBtn2');
@@ -210,6 +212,7 @@ const crossfaderLabelRight = document.getElementById('crossfaderLabelRight');
 // Microphone elements
 const enableMicBtn = document.getElementById('enableMicBtn');
 const disableMicBtn = document.getElementById('disableMicBtn');
+const captureTabAudioMic = document.getElementById('captureTabAudioMic');
 const micVolumeSlider = document.getElementById('micVolumeSlider');
 const micVolumeValue = document.getElementById('micVolumeValue');
 const micVolumeControl = document.getElementById('micVolumeControl');
@@ -316,6 +319,12 @@ let dataArray;
 let bufferLength;
 let animationId;
 
+// Tab capture state
+let tabCaptureStream1 = null;
+let tabCaptureStream2 = null;
+let tabCaptureSource1 = null;
+let tabCaptureSource2 = null;
+
 // Effect Chain managers
 let effectChain1, effectChain2, effectChainMaster;
 
@@ -326,6 +335,8 @@ let micEnabled = false;
 let micRecordingState = null;
 let micRecordingAnimationId = null;
 let micRecordingInterval = null;
+let micTabCaptureStream = null;
+let micTabCaptureSource = null;
 
 // Vocoder state
 let vocoderEnabled = false;
@@ -338,10 +349,12 @@ let autotuneState = null;
 // Audio effects nodes for Track 1
 let gain1, reverb1, delay1, filter1, panner1, adsr1;
 let reverbWet1, delayWet1;
+let finalMix1; // Final mixer for Track 1 effect chain
 
 // Audio effects nodes for Track 2
 let gain2, reverb2, delay2, filter2, panner2, adsr2;
 let reverbWet2, delayWet2;
+let finalMix2; // Final mixer for Track 2 effect chain
 
 // Master effect nodes
 let adsrMaster;
@@ -481,6 +494,53 @@ async function loadRecordingToTrack1() {
     }
     
     try {
+        // Clean up tab capture if Track 1 is currently capturing
+        if (window.tabCaptureState1 && window.tabCaptureState1.isTabCapture) {
+            console.log('Cleaning up tab capture on Track 1 before loading recording');
+            
+            // Stop the tab capture stream
+            if (tabCaptureStream1) {
+                tabCaptureStream1.getTracks().forEach(track => {
+                    track.stop();
+                    console.log('Stopped tab capture track:', track.kind);
+                });
+                tabCaptureStream1 = null;
+            }
+            
+            // Disconnect the tab capture source
+            if (tabCaptureSource1) {
+                try {
+                    tabCaptureSource1.disconnect();
+                    console.log('Disconnected tab capture source');
+                } catch (e) {
+                    console.log('Error disconnecting tab capture source:', e);
+                }
+                tabCaptureSource1 = null;
+            }
+            
+            // Disconnect existing source1 if it's the tab capture
+            if (source1) {
+                try {
+                    source1.disconnect();
+                    console.log('Disconnected existing source1');
+                } catch (e) {
+                    console.log('Error disconnecting source1:', e);
+                }
+                source1 = null;
+            }
+            
+            // Clear tab capture state
+            window.tabCaptureState1 = null;
+            
+            // Reset UI elements
+            fileName1.textContent = 'No file loaded';
+            playBtn1.title = '';
+            pauseBtn1.title = '';
+            stopBtn1.title = '';
+            
+            console.log('✅ Track 1 tab capture cleaned up, ready for file playback');
+        }
+        
         // Stop any playing audio
         audioElement1.pause();
         audioElement1.currentTime = 0;
@@ -601,6 +661,53 @@ async function loadRecordingToTrack2() {
     }
     
     try {
+        // Clean up tab capture if Track 2 is currently capturing
+        if (window.tabCaptureState2 && window.tabCaptureState2.isTabCapture) {
+            console.log('Cleaning up tab capture on Track 2 before loading recording');
+            
+            // Stop the tab capture stream
+            if (tabCaptureStream2) {
+                tabCaptureStream2.getTracks().forEach(track => {
+                    track.stop();
+                    console.log('Stopped tab capture track:', track.kind);
+                });
+                tabCaptureStream2 = null;
+            }
+            
+            // Disconnect the tab capture source
+            if (tabCaptureSource2) {
+                try {
+                    tabCaptureSource2.disconnect();
+                    console.log('Disconnected tab capture source');
+                } catch (e) {
+                    console.log('Error disconnecting tab capture source:', e);
+                }
+                tabCaptureSource2 = null;
+            }
+            
+            // Disconnect existing source2 if it's the tab capture
+            if (source2) {
+                try {
+                    source2.disconnect();
+                    console.log('Disconnected existing source2');
+                } catch (e) {
+                    console.log('Error disconnecting source2:', e);
+                }
+                source2 = null;
+            }
+            
+            // Clear tab capture state
+            window.tabCaptureState2 = null;
+            
+            // Reset UI elements
+            fileName2.textContent = 'No file loaded';
+            playBtn2.title = '';
+            pauseBtn2.title = '';
+            stopBtn2.title = '';
+            
+            console.log('✅ Track 2 tab capture cleaned up, ready for file playback');
+        }
+        
         // Stop any playing audio
         audioElement2.pause();
         audioElement2.currentTime = 0;
@@ -881,6 +988,11 @@ async function enableMicrophone() {
         // Update vocoder/autotune visibility
         updateVocoderAutotuneVisibility();
         
+        // Enable master recording button now that audio context is initialized
+        if (recordBtn) {
+            recordBtn.disabled = false;
+        }
+        
         // Start waveform visualization
         drawMicWaveform();
         
@@ -903,8 +1015,34 @@ function disableMicrophone() {
         micAnimationId = null;
     }
     
+    // Clean up tab capture if it's active
+    if (micTabCaptureStream) {
+        micTabCaptureStream.getTracks().forEach(track => track.stop());
+        micTabCaptureStream = null;
+    }
+    if (micTabCaptureSource) {
+        try {
+            micTabCaptureSource.disconnect();
+        } catch (e) {
+            console.log('Error disconnecting mic tab capture source:', e);
+        }
+        micTabCaptureSource = null;
+    }
+    
     if (micState) {
-        disableMicrophoneModule(micState);
+        // Only call disableMicrophoneModule if it's not a tab capture
+        if (!micState.isTabCapture) {
+            disableMicrophoneModule(micState);
+        } else {
+            // For tab capture, manually disconnect
+            if (micState.micGain) {
+                try {
+                    micState.micGain.disconnect();
+                } catch (e) {
+                    console.log('Error disconnecting mic gain:', e);
+                }
+            }
+        }
         micState = null;
     }
     
@@ -922,6 +1060,7 @@ function disableMicrophone() {
     
     // Update UI
     enableMicBtn.style.display = 'inline-block';
+    captureTabAudioMic.style.display = 'inline-block'; // Show tab capture button again
     disableMicBtn.style.display = 'none';
     micVolumeControl.style.display = 'none';
     micMonitoring.style.display = 'none';
@@ -933,6 +1072,132 @@ function disableMicrophone() {
     updateVocoderAutotuneVisibility();
     
     console.log('Microphone disabled');
+}
+
+// Capture tab audio as microphone input
+async function captureTabAudioAsMic() {
+    console.log('Capturing tab audio as microphone');
+    
+    try {
+        // Check browser support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+            alert('❌ Tab audio capture is not supported in your browser.\n\nPlease use Chrome, Edge, or another Chromium-based browser.');
+            return;
+        }
+        
+        // Request display media with audio
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: true, // Required by some browsers even if we only want audio
+            audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+                channelCount: 2
+            }
+        });
+        
+        // Check if audio track exists
+        const audioTracks = stream.getAudioTracks();
+        if (audioTracks.length === 0) {
+            alert('❌ No audio was captured from the selected tab.\n\nMake sure to:\n1. Select a tab (not a window/screen)\n2. Check "Share audio" checkbox in the picker dialog\n3. Ensure the tab is playing audio');
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        }
+        
+        console.log(`Tab audio captured with ${audioTracks.length} audio track(s) for microphone`);
+        
+        // Disable regular microphone if it's enabled
+        if (micEnabled) {
+            disableMicrophone();
+        }
+        
+        // Initialize audio context if not already
+        if (!audioContext) {
+            initAudioContext();
+        }
+        
+        // Store the capture stream
+        micTabCaptureStream = stream;
+        micTabCaptureSource = audioContext.createMediaStreamSource(stream);
+        
+        // Use the microphone module to set up the audio routing
+        // Create mic gain and analyser
+        const micGain = audioContext.createGain();
+        const micAnalyser = audioContext.createAnalyser();
+        micAnalyser.fftSize = 2048;
+        
+        // Connect: tab capture source -> gain -> analyser -> merger
+        micTabCaptureSource.connect(micGain);
+        micGain.connect(micAnalyser);
+        micGain.connect(merger);
+        
+        // Set initial volume
+        micGain.gain.value = 1.0;
+        
+        // Store mic state
+        micState = {
+            micStream: stream,
+            micSource: micTabCaptureSource,
+            micGain: micGain,
+            micAnalyser: micAnalyser,
+            isTabCapture: true // Flag to indicate this is tab capture, not real mic
+        };
+        
+        micEnabled = true;
+        
+        // Update UI
+        enableMicBtn.style.display = 'none';
+        captureTabAudioMic.style.display = 'none';
+        disableMicBtn.style.display = 'inline-block';
+        micVolumeControl.style.display = 'block';
+        micMonitoring.style.display = 'none'; // Hide monitoring for tab capture (no feedback issue)
+        micWaveformContainer.style.display = 'block';
+        micRecordingSection.style.display = 'block';
+        
+        // Initialize waveform canvas if needed
+        if (micWaveform) {
+            const ctx = micWaveform.getContext('2d');
+            micWaveform.width = micWaveform.offsetWidth;
+            micWaveform.height = micWaveform.offsetHeight;
+        }
+        
+        // Start waveform visualization
+        drawMicWaveform();
+        
+        // Update vocoder/autotune visibility
+        updateVocoderAutotuneVisibility();
+        
+        // Enable master recording button now that audio context is initialized
+        if (recordBtn) {
+            recordBtn.disabled = false;
+        }
+        
+        // Handle when the stream ends (user stops sharing)
+        stream.getVideoTracks()[0].addEventListener('ended', () => {
+            console.log('Tab capture ended for microphone');
+            disableMicrophone();
+            
+            // Re-show the capture button
+            enableMicBtn.style.display = 'inline-block';
+            captureTabAudioMic.style.display = 'inline-block';
+        });
+        
+        // Show success message
+        alert(`✅ Tab audio is now streaming as microphone input!\n\n📢 Important: Control playback (play/pause) in the SOURCE TAB\n\nYou can:\n• Adjust volume with the mic volume slider\n• Use it with vocoder/autotune effects\n• Mix it using the crossfader\n\n⚠️ Note: Recording may not work with tab capture due to browser limitations. Use master output recording instead.\n\nClick "Disable Microphone" to stop.`);
+        
+    } catch (error) {
+        console.error('Error capturing tab audio as mic:', error);
+        
+        if (error.name === 'NotAllowedError') {
+            alert('❌ Permission denied.\n\nYou need to allow screen/tab sharing and make sure to check "Share audio" in the picker dialog.');
+        } else if (error.name === 'NotFoundError') {
+            alert('❌ No audio source found.\n\nMake sure the tab you selected is playing audio.');
+        } else if (error.name === 'AbortError') {
+            console.log('User cancelled tab selection');
+        } else {
+            alert(`❌ Error capturing tab audio: ${error.message}`);
+        }
+    }
 }
 
 // Draw microphone waveform
@@ -1014,7 +1279,22 @@ function startMicRecordingHandler() {
         console.log('Microphone recording started');
     } catch (error) {
         console.error('Error starting microphone recording:', error);
-        alert(error.message || 'Could not start recording');
+        
+        let errorMessage = 'Could not start recording.';
+        
+        // Check if this is tab capture
+        if (micState.isTabCapture) {
+            errorMessage = '⚠️ Recording from tab capture is not supported in your browser.\n\n';
+            errorMessage += 'Tab capture streams may use incompatible audio formats.\n\n';
+            errorMessage += 'Workarounds:\n';
+            errorMessage += '• Use the regular microphone for recording\n';
+            errorMessage += '• Record the master output instead\n';
+            errorMessage += '• Try a different browser (Chrome/Edge work best)';
+        } else {
+            errorMessage = error.message || errorMessage;
+        }
+        
+        alert(errorMessage);
     }
 }
 
@@ -1216,6 +1496,349 @@ async function loadMicRecordingToTrack(trackNumber) {
     } catch (error) {
         console.error('Error loading microphone recording to track:', error);
         alert(`Could not load to track: ${error.message}`);
+    }
+}
+
+// Capture audio from another browser tab
+async function captureTabAudio(trackNumber) {
+    console.log(`Capturing tab audio for Track ${trackNumber}`);
+    
+    try {
+        // Check browser support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+            alert('❌ Tab audio capture is not supported in your browser.\n\nPlease use Chrome, Edge, or another Chromium-based browser.');
+            return;
+        }
+        
+        // Request display media with audio
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: true, // Required by some browsers even if we only want audio
+            audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+                channelCount: 2
+            }
+        });
+        
+        // Check if audio track exists
+        const audioTracks = stream.getAudioTracks();
+        if (audioTracks.length === 0) {
+            alert('❌ No audio was captured from the selected tab.\n\nMake sure to:\n1. Select a tab (not a window/screen)\n2. Check "Share audio" checkbox in the picker dialog\n3. Ensure the tab is playing audio');
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        }
+        
+        console.log(`Tab audio captured with ${audioTracks.length} audio track(s)`);
+        
+        // Initialize audio context if not already
+        if (!audioContext) {
+            initAudioContext();
+        }
+        
+        // Determine which track we're loading to
+        const audioElement = trackNumber === 1 ? audioElement1 : audioElement2;
+        const fileName = trackNumber === 1 ? fileName1 : fileName2;
+        const playBtn = trackNumber === 1 ? playBtn1 : playBtn2;
+        const pauseBtn = trackNumber === 1 ? pauseBtn1 : pauseBtn2;
+        const stopBtn = trackNumber === 1 ? stopBtn1 : stopBtn2;
+        const loopBtn = trackNumber === 1 ? loopBtn1 : loopBtn2;
+        const reverseLoopBtn = trackNumber === 1 ? reverseLoopBtn1 : reverseLoopBtn2;
+        const clearLoopBtn = trackNumber === 1 ? clearLoopBtn1 : clearLoopBtn2;
+        const exportStem = trackNumber === 1 ? exportStem1 : exportStem2;
+        
+        // Stop any existing tab capture for this track
+        if (trackNumber === 1) {
+            if (tabCaptureStream1) {
+                tabCaptureStream1.getTracks().forEach(track => track.stop());
+            }
+            if (tabCaptureSource1) {
+                try {
+                    tabCaptureSource1.disconnect();
+                } catch (e) {
+                    console.log('Error disconnecting tab capture source 1:', e);
+                }
+            }
+            
+            // Store stream and create audio source
+            tabCaptureStream1 = stream;
+            tabCaptureSource1 = audioContext.createMediaStreamSource(stream);
+            
+            // Disconnect existing source if it exists
+            if (source1) {
+                try {
+                    source1.disconnect();
+                } catch (e) {
+                    console.log('Error disconnecting existing source1:', e);
+                }
+            }
+            
+            // Use the tab capture source as the main source
+            source1 = tabCaptureSource1;
+            
+        } else {
+            if (tabCaptureStream2) {
+                tabCaptureStream2.getTracks().forEach(track => track.stop());
+            }
+            if (tabCaptureSource2) {
+                try {
+                    tabCaptureSource2.disconnect();
+                } catch (e) {
+                    console.log('Error disconnecting tab capture source 2:', e);
+                }
+            }
+            
+            // Store stream and create audio source
+            tabCaptureStream2 = stream;
+            tabCaptureSource2 = audioContext.createMediaStreamSource(stream);
+            
+            // Disconnect existing source if it exists
+            if (source2) {
+                try {
+                    source2.disconnect();
+                } catch (e) {
+                    console.log('Error disconnecting existing source2:', e);
+                }
+            }
+            
+            // Use the tab capture source as the main source
+            source2 = tabCaptureSource2;
+        }
+        
+        // Connect the source to the effect chain
+        if (trackNumber === 1) {
+            // Ensure effect nodes exist
+            if (!gain1) {
+                console.log('Creating effect chain for Track 1');
+                const effects = initAudioEffects(audioContext, 1);
+                gain1 = effects.gain;
+                panner1 = effects.panner;
+                reverb1 = effects.reverb.convolver;
+                reverbWet1 = effects.reverb.wet;
+                delay1 = effects.delay.node;
+                delayWet1 = effects.delay.wet;
+                filter1 = effects.filter;
+                adsr1 = effects.adsr;
+                
+                // Use the proper connectEffectsChain function to set up audio routing
+                const { reverbMix: reverbMix1, finalMix: fm1 } = connectEffectsChain(
+                    source1,
+                    effects,
+                    merger,
+                    audioContext
+                );
+                
+                // Store finalMix1 globally
+                finalMix1 = fm1;
+                console.log('Track 1 effect chain created and connected to merger');
+            } else {
+                // Connect to existing chain  
+                console.log('Tab capture: Reusing existing effect chain for Track 1');
+                console.log('  gain1 exists:', !!gain1);
+                console.log('  finalMix1 exists:', !!finalMix1);
+                
+                // If effects exist but finalMix1 doesn't, the chain was initialized but not connected
+                // This happens when initAudioContext() creates effects but no file was loaded yet
+                if (!finalMix1) {
+                    console.warn('⚠️ Effect nodes exist but finalMix1 is missing - completing the chain');
+                    
+                    // Build the effects object from existing nodes
+                    // Note: reverb1 and delay1 might be objects or just nodes depending on how they were created
+                    const effects = {
+                        gain: gain1,
+                        panner: panner1,
+                        filter: filter1,
+                        reverb: reverb1.convolver ? reverb1 : { convolver: reverb1, wet: reverbWet1, dry: null },
+                        delay: delay1.node ? delay1 : { node: delay1, wet: delayWet1, dry: null },
+                        adsr: adsr1
+                    };
+                    
+                    // Use connectEffectsChain to properly set up the full routing
+                    const { finalMix: fm1 } = connectEffectsChain(
+                        source1,
+                        effects,
+                        merger,
+                        audioContext
+                    );
+                    
+                    finalMix1 = fm1;
+                    console.log('✅ Track 1 effect chain completed and connected to merger');
+                } else {
+                    // finalMix1 exists, just connect source
+                    source1.connect(gain1);
+                    console.log('✅ Track 1 source connected to existing chain (finalMix1 already connected to merger)');
+                }
+            }
+        } else {
+            // Ensure effect nodes exist
+            if (!gain2) {
+                console.log('Creating effect chain for Track 2');
+                const effects = initAudioEffects(audioContext, 2);
+                gain2 = effects.gain;
+                panner2 = effects.panner;
+                reverb2 = effects.reverb.convolver;
+                reverbWet2 = effects.reverb.wet;
+                delay2 = effects.delay.node;
+                delayWet2 = effects.delay.wet;
+                filter2 = effects.filter;
+                adsr2 = effects.adsr;
+                
+                // Use the proper connectEffectsChain function to set up audio routing
+                const { reverbMix: reverbMix2, finalMix: fm2 } = connectEffectsChain(
+                    source2,
+                    effects,
+                    merger,
+                    audioContext
+                );
+                
+                // Store finalMix2 globally
+                finalMix2 = fm2;
+                console.log('Track 2 effect chain created and connected to merger');
+            } else {
+                // Connect to existing chain
+                console.log('Tab capture: Reusing existing effect chain for Track 2');
+                console.log('  gain2 exists:', !!gain2);
+                console.log('  finalMix2 exists:', !!finalMix2);
+                
+                // If effects exist but finalMix2 doesn't, the chain was initialized but not connected
+                if (!finalMix2) {
+                    console.warn('⚠️ Effect nodes exist but finalMix2 is missing - completing the chain');
+                    
+                    // Build the effects object from existing nodes
+                    const effects = {
+                        gain: gain2,
+                        panner: panner2,
+                        filter: filter2,
+                        reverb: reverb2.convolver ? reverb2 : { convolver: reverb2, wet: reverbWet2, dry: null },
+                        delay: delay2.node ? delay2 : { node: delay2, wet: delayWet2, dry: null },
+                        adsr: adsr2
+                    };
+                    
+                    // Use connectEffectsChain to properly set up the full routing
+                    const { finalMix: fm2 } = connectEffectsChain(
+                        source2,
+                        effects,
+                        merger,
+                        audioContext
+                    );
+                    
+                    finalMix2 = fm2;
+                    console.log('✅ Track 2 effect chain completed and connected to merger');
+                } else {
+                    // finalMix2 exists, just connect source
+                    source2.connect(gain2);
+                    console.log('✅ Track 2 source connected to existing chain (finalMix2 already connected to merger)');
+                }
+            }
+        }
+        
+        // Update UI
+        fileName.textContent = '🎵 Tab Audio (Live)';
+        
+        // Enable playback controls for better UX
+        // Note: These control the visualization/mixing, user still needs to control source tab manually
+        playBtn.disabled = false; // Enable for starting/resuming visualization
+        playBtn.title = 'Start processing (Control playback in source tab)';
+        pauseBtn.disabled = false; // Enable for pausing visualization
+        pauseBtn.title = 'Pause processing (Control playback in source tab)';
+        stopBtn.disabled = false; // Stop will disconnect the tab capture
+        stopBtn.title = 'Stop tab capture';
+        loopBtn.disabled = true;
+        reverseLoopBtn.disabled = true;
+        clearLoopBtn.disabled = true;
+        exportStem.disabled = true; // Can't export live stream directly
+        
+        // Store reference to help with playback control hints
+        const tabCaptureState = {
+            isTabCapture: true,
+            stream: stream,
+            trackNumber: trackNumber
+        };
+        
+        // Store state for this track
+        if (trackNumber === 1) {
+            window.tabCaptureState1 = tabCaptureState;
+        } else {
+            window.tabCaptureState2 = tabCaptureState;
+        }
+        
+        // Note: Volume, tempo, pan, filter, reverb, delay sliders are NOT disabled
+        // They work perfectly with live tab capture!
+        
+        // Initialize visualization if needed
+        if (!scene) {
+            initThreeJS();
+            initOscilloscope();
+            createCircleVisualization();
+        }
+        
+        if (placeholder) {
+            placeholder.classList.add('hidden');
+        }
+        
+        // Start visualization
+        if (!animationId) {
+            animate();
+        }
+        
+        // Handle when the stream ends (user stops sharing)
+        stream.getVideoTracks()[0].addEventListener('ended', () => {
+            console.log(`Tab capture ended for Track ${trackNumber}`);
+            fileName.textContent = 'Tab capture ended';
+            
+            // Disconnect source
+            if (trackNumber === 1 && source1) {
+                try {
+                    source1.disconnect();
+                } catch (e) {
+                    console.log('Error disconnecting source:', e);
+                }
+                source1 = null;
+                tabCaptureSource1 = null;
+                tabCaptureStream1 = null;
+            } else if (trackNumber === 2 && source2) {
+                try {
+                    source2.disconnect();
+                } catch (e) {
+                    console.log('Error disconnecting source:', e);
+                }
+                source2 = null;
+                tabCaptureSource2 = null;
+                tabCaptureStream2 = null;
+            }
+            
+            // Disable controls
+            stopBtn.disabled = true;
+        });
+        
+        // Enable master recording button now that audio context is initialized
+        if (recordBtn) {
+            recordBtn.disabled = false;
+        }
+        
+        // Show success message
+        const trackName = trackNumber === 1 ? 'Track 1' : 'Track 2';
+        alert(`✅ Tab audio is now streaming to ${trackName}!\n\n📢 Important: Control playback (play/pause) in the SOURCE TAB\n\n• The audio streams through your track effects in real-time\n• Adjust volume, pan, filter, reverb, delay here in Browser Jockey\n• Use Play/Pause in the source tab to control the audio\n• Click Stop here to end the capture`);
+
+        
+        // Check dual track buttons state
+        checkDualTrackButtonsState();
+        
+        // Update vocoder/autotune visibility
+        updateVocoderAutotuneVisibility();
+        
+    } catch (error) {
+        console.error('Error capturing tab audio:', error);
+        
+        if (error.name === 'NotAllowedError') {
+            alert('❌ Permission denied.\n\nYou need to allow screen/tab sharing and make sure to check "Share audio" in the picker dialog.');
+        } else if (error.name === 'NotFoundError') {
+            alert('❌ No audio source found.\n\nMake sure the tab you selected is playing audio.');
+        } else if (error.name === 'AbortError') {
+            console.log('User cancelled tab selection');
+        } else {
+            alert(`❌ Error capturing tab audio: ${error.message}`);
+        }
     }
 }
 
@@ -2185,12 +2808,15 @@ function initAudioContext() {
         // Dry path: reverbMix1 -> delayDry -------------> final merge
         reverbMix1.connect(delay1.dry);                     //
                                                             //
-        // Final merge and connect to mixer                //
-        const finalMix1 = audioContext.createGain();        //
+        // Final merge and connect to mixer - use global finalMix1
+        if (!finalMix1) {
+            finalMix1 = audioContext.createGain();
+        }
         delay1.wet.connect(finalMix1);                      //
         delay1.dry.connect(finalMix1);                      //
         
         finalMix1.connect(merger);
+        console.log('Track 1 file connected to effect chain and merger');
     }
     
     // Connect track 2 if it exists and isn't already connected
@@ -2214,11 +2840,15 @@ function initAudioContext() {
         delay2.node.connect(delay2.wet);
         reverbMix2.connect(delay2.dry);
         
-        const finalMix2 = audioContext.createGain();
+        // Final merge and connect to mixer - use global finalMix2
+        if (!finalMix2) {
+            finalMix2 = audioContext.createGain();
+        }
         delay2.wet.connect(finalMix2);
         delay2.dry.connect(finalMix2);
         
         finalMix2.connect(merger);
+        console.log('Track 2 file connected to effect chain and merger');
     }
 }
 
@@ -2715,12 +3345,57 @@ function createSphereVisualization() {
     }
 }
 
+// Tab capture button handlers
+if (captureTabAudio1) {
+    captureTabAudio1.addEventListener('click', () => captureTabAudio(1));
+}
+
+if (captureTabAudio2) {
+    captureTabAudio2.addEventListener('click', () => captureTabAudio(2));
+}
+
 // File upload handlers for Track 1
 audioFile1.addEventListener('change', async (e) => {
     console.log('Track 1 file upload triggered');
     const file = e.target.files[0];
     if (file) {
         console.log('Track 1 file selected:', file.name, file.type, file.size);
+        
+        // Clean up tab capture if Track 1 is currently capturing
+        if (window.tabCaptureState1 && window.tabCaptureState1.isTabCapture) {
+            console.log('Cleaning up tab capture on Track 1 before loading new file');
+            
+            // Stop the tab capture stream
+            if (tabCaptureStream1) {
+                tabCaptureStream1.getTracks().forEach(track => track.stop());
+                tabCaptureStream1 = null;
+            }
+            
+            // Disconnect the tab capture source
+            if (tabCaptureSource1) {
+                try {
+                    tabCaptureSource1.disconnect();
+                } catch (e) {
+                    console.log('Error disconnecting tab capture source:', e);
+                }
+                tabCaptureSource1 = null;
+            }
+            
+            // Disconnect existing source1
+            if (source1) {
+                try {
+                    source1.disconnect();
+                } catch (e) {
+                    console.log('Error disconnecting source1:', e);
+                }
+                source1 = null;
+            }
+            
+            // Clear tab capture state
+            window.tabCaptureState1 = null;
+            console.log('✅ Track 1 tab capture cleaned up');
+        }
+        
         // Remember if track was playing
         const wasPlaying = !audioElement1.paused;
         const currentTime = audioElement1.currentTime;
@@ -2856,6 +3531,42 @@ audioFile2.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
         console.log('Track 2 file selected:', file.name);
+        
+        // Clean up tab capture if Track 2 is currently capturing
+        if (window.tabCaptureState2 && window.tabCaptureState2.isTabCapture) {
+            console.log('Cleaning up tab capture on Track 2 before loading new file');
+            
+            // Stop the tab capture stream
+            if (tabCaptureStream2) {
+                tabCaptureStream2.getTracks().forEach(track => track.stop());
+                tabCaptureStream2 = null;
+            }
+            
+            // Disconnect the tab capture source
+            if (tabCaptureSource2) {
+                try {
+                    tabCaptureSource2.disconnect();
+                } catch (e) {
+                    console.log('Error disconnecting tab capture source:', e);
+                }
+                tabCaptureSource2 = null;
+            }
+            
+            // Disconnect existing source2
+            if (source2) {
+                try {
+                    source2.disconnect();
+                } catch (e) {
+                    console.log('Error disconnecting source2:', e);
+                }
+                source2 = null;
+            }
+            
+            // Clear tab capture state
+            window.tabCaptureState2 = null;
+            console.log('✅ Track 2 tab capture cleaned up');
+        }
+        
         const url = URL.createObjectURL(file);
         audioElement2.src = url;
         fileName2.textContent = file.name;
@@ -3458,6 +4169,14 @@ audioElement2.addEventListener('timeupdate', () => {
 
 // Play button handlers
 playBtn1.addEventListener('click', () => {
+    // Check if this is tab capture
+    if (window.tabCaptureState1?.isTabCapture) {
+        // For tab capture, show reminder to user
+        console.log('Tab capture active - User should control playback in source tab');
+        alert('💡 Tip: To play/pause the audio, control it in the source tab.\n\nThis button controls the audio processing in Browser Jockey, but the actual playback happens in the source tab.');
+        return;
+    }
+    
     initAudioContext();
     audioContext.resume().then(() => {
         audioElement1.play();
@@ -3474,6 +4193,14 @@ playBtn1.addEventListener('click', () => {
 });
 
 playBtn2.addEventListener('click', () => {
+    // Check if this is tab capture
+    if (window.tabCaptureState2?.isTabCapture) {
+        // For tab capture, show reminder to user
+        console.log('Tab capture active - User should control playback in source tab');
+        alert('💡 Tip: To play/pause the audio, control it in the source tab.\n\nThis button controls the audio processing in Browser Jockey, but the actual playback happens in the source tab.');
+        return;
+    }
+    
     initAudioContext();
     audioContext.resume().then(() => {
         audioElement2.play();
@@ -3491,6 +4218,13 @@ playBtn2.addEventListener('click', () => {
 
 // Pause button handlers
 pauseBtn1.addEventListener('click', () => {
+    // Check if this is tab capture
+    if (window.tabCaptureState1?.isTabCapture) {
+        console.log('Tab capture active - User should control playback in source tab');
+        alert('💡 Tip: To play/pause the audio, control it in the source tab.\n\nThis button controls the audio processing in Browser Jockey, but the actual playback happens in the source tab.');
+        return;
+    }
+    
     audioElement1.pause();
     vinylAnimation1.style.display = 'none'; // Hide vinyl animation
     // Stop reverse animation when pausing
@@ -3498,6 +4232,13 @@ pauseBtn1.addEventListener('click', () => {
 });
 
 pauseBtn2.addEventListener('click', () => {
+    // Check if this is tab capture
+    if (window.tabCaptureState2?.isTabCapture) {
+        console.log('Tab capture active - User should control playback in source tab');
+        alert('💡 Tip: To play/pause the audio, control it in the source tab.\n\nThis button controls the audio processing in Browser Jockey, but the actual playback happens in the source tab.');
+        return;
+    }
+    
     audioElement2.pause();
     vinylAnimation2.style.display = 'none'; // Hide vinyl animation
     // Stop reverse animation when pausing
@@ -3511,6 +4252,33 @@ stopBtn1.addEventListener('click', () => {
     vinylAnimation1.style.display = 'none'; // Hide vinyl animation
     // Stop reverse animation
     stopReversePlayback(loopState1);
+    
+    // Stop tab capture if active
+    if (tabCaptureStream1) {
+        tabCaptureStream1.getTracks().forEach(track => track.stop());
+        tabCaptureStream1 = null;
+    }
+    if (tabCaptureSource1) {
+        try {
+            tabCaptureSource1.disconnect();
+        } catch (e) {
+            console.log('Error disconnecting tab capture source:', e);
+        }
+        tabCaptureSource1 = null;
+        source1 = null;
+    }
+    // Clean up tab capture state
+    if (window.tabCaptureState1) {
+        delete window.tabCaptureState1;
+    }
+    if (fileName1.textContent.includes('Tab Audio')) {
+        fileName1.textContent = 'No file selected';
+        stopBtn1.disabled = true;
+        playBtn1.disabled = true;
+        pauseBtn1.disabled = true;
+        playBtn1.title = '';
+        pauseBtn1.title = '';
+    }
 });
 
 stopBtn2.addEventListener('click', () => {
@@ -3519,6 +4287,33 @@ stopBtn2.addEventListener('click', () => {
     vinylAnimation2.style.display = 'none'; // Hide vinyl animation
     // Stop reverse animation
     stopReversePlayback(loopState2);
+    
+    // Stop tab capture if active
+    if (tabCaptureStream2) {
+        tabCaptureStream2.getTracks().forEach(track => track.stop());
+        tabCaptureStream2 = null;
+    }
+    if (tabCaptureSource2) {
+        try {
+            tabCaptureSource2.disconnect();
+        } catch (e) {
+            console.log('Error disconnecting tab capture source:', e);
+        }
+        tabCaptureSource2 = null;
+        source2 = null;
+    }
+    // Clean up tab capture state
+    if (window.tabCaptureState2) {
+        delete window.tabCaptureState2;
+    }
+    if (fileName2.textContent.includes('Tab Audio')) {
+        fileName2.textContent = 'No file selected';
+        stopBtn2.disabled = true;
+        playBtn2.disabled = true;
+        pauseBtn2.disabled = true;
+        playBtn2.title = '';
+        pauseBtn2.title = '';
+    }
 });
 
 // Loop button handlers
@@ -3785,6 +4580,10 @@ crossfaderMode.addEventListener('change', (e) => {
 // Microphone button handlers
 enableMicBtn.addEventListener('click', enableMicrophone);
 disableMicBtn.addEventListener('click', disableMicrophone);
+
+if (captureTabAudioMic) {
+    captureTabAudioMic.addEventListener('click', captureTabAudioAsMic);
+}
 
 micVolumeSlider.addEventListener('input', (e) => {
     updateMicVolumeWrapper(parseInt(e.target.value));
