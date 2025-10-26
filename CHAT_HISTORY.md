@@ -3,13 +3,67 @@
 ## Project Overview
 A dual-track DJ mixing application built with Flask, Three.js, and the Web Audio API. Features include 3D audio visualization, XY oscilloscope (Lissajous mode), BPM detection, precise loop markers with millisecond accuracy, waveform zoom/pan, tempo control, volume faders, recording capabilities, quick loop creation, dual track controls, drag-and-drop effect chains with master output processing, professional DJ layout with vertical faders, stereo panning controls, standalone microphone recording, flexible vocoder/autotune routing, professional crossfader with multiple modes, comprehensive audio routing management, enhanced UI with premium controls, WebM loop marker support, real-time stereo phase visualization, ADSR envelope effects, camera theremin with adaptive wave detection, browser tab audio capture with full effects support, and **sequencer recording with seamless track integration**.
 
-**Latest Version: v3.19.0** - Sequencer Recording with Track Integration
+**Latest Version: v3.19.1** - Master Recording Playback Bugfix
 
 ---
 
 ## Session Timeline
 
-### Latest Session: Sequencer Recording & Track Integration (v3.19.0)
+### Latest Session: Master Recording Playback Fix (v3.19.1)
+**Date:** October 26, 2025
+
+**User Report:**
+"i tried capturing tab audio by recording from track1 to master output and then sending to track 2. i saw the waveform but didn't hear anything when playing track 2"
+
+**Bug Identified:**
+Master recording to track playback was silent despite waveform appearing and controls working.
+
+**Root Cause:**
+The `loadAudioFile()` function was overwriting `audioElement.src` after it had already been set by the recording load function. This broke the MediaElementSource connection in the Web Audio API graph.
+
+**Technical Details:**
+```javascript
+// BROKEN FLOW:
+audioElement2.src = URL.createObjectURL(blob);  // Set by loadRecordingToTrack2
+// Later...
+audioElement2.src = URL.createObjectURL(file);  // ❌ Overwritten by loadAudioFile!
+source2 = createMediaElementSource(audioElement2);  // Connected to wrong source
+```
+
+When `MediaElementSource` is created, it connects to the audio element's current source. Changing the `src` after creation doesn't update the connection - it remains locked to the old source, resulting in silent playback.
+
+**Solution Implemented:**
+Modified `loadAudioFile()` to check if audio element already has a source:
+
+```javascript
+if (!audioElement.src || audioElement.src === '') {
+    const url = URL.createObjectURL(file);
+    audioElement.src = url;
+    // ... wait for metadata
+} else {
+    console.log('Audio element source already set, skipping...');
+}
+```
+
+**Files Modified:**
+- `app/static/js/visualizer-dual.js` - Added source check in `loadAudioFile()`
+
+**Impact:**
+- ✅ Track 1 → Record → Load to Track 2 (now works)
+- ✅ Track 2 → Record → Load to Track 1 (now works)
+- ✅ Sequencer → Record → Load to tracks (still works)
+- ✅ Microphone → Record → Load to tracks (still works)
+- ✅ No breaking changes to file upload or other workflows
+
+**Documentation Created:**
+- `RELEASE_NOTES_v3.19.1.md` - Complete bugfix documentation
+
+**User Verification:**
+User confirmed: "it works!"
+
+---
+
+### Previous Session: Sequencer Recording & Track Integration (v3.19.0)
 **Date**: October 26, 2025
 
 **User Requests**:

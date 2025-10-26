@@ -2700,30 +2700,35 @@ async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, 
         keyDisplay.textContent = key;
     }
     
-    // Set audio element source for playback
-    console.log('Setting audio element source from file');
-    const url = URL.createObjectURL(file);
-    audioElement.src = url;
-    
-    // Wait for metadata to load
-    await new Promise((resolve, reject) => {
-        const timeoutId = setTimeout(() => {
-            console.warn('Timeout waiting for audio metadata, continuing anyway');
-            resolve(); // Don't reject, just continue
-        }, 5000);
+    // Set audio element source for playback (only if not already set)
+    if (!audioElement.src || audioElement.src === '') {
+        console.log('Setting audio element source from file');
+        const url = URL.createObjectURL(file);
+        audioElement.src = url;
         
-        audioElement.addEventListener('loadedmetadata', () => {
-            clearTimeout(timeoutId);
-            console.log(`Track ${trackNumber} metadata loaded. Duration:`, audioElement.duration);
-            resolve();
-        }, { once: true });
-        
-        audioElement.addEventListener('error', (e) => {
-            clearTimeout(timeoutId);
-            console.error(`Track ${trackNumber} audio element error:`, e);
-            reject(e);
-        }, { once: true });
-    });
+        // Wait for metadata to load
+        await new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                console.warn('Timeout waiting for audio metadata, continuing anyway');
+                resolve(); // Don't reject, just continue
+            }, 5000);
+            
+            audioElement.addEventListener('loadedmetadata', () => {
+                clearTimeout(timeoutId);
+                console.log(`Track ${trackNumber} metadata loaded. Duration:`, audioElement.duration);
+                resolve();
+            }, { once: true });
+            
+            audioElement.addEventListener('error', (e) => {
+                clearTimeout(timeoutId);
+                console.error(`Track ${trackNumber} audio element error:`, e);
+                reject(e);
+            }, { once: true });
+        });
+    } else {
+        console.log('Audio element source already set, skipping...');
+        console.log('Existing src:', audioElement.src.substring(0, 50) + '...');
+    }
     
     // Update file name display
     const fileDisplayElement = trackNumber === 1 ? 

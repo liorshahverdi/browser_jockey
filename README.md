@@ -4,7 +4,9 @@
 
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, precise loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, sequencer recording with track integration, and authentic DJ controls.
 
-**Latest Update (v3.19.0)**: Added Sequencer Recording with Track Integration! Record your sequencer arrangements with one click, preview with waveform, and load directly to DJ tracks. Includes high-quality Opus encoding, auto-stop at timeline end, loop recording mode, and seamless integration with DJ mixer. Also includes double-click loop marker adjustment, clip name overflow fixes, and critical audio capture timing fixes. See [RELEASE_NOTES_v3.19.md](RELEASE_NOTES_v3.19.md) for full details.
+**Latest Update (v3.19.1)**: Bugfix - Fixed master recording to track playback. Audio element source is now preserved when loading recordings to tracks, fixing silent playback issue. All recording workflows (master, sequencer, microphone, tab capture) now work correctly when loading to Track 1 or Track 2. See [RELEASE_NOTES_v3.19.1.md](RELEASE_NOTES_v3.19.1.md).
+
+**v3.19.0**: Added Sequencer Recording with Track Integration! Record your sequencer arrangements with one click, preview with waveform, and load directly to DJ tracks. Includes high-quality Opus encoding, auto-stop at timeline end, loop recording mode, and seamless integration with DJ mixer. Also includes double-click loop marker adjustment, clip name overflow fixes, and critical audio capture timing fixes. See [RELEASE_NOTES_v3.19.md](RELEASE_NOTES_v3.19.md) for full details.
 
 **v3.14.0**: Added Precise Loop Markers with millisecond accuracy! Set loop points with numeric inputs (0.001s precision), interactive time tooltip on hover, intelligent marker adjustment, and fixed zoom click detection. Perfect for chopping tiny segments from tab-captured audio or any track. Works seamlessly at 16x-20x zoom levels. See [PRECISE_LOOP_MARKERS.md](PRECISE_LOOP_MARKERS.md) for details.
 
