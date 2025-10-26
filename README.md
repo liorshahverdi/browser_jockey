@@ -2,13 +2,13 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browser-jockey.onrender.com/)
 
-A dual-track DJ mixing web application with 3D audio visualization, BPM detection, precise loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, and authentic DJ controls.
+A dual-track DJ mixing web application with 3D audio visualization, BPM detection, precise loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, sequencer recording with track integration, and authentic DJ controls.
 
-**Latest Update (v3.14.0)**: Added Precise Loop Markers with millisecond accuracy! Set loop points with numeric inputs (0.001s precision), interactive time tooltip on hover, intelligent marker adjustment, and fixed zoom click detection. Perfect for chopping tiny segments from tab-captured audio or any track. Works seamlessly at 16x-20x zoom levels. See [PRECISE_LOOP_MARKERS.md](PRECISE_LOOP_MARKERS.md) for details.
+**Latest Update (v3.19.0)**: Added Sequencer Recording with Track Integration! Record your sequencer arrangements with one click, preview with waveform, and load directly to DJ tracks. Includes high-quality Opus encoding, auto-stop at timeline end, loop recording mode, and seamless integration with DJ mixer. Also includes double-click loop marker adjustment, clip name overflow fixes, and critical audio capture timing fixes. See [RELEASE_NOTES_v3.19.md](RELEASE_NOTES_v3.19.md) for full details.
+
+**v3.14.0**: Added Precise Loop Markers with millisecond accuracy! Set loop points with numeric inputs (0.001s precision), interactive time tooltip on hover, intelligent marker adjustment, and fixed zoom click detection. Perfect for chopping tiny segments from tab-captured audio or any track. Works seamlessly at 16x-20x zoom levels. See [PRECISE_LOOP_MARKERS.md](PRECISE_LOOP_MARKERS.md) for details.
 
 **v3.13.0**: Added browser tab audio capture! Capture audio from any browser tab (YouTube, Spotify, etc.) and route it through Track 1, Track 2, or Microphone input with full effects support. Record tab capture to master output, mix with other tracks, apply vocoder/auto-tune, and use the crossfader. Perfect for DJing with streaming services or remixing online content! See [TAB_CAPTURE_FEATURE.md](TAB_CAPTURE_FEATURE.md) for details.
-
-**v3.12.0**: Added ADSR Envelope effects for professional dynamic control! Attack, Decay, Sustain, Release controls for Track 1, Track 2, Master output, and Keyboard Sampler. Manual trigger buttons for precise envelope activation, integrated into drag-and-drop effect chains, conditional sampler ADSR, and 15+ creative use cases documented. See [ADSR_ENVELOPE_EFFECT.md](ADSR_ENVELOPE_EFFECT.md) and [ADSR_CREATIVE_USE_CASES.md](ADSR_CREATIVE_USE_CASES.md).
 
 **v3.11.0**: Added Camera Theremin! Motion-controlled instrument using webcam with wave detection, adjustable sensitivity, three control modes (Pitch & Volume, Filter & Resonance, ADSR Envelope), audio sources (oscillator, Track 1, Track 2), adaptive motion detection, wave-only mode, visual feedback, and master volume/vibrato controls. See [CAMERA_THEREMIN_FEATURE.md](CAMERA_THEREMIN_FEATURE.md).
 
@@ -49,6 +49,21 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
   - 🔀 Mix with crossfader and other tracks
   - 💾 Record and load back to tracks for remixing
   - ⚠️ Chrome/Edge only (browser limitation)
+- 🎼 **Sequencer with Recording** - Arrange and record multi-track compositions
+  - 📦 Load clips from DJ tracks or upload new files
+  - 🎚️ 4 independent sequencer tracks with volume, solo, mute
+  - 📊 Visual timeline with bar-based positioning
+  - 🎨 Per-clip effects (volume, ADSR envelope, reverb, delay)
+  - 🔁 Loop playback with adjustable loop markers
+  - 🖱️ **Double-click loop adjustment** - Click ruler to move nearest marker
+  - ⏺️ **One-Click Recording** - Record sequencer output with single button
+  - 🎙️ High-quality Opus encoding (128kbps WebM)
+  - ⏱️ Real-time recording timer and waveform preview
+  - 🔄 Auto-stop at timeline end or continuous loop recording
+  - 📥 **Load to Tracks** - Send recordings directly to Track 1 or Track 2
+  - 🔀 **Seamless Integration** - Recorded tracks work like any other audio
+  - 💾 Export recordings or process further in DJ mixer
+  - 🎛️ Full track controls enabled (play, loop, effects, export)
 - ⚡ **Professional Crossfader** - Smooth transitions with equal-power curves
   - 🔀 Three modes: Track1↔Track2, Track1↔Mic, Track2↔Mic
   - 📊 Equal-power crossfade algorithm (constant perceived loudness)

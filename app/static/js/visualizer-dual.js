@@ -75,6 +75,7 @@ import {
     changeThereminHandRequirement,
     cleanupTheremin
 } from './modules/theremin.js';
+import { Sequencer } from './modules/sequencer.js';
 
 // Get DOM elements for Track 1
 const audioFile1 = document.getElementById('audioFile1');
@@ -306,6 +307,7 @@ const routeTrack2 = document.getElementById('routeTrack2');
 const routeMicrophone = document.getElementById('routeMicrophone');
 const routeSampler = document.getElementById('routeSampler');
 const routeTheremin = document.getElementById('routeTheremin');
+const routeSequencer = document.getElementById('routeSequencer');
 const filterSliderMaster = document.getElementById('filterSliderMaster');
 const filterValueMaster = document.getElementById('filterValueMaster');
 const filterTypeMaster = document.getElementById('filterTypeMaster');
@@ -328,6 +330,9 @@ let merger; // To mix both tracks
 let dataArray;
 let bufferLength;
 let animationId;
+
+// Sequencer instance
+let sequencer = null;
 
 // Tab capture state
 let tabCaptureStream1 = null;
@@ -2418,6 +2423,41 @@ function toggleThereminRouting(enabled) {
             try {
                 thereminGain.connect(merger);
             } catch (e) {
+                console.error('Failed to reconnect theremin:', e);
+            }
+        }
+    }
+}
+
+function toggleSequencerRouting(enabled) {
+    if (!sequencer || !merger) {
+        console.warn('Sequencer or merger not initialized');
+        return;
+    }
+    
+    const sequencerGain = sequencer.getRoutingGain();
+    if (!sequencerGain) {
+        console.warn('Sequencer routing gain not available');
+        return;
+    }
+    
+    try {
+        if (enabled) {
+            // Connect sequencer to merger
+            sequencerGain.connect(merger);
+            console.log('Sequencer routed to master');
+        } else {
+            // Disconnect sequencer from merger
+            sequencerGain.disconnect(merger);
+            console.log('Sequencer disconnected from master');
+        }
+    } catch (error) {
+        console.error('Error toggling sequencer routing:', error);
+        // Reconnect on error
+        if (enabled) {
+            try {
+                sequencerGain.connect(merger);
+            } catch (e) {
                 // Already connected or other error
             }
         }
@@ -2517,6 +2557,17 @@ async function loadSamplerSource() {
             // Decode recording blob
             const arrayBuffer = await recordedBlob.arrayBuffer();
             audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        } else if (samplerSource === 'sequencer') {
+            // Use sequencer output as source
+            // For now, we'll use a note that the sequencer needs to be playing
+            alert('⚠️ Sequencer as sampler source:\n\nNote: The keyboard sampler will use the sequencer output when playing notes.\nMake sure to start the sequencer playback first, then enable the sampler.\n\nThis creates a unique effect where your keyboard notes trigger alongside the sequencer arrangement!');
+            
+            // We don't need an audio buffer for this mode
+            // The sampler will connect to sequencer's output gain directly
+            samplerAudioBuffer = null;
+            enableSamplerBtn.disabled = false;
+            console.log('Sampler will use sequencer output');
+            return;
         }
         
         samplerAudioBuffer = audioBuffer;
@@ -2628,20 +2679,86 @@ async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, 
     const trackNumber = canvas === waveform1 ? 1 : 2;
     const color = trackNumber === 1 ? waveformColors.track1 : waveformColors.track2;
     
-    console.log('Drawing waveform...');
-    drawWaveform(canvas, audioBuffer, 1.0, 0.0, color);
-    console.log('Waveform drawn');
+    // Ensure canvas is visible and has dimensions before drawing
+    if (canvas.offsetWidth === 0 || canvas.offsetHeight === 0) {
+        // Wait for layout
+        await new Promise(resolve => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(resolve);
+            });
+        });
+    }
     
-    console.log('Detecting BPM...');
+    drawWaveform(canvas, audioBuffer, 1.0, 0.0, color);
+    
     const bpm = detectBPM(audioBuffer);
-    console.log('BPM detected:', bpm);
     bpmDisplay.textContent = bpm > 0 ? bpm : '--';
     
-    console.log('Detecting key...');
     const key = detectKey(audioBuffer);
     console.log('Key detected:', key);
     if (keyDisplay) {
         keyDisplay.textContent = key;
+    }
+    
+    // Set audio element source for playback
+    console.log('Setting audio element source from file');
+    const url = URL.createObjectURL(file);
+    audioElement.src = url;
+    
+    // Wait for metadata to load
+    await new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            console.warn('Timeout waiting for audio metadata, continuing anyway');
+            resolve(); // Don't reject, just continue
+        }, 5000);
+        
+        audioElement.addEventListener('loadedmetadata', () => {
+            clearTimeout(timeoutId);
+            console.log(`Track ${trackNumber} metadata loaded. Duration:`, audioElement.duration);
+            resolve();
+        }, { once: true });
+        
+        audioElement.addEventListener('error', (e) => {
+            clearTimeout(timeoutId);
+            console.error(`Track ${trackNumber} audio element error:`, e);
+            reject(e);
+        }, { once: true });
+    });
+    
+    // Update file name display
+    const fileDisplayElement = trackNumber === 1 ? 
+        document.getElementById('audioFile1') : 
+        document.getElementById('audioFile2');
+    if (fileDisplayElement) {
+        fileDisplayElement.textContent = file.name;
+    }
+    
+    // Enable track controls
+    console.log(`Enabling track ${trackNumber} controls`);
+    if (trackNumber === 1) {
+        playBtn1.disabled = false;
+        pauseBtn1.disabled = false;
+        stopBtn1.disabled = false;
+        loopBtn1.disabled = false;
+        reverseLoopBtn1.disabled = false;
+        clearLoopBtn1.disabled = false;
+        exportStem1.disabled = false;
+    } else if (trackNumber === 2) {
+        playBtn2.disabled = false;
+        pauseBtn2.disabled = false;
+        stopBtn2.disabled = false;
+        loopBtn2.disabled = false;
+        reverseLoopBtn2.disabled = false;
+        clearLoopBtn2.disabled = false;
+        exportStem2.disabled = false;
+    }
+    
+    // Add clip to sequencer if initialized
+    if (sequencer) {
+        const clipId = `track${trackNumber}-${Date.now()}`;
+        const clipName = `Track ${trackNumber}: ${file.name}`;
+        sequencer.addClip(clipId, clipName, audioBuffer, audioBuffer.duration);
+        console.log('Added clip to sequencer:', clipName);
     }
     
     tempContext.close();
@@ -2697,6 +2814,18 @@ function handleEffectChainChange(event) {
 function initAudioContext() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Initialize or update sequencer
+        if (!sequencer) {
+            sequencer = new Sequencer(audioContext);
+            console.log('✅ Sequencer initialized in initAudioContext');
+        } else {
+            // Update existing sequencer with the main audio context
+            sequencer.audioContext = audioContext;
+            // Reinitialize audio routing with the main context
+            sequencer.initializeAudioRouting();
+            console.log('✅ Sequencer audio context updated in initAudioContext');
+        }
         
         // Create analyser
         analyser = audioContext.createAnalyser();
@@ -2786,6 +2915,15 @@ function initAudioContext() {
         
         // Listen for effect chain changes
         document.addEventListener('effectChainChanged', handleEffectChainChange);
+        
+        // Connect sequencer to master output if routing is enabled
+        if (sequencer && routeSequencer && routeSequencer.checked) {
+            const sequencerGain = sequencer.getRoutingGain();
+            if (sequencerGain) {
+                sequencerGain.connect(merger);
+                console.log('✅ Sequencer initially routed to master');
+            }
+        }
     }
     
     // Connect track 1 if it exists and isn't already connected
@@ -3807,6 +3945,15 @@ waveform1.parentElement.addEventListener('click', (e) => {
                 console.log('🅱️ After setting: end =', loopState1.end, ', settingPoint =', loopState1.settingPoint);
                 // Enable export loop button when both points are set
                 exportLoop1.disabled = false;
+                
+                // Add loop clip to sequencer if available
+                console.log('🎼 Attempting to add loop clip. Sequencer exists:', !!sequencer, 'AudioBuffer exists:', !!zoomState1.audioBuffer);
+                if (sequencer && zoomState1.audioBuffer) {
+                    console.log('✅ Creating loop clip for Track 1:', loopState1.start, 'to', loopState1.end);
+                    sequencer.addLoopClip(1, zoomState1.audioBuffer, loopState1.start, loopState1.end, fileName1.textContent);
+                } else {
+                    console.warn('⚠️ Cannot create loop clip - sequencer or audioBuffer missing');
+                }
             }
         }
         
@@ -3985,6 +4132,15 @@ waveform2.parentElement.addEventListener('click', (e) => {
                 console.log('Loop end (B) set at:', formatTimeWithMs(time));
                 // Enable export loop button when both points are set
                 exportLoop2.disabled = false;
+                
+                // Add loop clip to sequencer if available
+                console.log('🎼 Attempting to add loop clip. Sequencer exists:', !!sequencer, 'AudioBuffer exists:', !!zoomState2.audioBuffer);
+                if (sequencer && zoomState2.audioBuffer) {
+                    console.log('✅ Creating loop clip for Track 2:', loopState2.start, 'to', loopState2.end);
+                    sequencer.addLoopClip(2, zoomState2.audioBuffer, loopState2.start, loopState2.end, fileName2.textContent);
+                } else {
+                    console.warn('⚠️ Cannot create loop clip - sequencer or audioBuffer missing');
+                }
             }
         }
         
@@ -5112,6 +5268,24 @@ if (thereminAudioSource) {
                 thereminAudioSource.value = 'oscillator'; // Reset to oscillator
                 return;
             }
+        } else if (sourceType === 'sequencer') {
+            if (sequencer) {
+                const sequencerGain = sequencer.getOutputGain();
+                if (sequencerGain) {
+                    sourceNode = sequencerGain;
+                    console.log('Using Sequencer as theremin source');
+                } else {
+                    console.warn('Sequencer output not available');
+                    alert('Sequencer is not ready. Please try again.');
+                    thereminAudioSource.value = 'oscillator';
+                    return;
+                }
+            } else {
+                console.warn('Sequencer not initialized');
+                alert('Sequencer is not initialized yet');
+                thereminAudioSource.value = 'oscillator';
+                return;
+            }
         } else if (sourceType === 'oscillator') {
             console.log('Using oscillator as theremin source');
         }
@@ -5135,6 +5309,8 @@ if (thereminAudioSource) {
         if (helpText) {
             if (sourceType === 'oscillator') {
                 helpText.textContent = 'Use your hand motion to control the theremin! Move up/down for pitch, left/right for volume.';
+            } else if (sourceType === 'sequencer') {
+                helpText.textContent = 'Modulating SEQUENCER: Move up/down to control filter brightness, left/right for volume. Start sequencer playback for best results!';
             } else {
                 helpText.textContent = `Modulating ${sourceType.toUpperCase()}: Move up/down to control filter brightness, left/right for volume.`;
             }
@@ -5236,6 +5412,59 @@ if (thereminRequireHand) {
 
 // Cleanup theremin on page unload
 window.addEventListener('beforeunload', cleanupTheremin);
+
+// Handle sequencer recording load to track
+window.addEventListener('loadSequencerRecording', async (event) => {
+    const { trackNumber, arrayBuffer, filename, mimeType } = event.detail;
+    
+    try {
+        // Use the provided MIME type or default to audio/webm with opus codec
+        const blobType = mimeType || 'audio/webm;codecs=opus';
+        
+        // Create a File object from the arrayBuffer with proper MIME type
+        const blob = new Blob([arrayBuffer], { type: blobType });
+        const file = new File([blob], filename, { type: blobType });
+        
+        console.log(`📥 Loading sequencer recording: ${filename} (${blobType}, ${arrayBuffer.byteLength} bytes)`);
+        
+        // Switch to tracks view so the canvas is visible and can be drawn on
+        const sequencerSection = document.getElementById('sequencerSection');
+        const mixerTab = document.getElementById('mixer-tab');
+        const sequencerTab = document.getElementById('sequencer-tab');
+        
+        // Hide sequencer, show mixer tab
+        if (sequencerSection) {
+            sequencerSection.style.display = 'none';
+        }
+        if (sequencerTab) {
+            sequencerTab.classList.remove('active');
+        }
+        if (mixerTab) {
+            mixerTab.classList.add('active');
+        }
+        
+        // Wait multiple frames for the layout to fully update
+        await new Promise(resolve => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    setTimeout(resolve, 50);
+                });
+            });
+        });
+        
+        // Load to the specified track
+        if (trackNumber === 1) {
+            await loadAudioFile(file, waveform1, bpm1Display, audioElement1, zoomState1, key1Display);
+            console.log('✅ Loaded sequencer recording to Track 1');
+        } else if (trackNumber === 2) {
+            await loadAudioFile(file, waveform2, bpm2Display, audioElement2, zoomState2, key2Display);
+            console.log('✅ Loaded sequencer recording to Track 2');
+        }
+    } catch (error) {
+        console.error('Error loading sequencer recording:', error);
+        alert('Failed to load sequencer recording to track');
+    }
+});
 
 // Tempo sliders
 tempoSlider1.addEventListener('input', (e) => {
@@ -5623,6 +5852,10 @@ routeTheremin.addEventListener('change', (e) => {
     toggleThereminRouting(e.target.checked);
 });
 
+routeSequencer.addEventListener('change', (e) => {
+    toggleSequencerRouting(e.target.checked);
+});
+
 masterVolumeSlider.addEventListener('input', (e) => {
     const volume = parseInt(e.target.value) / 100;
     if (gainMaster) {
@@ -5908,8 +6141,15 @@ async function exportLoop(trackNumber) {
         const endSample = Math.floor(loopState.end * sampleRate);
         const loopLength = endSample - startSample;
         
+        // Create offline context for the loop buffer
+        const tempContext = new OfflineAudioContext(
+            audioBuffer.numberOfChannels,
+            loopLength,
+            sampleRate
+        );
+        
         // Create new buffer with just the loop
-        const loopBuffer = audioContext.createBuffer(
+        const loopBuffer = tempContext.createBuffer(
             audioBuffer.numberOfChannels,
             loopLength,
             sampleRate
@@ -5947,23 +6187,58 @@ async function exportLoop(trackNumber) {
         const currentReverb = trackNumber === 1 ? reverb1 : reverb2;
         const currentDelay = trackNumber === 1 ? delay1 : delay2;
         
-        gain.gain.value = currentGain.gain.value;
-        filter.type = currentFilter.type;
-        filter.frequency.value = currentFilter.frequency.value;
-        filter.Q.value = currentFilter.Q.value;
-        convolver.buffer = currentReverb.convolver.buffer;
-        delay.delayTime.value = currentDelay.node.delayTime.value;
-        feedback.gain.value = currentDelay.feedback.gain.value;
+        // Apply effect settings if they exist
+        if (currentGain && currentGain.gain) {
+            gain.gain.value = currentGain.gain.value;
+        } else {
+            gain.gain.value = 1.0; // Default volume
+        }
+        
+        if (currentFilter && currentFilter.type) {
+            filter.type = currentFilter.type;
+            filter.frequency.value = currentFilter.frequency.value;
+            filter.Q.value = currentFilter.Q.value;
+        } else {
+            filter.type = 'lowpass';
+            filter.frequency.value = 20000; // No filtering
+        }
+        
+        if (currentReverb && currentReverb.convolver && currentReverb.convolver.buffer) {
+            convolver.buffer = currentReverb.convolver.buffer;
+        }
+        
+        if (currentDelay && currentDelay.node && currentDelay.node.delayTime) {
+            delay.delayTime.value = currentDelay.node.delayTime.value;
+        } else {
+            delay.delayTime.value = 0;
+        }
+        
+        if (currentDelay && currentDelay.feedback && currentDelay.feedback.gain) {
+            feedback.gain.value = currentDelay.feedback.gain.value;
+        } else {
+            feedback.gain.value = 0;
+        }
         
         const reverbWet = offlineContext.createGain();
         const reverbDry = offlineContext.createGain();
         const delayWet = offlineContext.createGain();
         const delayDry = offlineContext.createGain();
         
-        reverbWet.gain.value = currentReverb.wet.gain.value;
-        reverbDry.gain.value = currentReverb.dry.gain.value;
-        delayWet.gain.value = currentDelay.wet.gain.value;
-        delayDry.gain.value = currentDelay.dry.gain.value;
+        if (currentReverb && currentReverb.wet && currentReverb.dry) {
+            reverbWet.gain.value = currentReverb.wet.gain.value;
+            reverbDry.gain.value = currentReverb.dry.gain.value;
+        } else {
+            reverbWet.gain.value = 0;
+            reverbDry.gain.value = 1;
+        }
+        
+        if (currentDelay && currentDelay.wet && currentDelay.dry) {
+            delayWet.gain.value = currentDelay.wet.gain.value;
+            delayDry.gain.value = currentDelay.dry.gain.value;
+        } else {
+            delayWet.gain.value = 0;
+            delayDry.gain.value = 1;
+        }
         
         // Connect chain
         source.connect(gain);
@@ -6564,6 +6839,47 @@ function setupRecordedAudioConnection() {
         console.log('Recorded audio ended - oscilloscope reconnected to tracks');
     });
 }
+
+// Initialize sequencer early (before audio context is created)
+// This ensures it's available when loop points are set
+if (!sequencer) {
+    // Create a temporary audio context just for sequencer initialization
+    const tempAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    sequencer = new Sequencer(tempAudioContext);
+    console.log('✅ Sequencer initialized early with temporary audio context');
+    
+    // When the main audio context is created, update the sequencer's reference
+    const originalInitAudioContext = initAudioContext;
+    window.updateSequencerAudioContext = function() {
+        if (sequencer && audioContext) {
+            sequencer.audioContext = audioContext;
+            console.log('✅ Sequencer audio context updated to main context');
+        }
+    };
+}
+
+// Handle sequencer play requests
+document.addEventListener('sequencerPlayRequested', () => {
+    // Initialize main audio context if not already done
+    if (!audioContext) {
+        initAudioContext();
+        console.log('✅ Audio context initialized from sequencer play request');
+    }
+    
+    // Ensure sequencer is routed to master if enabled
+    if (sequencer && merger && routeSequencer && routeSequencer.checked) {
+        const sequencerGain = sequencer.getRoutingGain();
+        if (sequencerGain) {
+            try {
+                sequencerGain.disconnect();
+            } catch (e) {
+                // Not connected yet
+            }
+            sequencerGain.connect(merger);
+            console.log('✅ Sequencer routed to master from play request');
+        }
+    }
+});
 
 // Final initialization complete
 console.log('🎵 Browser Jockey initialized successfully');

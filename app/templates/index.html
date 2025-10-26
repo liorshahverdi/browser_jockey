@@ -24,6 +24,14 @@
         </header>
         
         <div class="controls">
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" data-tab="mixer">🎛️ DJ Mixer</button>
+                <button class="tab-btn" data-tab="sequencer">🎼 Sequencer</button>
+            </div>
+
+            <!-- DJ Mixer Tab -->
+            <div id="mixer-tab" class="tab-content active">
             <!-- DJ Layout: Three Column Layout (Track 1 | Mixer | Track 2) -->
             <div class="dj-decks-container">
                 <!-- Left Column: Track 1 -->
@@ -576,6 +584,7 @@
                             <option value="track1-loop">Track 1 (Loop Only)</option>
                             <option value="track2-loop">Track 2 (Loop Only)</option>
                             <option value="recording">Last Recording</option>
+                            <option value="sequencer">Sequencer Output</option>
                         </select>
                     </div>
                     <div class="sampler-mode-select">
@@ -715,6 +724,7 @@
                                 <option value="oscillator" selected>Oscillator (Synthesizer)</option>
                                 <option value="track1">Track 1</option>
                                 <option value="track2">Track 2</option>
+                                <option value="sequencer">Sequencer Output</option>
                             </select>
                         </div>
                         <div class="theremin-setting" id="thereminWaveformSetting">
@@ -772,22 +782,32 @@
                         <label class="routing-toggle">
                             <input type="checkbox" id="routeTrack1" checked>
                             <span>🎵 Track 1</span>
+                            <span class="activity-indicator" id="activityTrack1"></span>
                         </label>
                         <label class="routing-toggle">
                             <input type="checkbox" id="routeTrack2" checked>
                             <span>🎵 Track 2</span>
+                            <span class="activity-indicator" id="activityTrack2"></span>
                         </label>
                         <label class="routing-toggle">
                             <input type="checkbox" id="routeMicrophone" checked>
                             <span>🎤 Microphone</span>
+                            <span class="activity-indicator" id="activityMicrophone"></span>
                         </label>
                         <label class="routing-toggle">
                             <input type="checkbox" id="routeSampler" checked>
                             <span>🎹 Sampler</span>
+                            <span class="activity-indicator" id="activitySampler"></span>
                         </label>
                         <label class="routing-toggle">
                             <input type="checkbox" id="routeTheremin" checked>
                             <span>🎥 Theremin</span>
+                            <span class="activity-indicator" id="activityTheremin"></span>
+                        </label>
+                        <label class="routing-toggle">
+                            <input type="checkbox" id="routeSequencer" checked>
+                            <span>🎼 Sequencer</span>
+                            <span class="activity-indicator" id="activitySequencer"></span>
                         </label>
                     </div>
                 </div>
@@ -900,6 +920,212 @@
                     </div>
                 </div>
             </div>
+            </div>
+            <!-- End DJ Mixer Tab -->
+
+            <!-- Sequencer Tab -->
+            <div id="sequencer-tab" class="tab-content">
+                <div class="sequencer-container" id="sequencerContainer">
+                    <div class="sequencer-header">
+                        <h2>🎼 Sequencer</h2>
+                        <div class="sequencer-controls">
+                            <button id="sequencerPlayBtn" class="sequencer-btn">▶️ Play</button>
+                            <button id="sequencerPauseBtn" class="sequencer-btn">⏸️ Pause</button>
+                            <button id="sequencerStopBtn" class="sequencer-btn">⏹️ Stop</button>
+                            <button id="sequencerLoopToggleBtn" class="sequencer-btn" title="Toggle timeline looping">🔁 Loop</button>
+                            <button id="sequencerRecordBtn" class="sequencer-btn">⏺️ Record</button>
+                            <button id="addBarBtn" class="sequencer-btn">➕ Add Bar</button>
+                            <button id="removeBarBtn" class="sequencer-btn">➖ Remove Bar</button>
+                            <label class="bpm-control">
+                                BPM: <input type="number" id="sequencerBPM" value="120" min="60" max="200" step="1">
+                            </label>
+                            <label class="zoom-control">
+                                Zoom: <input type="range" id="sequencerZoom" value="100" min="50" max="300" step="10" style="width: 100px;">
+                                <span id="zoomValue">100%</span>
+                            </label>
+                            <label class="bpm-control" style="display: none;" id="loopRangeControl">
+                                Loop: Bar <input type="number" id="loopStartBar" value="1" min="1" max="8" step="1" style="width: 50px;">
+                                to <input type="number" id="loopEndBar" value="8" min="1" max="8" step="1" style="width: 50px;">
+                            </label>
+                            <button id="sequencerFullscreenBtn" class="sequencer-btn" title="Toggle fullscreen">⛶ Fullscreen</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Sequencer Recording Section -->
+                    <div class="sequencer-recording-section" id="sequencerRecordingSection" style="display: none;">
+                        <div class="recording-header">⏺️ Sequencer Recording</div>
+                        <div class="recording-controls">
+                            <button id="stopSequencerRecordBtn" class="control-btn">
+                                <span class="record-icon">⏹️</span> Stop Recording
+                            </button>
+                            <span id="sequencerRecordingTime" class="recording-time">0:00</span>
+                        </div>
+                        <div class="recording-export-group" style="display: none;" id="sequencerExportGroup">
+                            <div class="recording-format-selector">
+                                <label>Format:</label>
+                                <select id="sequencerExportFormat" class="recording-format-select">
+                                    <option value="webm" selected>WebM (original)</option>
+                                    <option value="wav">WAV (lossless)</option>
+                                    <option value="mp3">MP3 (compressed)</option>
+                                </select>
+                            </div>
+                            <button id="downloadSequencerBtn" class="control-btn">
+                                <span class="record-icon">💾</span> Download Recording
+                            </button>
+                            <button id="loadSequencerToTrack1Btn" class="control-btn">
+                                <span class="record-icon">📥</span> Load to Track 1
+                            </button>
+                            <button id="loadSequencerToTrack2Btn" class="control-btn">
+                                <span class="record-icon">📥</span> Load to Track 2
+                            </button>
+                        </div>
+                        <div class="recording-waveform-container" style="display: none;">
+                            <label>Recorded Sequencer:</label>
+                            <div class="waveform-container">
+                                <canvas id="sequencerRecordingWaveform" class="waveform-canvas"></canvas>
+                                <div id="sequencerLoopMarkerStart" class="loop-marker loop-marker-start" style="display: none;">A</div>
+                                <div id="sequencerLoopMarkerEnd" class="loop-marker loop-marker-end" style="display: none;">B</div>
+                                <div id="sequencerLoopRegion" class="loop-region" style="display: none;"></div>
+                            </div>
+                            <div class="sequencer-recording-controls">
+                                <button id="sequencerLoopBtn" class="control-btn-small loop-btn" title="Enable loop (click waveform twice to set A-B points)">🔁</button>
+                                <button id="sequencerClearLoopBtn" class="control-btn-small" title="Clear loop points">❌ Clear Loop</button>
+                            </div>
+                            <audio id="sequencerRecordedAudio" controls></audio>
+                        </div>
+                    </div>
+
+                    <div class="sequencer-workspace">
+                        <!-- Source Clips Panel -->
+                        <div class="clips-panel">
+                            <h3>Available Clips</h3>
+                            <div class="sequencer-upload-section">
+                                <label for="sequencerAudioUpload" class="sequencer-upload-btn">
+                                    📁 Choose Audio File
+                                </label>
+                                <input type="file" id="sequencerAudioUpload" accept="audio/*" multiple style="display: none;">
+                                <div class="sequencer-upload-help">
+                                    Upload or drag & drop audio files here
+                                </div>
+                            </div>
+                            <div id="clipsList" class="clips-list">
+                                <div class="clip-help-text">
+                                    Upload files above or load tracks in the DJ Mixer tab
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sequencer Timeline -->
+                        <div class="sequencer-timeline-container">
+                            <div class="timeline-header">
+                                <!-- Timeline Loop Markers -->
+                                <div id="timelineLoopMarkerStart" class="timeline-loop-marker timeline-loop-marker-start" style="display: none;">
+                                    <div class="timeline-loop-marker-label">START</div>
+                                </div>
+                                <div id="timelineLoopMarkerEnd" class="timeline-loop-marker timeline-loop-marker-end" style="display: none;">
+                                    <div class="timeline-loop-marker-label">END</div>
+                                </div>
+                                <div id="timelineLoopRegion" class="timeline-loop-region" style="display: none;"></div>
+                                
+                                <div class="timeline-ruler" id="timelineRuler">
+                                    <!-- Bar markers will be generated here -->
+                                </div>
+                            </div>
+                            <div class="sequencer-tracks" id="sequencerTracks">
+                                <!-- Tracks will be added dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Clip Effects Panel -->
+                        <div class="sequencer-effects-panel" id="sequencerEffectsPanel" style="display: none;">
+                            <div class="sequencer-effects-header">
+                                <h3>🎛️ Clip Effects</h3>
+                                <div class="selected-clip-info">
+                                    <span id="selectedClipName">No clip selected</span>
+                                    <div class="clip-header-buttons">
+                                        <button id="deleteClipBtn" class="delete-clip-btn" title="Delete this clip from track">🗑️</button>
+                                        <button id="closeClipEffects" class="close-effects-btn">✕</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="sequencer-effects-controls">
+                                <!-- Volume Control -->
+                                <div class="clip-effect-control">
+                                    <label>Volume: <span id="clipVolumeValue">100%</span></label>
+                                    <input type="range" id="clipVolumeSlider" min="0" max="150" step="1" value="100" class="effect-slider">
+                                </div>
+                                
+                                <!-- Pitch Control -->
+                                <div class="clip-effect-control">
+                                    <label>Pitch: <span id="clipPitchValue">0</span></label>
+                                    <input type="range" id="clipPitchSlider" min="-12" max="12" step="0.1" value="0" class="effect-slider">
+                                </div>
+                                
+                                <!-- Filter Control -->
+                                <div class="clip-effect-control">
+                                    <label>Filter: <span id="clipFilterValue">20kHz</span></label>
+                                    <input type="range" id="clipFilterSlider" min="20" max="20000" step="10" value="20000" class="effect-slider">
+                                    <select id="clipFilterType" class="filter-type-select">
+                                        <option value="lowpass">Low Pass</option>
+                                        <option value="highpass">High Pass</option>
+                                        <option value="bandpass">Band Pass</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- ADSR Envelope Control -->
+                                <div class="clip-effect-control">
+                                    <div class="adsr-header">
+                                        <label>📊 ADSR Envelope</label>
+                                        <button id="clipAdsrTrigger" class="adsr-trigger-btn" title="Trigger envelope">⚡ Trigger</button>
+                                    </div>
+                                    <div class="adsr-controls">
+                                        <div class="adsr-param">
+                                            <label>Attack: <span id="clipAdsrAttackValue">10ms</span></label>
+                                            <input type="range" id="clipAdsrAttackSlider" min="1" max="2000" step="1" value="10" class="effect-slider">
+                                        </div>
+                                        <div class="adsr-param">
+                                            <label>Decay: <span id="clipAdsrDecayValue">100ms</span></label>
+                                            <input type="range" id="clipAdsrDecaySlider" min="1" max="2000" step="1" value="100" class="effect-slider">
+                                        </div>
+                                        <div class="adsr-param">
+                                            <label>Sustain: <span id="clipAdsrSustainValue">80%</span></label>
+                                            <input type="range" id="clipAdsrSustainSlider" min="0" max="100" step="1" value="80" class="effect-slider">
+                                        </div>
+                                        <div class="adsr-param">
+                                            <label>Release: <span id="clipAdsrReleaseValue">300ms</span></label>
+                                            <input type="range" id="clipAdsrReleaseSlider" min="1" max="5000" step="1" value="300" class="effect-slider">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Reverb Control -->
+                                <div class="clip-effect-control">
+                                    <label>Reverb: <span id="clipReverbValue">0%</span></label>
+                                    <input type="range" id="clipReverbSlider" min="0" max="100" step="1" value="0" class="effect-slider">
+                                </div>
+                                
+                                <!-- Delay Control -->
+                                <div class="clip-effect-control">
+                                    <label>Delay: <span id="clipDelayValue">0%</span></label>
+                                    <input type="range" id="clipDelaySlider" min="0" max="100" step="1" value="0" class="effect-slider">
+                                </div>
+                                
+                                <!-- Delay Time Control -->
+                                <div class="clip-effect-control">
+                                    <label>Delay Time: <span id="clipDelayTimeValue">300ms</span></label>
+                                    <input type="range" id="clipDelayTimeSlider" min="50" max="2000" step="50" value="300" class="effect-slider">
+                                </div>
+                                
+                                <!-- Reset Button -->
+                                <div class="clip-effect-control">
+                                    <button id="resetClipEffects" class="sequencer-btn" style="width: 100%;">Reset All Effects</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Sequencer Tab -->
         </div>
         
         <div class="visualization-wrapper">
@@ -939,6 +1165,7 @@
         Made by Lior Shahverdi and Claude Sonnet 4.5 in VS Code.
     </footer>
     
+    <script type="module" src="{{ url_for('static', filename='js/modules/activity-indicators.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/visualizer-dual.js') }}"></script>
 </body>
 </html>

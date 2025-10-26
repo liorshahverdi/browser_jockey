@@ -3276,6 +3276,34 @@ h1 {
     text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
 }
 
+/* Activity Indicators */
+.activity-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    margin-left: auto;
+    transition: all 0.2s ease;
+}
+
+.activity-indicator.active {
+    background: #00ff00;
+    box-shadow: 0 0 10px #00ff00, 0 0 20px rgba(0, 255, 0, 0.5);
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.2);
+    }
+}
+
 /* Master Controls Row - Volume/Pan left, Effects right */
 .master-controls-row {
     display: grid;
@@ -3464,3 +3492,840 @@ h1 {
         height: 300px;
     }
 }
+/* Tab Navigation Styles */
+.tab-navigation {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.8);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+    color: white;
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Sequencer Styles */
+.sequencer-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    padding: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    transition: all 0.3s ease;
+}
+
+/* Fullscreen Mode for Sequencer */
+.sequencer-container.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    border-radius: 0;
+    background: rgba(0, 0, 0, 0.95);
+    overflow: auto;
+    padding: 30px;
+    animation: fullscreenEnter 0.3s ease;
+}
+
+@keyframes fullscreenEnter {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.sequencer-container.fullscreen .sequencer-workspace {
+    height: calc(100vh - 200px);
+}
+
+.sequencer-container.fullscreen .clips-panel {
+    max-height: calc(100vh - 250px);
+}
+
+.sequencer-container.fullscreen .sequencer-timeline-container {
+    max-height: calc(100vh - 250px);
+}
+
+/* Hide visualizer and oscilloscope when sequencer is in fullscreen mode */
+body.sequencer-fullscreen .visualization-wrapper {
+    display: none !important;
+}
+
+.sequencer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.sequencer-header h2 {
+    font-size: 2rem;
+    margin: 0;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.sequencer-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.sequencer-btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.sequencer-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+}
+
+.sequencer-btn:active {
+    transform: translateY(0);
+}
+
+.bpm-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+}
+
+.bpm-control input[type="number"] {
+    width: 70px;
+    padding: 8px;
+    font-size: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    text-align: center;
+}
+
+.zoom-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+}
+
+.zoom-control input[type="range"] {
+    cursor: pointer;
+}
+
+.zoom-control span {
+    min-width: 50px;
+    text-align: center;
+}
+
+.sequencer-workspace {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* Clips Panel */
+.clips-panel {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    padding: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    max-height: 600px;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+    scroll-behavior: smooth;
+}
+
+/* Webkit scrollbar styling for clips panel */
+.clips-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.clips-panel::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.clips-panel::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.6);
+    border-radius: 4px;
+}
+
+.clips-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.8);
+}
+
+.clips-panel.drag-over {
+    background: rgba(102, 126, 234, 0.2);
+    border-color: rgba(102, 126, 234, 0.6);
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+}
+
+.clips-panel h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+/* Sequencer Upload Section */
+.sequencer-upload-section {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sequencer-upload-btn {
+    display: block;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.7), rgba(118, 75, 162, 0.7));
+    color: white;
+    text-align: center;
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.sequencer-upload-btn:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+}
+
+.sequencer-upload-btn:active {
+    transform: translateY(0);
+}
+
+.sequencer-upload-help {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    font-style: italic;
+}
+
+.clips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.clip-item {
+    padding: 8px 10px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.6), rgba(118, 75, 162, 0.6));
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.clip-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.6);
+}
+
+.clip-item:active {
+    cursor: grabbing;
+}
+
+.clip-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+.clip-name {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 3px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.clip-duration {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.clip-help-text {
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Sequencer Timeline */
+.sequencer-timeline-container {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    padding: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 600px;
+    scroll-behavior: smooth;
+    cursor: grab;
+}
+
+.sequencer-timeline-container:active {
+    cursor: grabbing;
+}
+
+/* Webkit scrollbar styling for horizontal scroll */
+.sequencer-timeline-container::-webkit-scrollbar {
+    height: 10px;
+}
+
+.sequencer-timeline-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+}
+
+.sequencer-timeline-container::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.6);
+    border-radius: 5px;
+}
+
+.sequencer-timeline-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.8);
+}
+
+.timeline-header {
+    margin-bottom: 10px;
+    position: relative; /* Allow absolute positioning of loop markers */
+}
+
+/* Timeline Loop Markers */
+.timeline-loop-marker {
+    position: absolute;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(255, 215, 0, 0.9), rgba(255, 165, 0, 0.9));
+    z-index: 10;
+    cursor: ew-resize;
+    transition: width 0.2s;
+}
+
+.timeline-loop-marker:hover {
+    width: 5px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+}
+
+.timeline-loop-marker-label {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 215, 0, 0.95);
+    color: #000;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.timeline-loop-region {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: rgba(255, 215, 0, 0.15);
+    border: 2px solid rgba(255, 215, 0, 0.4);
+    border-radius: 4px;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.timeline-ruler {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    padding: 8px;
+    min-height: 40px;
+    position: relative;
+    min-width: fit-content;
+}
+
+.bar-marker {
+    flex-shrink: 0;
+    text-align: center;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 5px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.bar-marker:last-child {
+    border-right: none;
+}
+
+.sequencer-tracks {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 300px;
+    width: fit-content; /* Allow tracks to expand beyond viewport */
+    min-width: 100%; /* At minimum, fill container */
+}
+
+.sequencer-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    min-height: 80px;
+    position: relative;
+    overflow: visible; /* Allow track to extend naturally */
+    display: block; /* Block level element */
+    width: fit-content; /* Shrink-wrap to content */
+    min-width: 100%; /* At minimum, fill container width */
+}
+
+.track-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.track-name {
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.track-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.track-volume-control {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.track-volume-control label {
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.8);
+    min-width: 20px;
+}
+
+.track-volume-slider {
+    width: 60px;
+    height: 3px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    border-radius: 2px;
+}
+
+.track-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.track-volume-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.track-volume-value {
+    font-size: 0.75rem;
+    font-weight: bold;
+    min-width: 35px;
+    text-align: right;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.track-control-btn {
+    padding: 3px 6px;
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.track-control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.track-timeline {
+    display: block; /* Changed from flex to allow natural width expansion */
+    position: relative;
+    min-height: 50px;
+    /* Width will be set dynamically by JavaScript based on clips */
+    background: repeating-linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.2) 0px,
+        rgba(0, 0, 0, 0.2) 150px,
+        rgba(0, 0, 0, 0.3) 150px,
+        rgba(0, 0, 0, 0.3) 151px
+    ); /* Default bar grid pattern */
+}
+
+.timeline-clip {
+    position: absolute;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 6px;
+    padding: 8px;
+    cursor: move;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+}
+
+.timeline-clip:hover {
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.8);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.timeline-clip.dragging {
+    opacity: 0.7;
+    z-index: 1000;
+}
+
+.timeline-clip-waveform {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+    /* Ensure canvas doesn't overflow */
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.timeline-clip-content {
+    font-weight: bold;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    padding: 5px;
+}
+
+.timeline-bar {
+    flex-shrink: 0;
+    border-right: 1px dashed rgba(255, 255, 255, 0.1);
+    position: relative;
+    height: 100%;
+}
+
+.timeline-bar:last-child {
+    border-right: none;
+}
+
+.drop-indicator {
+    position: absolute;
+    background: rgba(0, 255, 255, 0.3);
+    border: 2px dashed rgba(0, 255, 255, 0.6);
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 999;
+}
+
+/* Playhead */
+.playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(255, 0, 0, 0.8);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.6);
+    z-index: 1001;
+    pointer-events: none;
+}
+
+.playhead::before {
+    content: '▼';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 0, 0, 0.8);
+    font-size: 16px;
+}
+
+/* Sequencer Effects Panel */
+.sequencer-effects-panel {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    padding: 15px;
+    border: 2px solid rgba(102, 126, 234, 0.5);
+    max-height: 600px;
+    overflow-y: auto;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.sequencer-effects-header {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.sequencer-effects-header h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.3rem;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+}
+
+.selected-clip-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(102, 126, 234, 0.2);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    gap: 10px; /* Space between clip name and close button */
+}
+
+#selectedClipName {
+    flex: 1; /* Take up available space */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0; /* Allow flex item to shrink below content size */
+    font-size: clamp(0.75rem, 2.5vw, 1rem); /* Responsive font size: min 0.75rem, max 1rem */
+}
+
+.clip-header-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.delete-clip-btn {
+    background: rgba(255, 100, 100, 0.2);
+    border: 1px solid rgba(255, 100, 100, 0.4);
+    color: white;
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.delete-clip-btn:hover {
+    background: rgba(255, 50, 50, 0.4);
+    border-color: rgba(255, 50, 50, 0.6);
+    transform: scale(1.05);
+}
+
+.delete-clip-btn:active {
+    transform: scale(0.95);
+}
+
+.close-effects-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    flex-shrink: 0; /* Prevent button from shrinking */
+}
+
+.close-effects-btn:hover {
+    background: rgba(255, 0, 0, 0.3);
+    border-color: rgba(255, 0, 0, 0.5);
+}
+
+.sequencer-effects-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.clip-effect-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.clip-effect-control label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.clip-effect-control .effect-slider {
+    width: 100%;
+}
+
+.clip-effect-control .filter-type-select {
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+/* Adjust sequencer workspace grid when effects panel is visible */
+.sequencer-workspace {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 20px;
+    margin-top: 20px;
+    transition: grid-template-columns 0.3s ease;
+}
+
+.sequencer-workspace.effects-visible {
+    grid-template-columns: 250px 1fr 280px;
+}
+
+/* Highlight selected clip */
+.timeline-clip.selected {
+    border-color: rgba(255, 215, 0, 0.8);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+}
+
+/* Sequencer Recording Section */
+.sequencer-recording-section {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 15px;
+    border: 2px solid rgba(255, 100, 100, 0.3);
+}
+
+.sequencer-recording-section .recording-header {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: rgba(255, 100, 100, 0.9);
+    text-shadow: 0 0 10px rgba(255, 100, 100, 0.5);
+}
+
+.sequencer-recording-controls {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+    align-items: center;
+}
+
