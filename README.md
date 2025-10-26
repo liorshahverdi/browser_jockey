@@ -1,6 +1,6 @@
 # Browser Jockey
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browserjockey.onrender.com/)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browser-jockey.onrender.com/)
 
 A dual-track DJ mixing web application with 3D audio visualization, BPM detection, A-B loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, and authentic DJ controls.
 
