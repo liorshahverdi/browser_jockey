@@ -2,9 +2,11 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browser-jockey.onrender.com/)
 
-A dual-track DJ mixing web application with 3D audio visualization, BPM detection, precise loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, sequencer recording with track integration, and authentic DJ controls.
+A dual-track DJ mixing web application with 3D audio visualization, BPM detection, precise loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, advanced sequencer with clip trimming and real-time effects, and authentic DJ controls.
 
-**Latest Update (v3.19.1)**: Bugfix - Fixed master recording to track playback. Audio element source is now preserved when loading recordings to tracks, fixing silent playback issue. All recording workflows (master, sequencer, microphone, tab capture) now work correctly when loading to Track 1 or Track 2. See [RELEASE_NOTES_v3.19.1.md](RELEASE_NOTES_v3.19.1.md).
+**Latest Update (v3.20.0)**: Major sequencer enhancements! Added non-destructive clip trimming by dragging edges, real-time effect updates during playback (volume, pitch, filter, delay), toggleable effects panel to maximize workspace, automatic timeline resize based on track count, timeline expansion when effects hidden (+280px width, +5vh height), and auto-zoom to fit long clips. Fixed "Add Track" button visibility and trim accumulation bugs. See [RELEASE_NOTES_v3.20.md](RELEASE_NOTES_v3.20.md) for full details.
+
+**v3.19.1**: Bugfix - Fixed master recording to track playback. Audio element source is now preserved when loading recordings to tracks, fixing silent playback issue. All recording workflows (master, sequencer, microphone, tab capture) now work correctly when loading to Track 1 or Track 2. See [RELEASE_NOTES_v3.19.1.md](RELEASE_NOTES_v3.19.1.md).
 
 **v3.19.0**: Added Sequencer Recording with Track Integration! Record your sequencer arrangements with one click, preview with waveform, and load directly to DJ tracks. Includes high-quality Opus encoding, auto-stop at timeline end, loop recording mode, and seamless integration with DJ mixer. Also includes double-click loop marker adjustment, clip name overflow fixes, and critical audio capture timing fixes. See [RELEASE_NOTES_v3.19.md](RELEASE_NOTES_v3.19.md) for full details.
 
@@ -55,7 +57,13 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
   - 📦 Load clips from DJ tracks or upload new files
   - 🎚️ 4 independent sequencer tracks with volume, solo, mute
   - 📊 Visual timeline with bar-based positioning
-  - 🎨 Per-clip effects (volume, ADSR envelope, reverb, delay)
+  - ✂️ **Clip Trimming** - Non-destructive edge dragging to trim start/end
+  - 🎨 Per-clip effects (volume, pitch, filter, delay, ADSR, reverb)
+  - 🎛️ **Real-Time Effects** - Adjust volume/pitch/filter/delay while playing
+  - 👁️ **Toggleable Effects Panel** - Show/hide to maximize workspace
+  - 📏 **Auto-Resize Timeline** - Grows/shrinks based on track count (80vh-85vh)
+  - 🔍 **Auto-Zoom to Fit** - Automatically zoom out for long clips
+  - ➕ **Always-Visible Add Track** - Green button always accessible
   - 🔁 Loop playback with adjustable loop markers
   - 🖱️ **Double-click loop adjustment** - Click ruler to move nearest marker
   - ⏺️ **One-Click Recording** - Record sequencer output with single button

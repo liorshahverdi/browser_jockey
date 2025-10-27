@@ -28,6 +28,9 @@ export class Sequencer {
         this.loopEndBar = null; // 0-indexed: 7 = bar 8 (null means loop to end)
         this.loopTimeout = null;
         
+        // Effects panel state
+        this.effectsPanelVisible = true; // Start visible by default
+        
         // Audio routing
         this.outputGain = null;
         this.routingGain = null;
@@ -190,6 +193,12 @@ export class Sequencer {
         const fullscreenBtn = document.getElementById('sequencerFullscreenBtn');
         if (fullscreenBtn) {
             fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+        }
+        
+        // Effects Panel toggle
+        const toggleEffectsPanelBtn = document.getElementById('toggleEffectsPanelBtn');
+        if (toggleEffectsPanelBtn) {
+            toggleEffectsPanelBtn.addEventListener('click', () => this.toggleEffectsPanel());
         }
         
         // ESC key to exit fullscreen
@@ -842,6 +851,59 @@ export class Sequencer {
         // Update timeline loop markers if loop is enabled
         this.updateTimelineLoopMarkers();
     }
+
+    autoZoomToFitLongestTrack() {
+        // Find the rightmost edge of all clips across all tracks
+        let maxRight = 0;
+        
+        this.sequencerTracks.forEach(track => {
+            track.clips.forEach(placedClip => {
+                const clipElement = placedClip.element;
+                const left = parseFloat(clipElement.style.left) || 0;
+                const width = parseFloat(clipElement.style.width) || 0;
+                const clipRight = left + width;
+                maxRight = Math.max(maxRight, clipRight);
+            });
+        });
+        
+        // If no clips, nothing to do
+        if (maxRight === 0) return;
+        
+        // Get the timeline container's visible width
+        const timelineContainer = document.querySelector('.sequencer-timeline-container');
+        if (!timelineContainer) return;
+        
+        const containerWidth = timelineContainer.clientWidth;
+        
+        // Add some padding (10% of container) for breathing room
+        const padding = containerWidth * 0.1;
+        const targetWidth = containerWidth - padding;
+        
+        // Calculate the required zoom level to fit the longest content
+        // maxRight is currently sized at this.zoomLevel, we need to fit it in targetWidth
+        // newZoomLevel = targetWidth / (maxRight / this.zoomLevel)
+        const requiredZoomLevel = (targetWidth / maxRight) * this.zoomLevel;
+        
+        // Only auto-zoom out (make things smaller), never auto-zoom in
+        // Also set a minimum zoom level of 10% to prevent too-small view
+        if (requiredZoomLevel < this.zoomLevel && requiredZoomLevel >= 0.1) {
+            this.zoomLevel = requiredZoomLevel;
+            this.barWidth = this.baseBarWidth * this.zoomLevel;
+            
+            // Update the zoom slider UI
+            const zoomPercent = Math.round(this.zoomLevel * 100);
+            if (this.zoomSlider) {
+                this.zoomSlider.value = zoomPercent;
+            }
+            if (this.zoomValue) {
+                this.zoomValue.textContent = `${zoomPercent}%`;
+            }
+            
+            // Update all tracks and clips to reflect new zoom
+            this.updateTimelineRuler();
+            this.updateAllTracksForZoom();
+        }
+    }
     
     updateTrackTimeline(timeline) {
         // Update the background pattern to match current zoom
@@ -1073,6 +1135,9 @@ export class Sequencer {
         // Ensure timeline is wide enough to contain this clip
         this.expandTimelineToFitClips(timeline);
         
+        // Auto-zoom to fit the longest track if this clip is long
+        this.autoZoomToFitLongestTrack();
+        
         // Store pixel position for accurate sequencing
         const barPosition = pixelPosition / this.barWidth;
         track.clips.push({
@@ -1080,7 +1145,9 @@ export class Sequencer {
             sourceClip: clip,
             barPosition: barPosition,
             pixelPosition: pixelPosition,
-            element: clipElement
+            element: clipElement,
+            trimStart: 0, // Trim from start in seconds
+            trimEnd: 0    // Trim from end in seconds
         });
     }
     
@@ -1143,35 +1210,184 @@ export class Sequencer {
     
     makeClipDraggable(clipElement, timeline) {
         let isDragging = false;
+        let isResizing = false;
+        let resizeDirection = null; // 'left' or 'right'
         let startX = 0;
         let startLeft = 0;
+        let startWidth = 0;
+        let startTrimStart = 0; // Store initial trim values
+        let startTrimEnd = 0;
+        
+        // Detect if mouse is over resize handle
+        const isOverResizeHandle = (e) => {
+            const rect = clipElement.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const handleWidth = 8; // Match CSS ::before/::after width
+            
+            if (x <= handleWidth) return 'left';
+            if (x >= rect.width - handleWidth) return 'right';
+            return null;
+        };
+        
+        // Update cursor based on position
+        clipElement.addEventListener('mousemove', (e) => {
+            if (isDragging || isResizing) return;
+            
+            const handle = isOverResizeHandle(e);
+            if (handle) {
+                clipElement.style.cursor = 'ew-resize';
+            } else {
+                clipElement.style.cursor = 'move';
+            }
+        });
         
         clipElement.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            startX = e.clientX;
-            startLeft = parseInt(clipElement.style.left) || 0;
-            clipElement.classList.add('dragging');
-            e.preventDefault();
+            const handle = isOverResizeHandle(e);
+            
+            if (handle) {
+                // Start resizing
+                isResizing = true;
+                resizeDirection = handle;
+                startX = e.clientX;
+                startLeft = parseInt(clipElement.style.left) || 0;
+                startWidth = parseFloat(clipElement.style.width) || 0;
+                
+                // Store initial trim values
+                const track = this.sequencerTracks.find(t => 
+                    t.element.querySelector('.track-timeline') === timeline
+                );
+                const placedClip = track?.clips.find(c => c.element === clipElement);
+                if (placedClip) {
+                    startTrimStart = placedClip.trimStart || 0;
+                    startTrimEnd = placedClip.trimEnd || 0;
+                }
+                
+                clipElement.classList.add('resizing');
+                e.preventDefault();
+                e.stopPropagation();
+            } else {
+                // Start dragging
+                isDragging = true;
+                startX = e.clientX;
+                startLeft = parseInt(clipElement.style.left) || 0;
+                clipElement.classList.add('dragging');
+                e.preventDefault();
+            }
         });
         
         document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            
-            const deltaX = e.clientX - startX;
-            const newLeft = Math.max(0, startLeft + deltaX);
-            
-            // Get current track
-            const track = this.sequencerTracks.find(t => 
-                t.element.querySelector('.track-timeline') === timeline
-            );
-            
-            // Snap to grid or adjacent clips (no boundary constraints - track extends infinitely)
-            const snappedLeft = this.snapToGridOrClip(newLeft, track, clipElement);
-            clipElement.style.left = `${snappedLeft}px`;
+            if (isResizing) {
+                const deltaX = e.clientX - startX;
+                const track = this.sequencerTracks.find(t => 
+                    t.element.querySelector('.track-timeline') === timeline
+                );
+                const placedClip = track?.clips.find(c => c.element === clipElement);
+                if (!placedClip) return;
+                
+                const sourceClip = placedClip.sourceClip;
+                const secondsPerBar = (60 / this.currentBPM) * 4;
+                const pixelsPerSecond = this.barWidth / secondsPerBar;
+                
+                if (resizeDirection === 'left') {
+                    // Resize from left (trim start)
+                    // Calculate how much trim to add based on total pixel movement from start
+                    const trimSeconds = deltaX / pixelsPerSecond;
+                    const maxTrim = sourceClip.duration - startTrimEnd - 0.1; // Leave at least 0.1s
+                    
+                    // Calculate new trim based on initial trim + change
+                    const newTrimStart = Math.max(0, Math.min(startTrimStart + trimSeconds, maxTrim));
+                    const actualTrimChange = newTrimStart - startTrimStart;
+                    
+                    placedClip.trimStart = newTrimStart;
+                    
+                    // Update visual position and width
+                    // Position moves right as we trim from start
+                    const newLeft = startLeft + (actualTrimChange * pixelsPerSecond);
+                    const newWidth = startWidth - (actualTrimChange * pixelsPerSecond);
+                    
+                    // Ensure minimum width
+                    if (newWidth >= 20) {
+                        clipElement.style.left = `${newLeft}px`;
+                        clipElement.style.width = `${newWidth}px`;
+                    } else {
+                        // Cap at minimum width
+                        const maxAllowedTrim = (startWidth - 20) / pixelsPerSecond;
+                        placedClip.trimStart = startTrimStart + maxAllowedTrim;
+                        clipElement.style.left = `${startLeft + maxAllowedTrim * pixelsPerSecond}px`;
+                        clipElement.style.width = '20px';
+                    }
+                    
+                } else if (resizeDirection === 'right') {
+                    // Resize from right (trim end)
+                    // Calculate how much trim to add based on total pixel movement from start
+                    // Negative deltaX = trimming more, positive = restoring
+                    const trimSeconds = -deltaX / pixelsPerSecond;
+                    const maxTrim = sourceClip.duration - startTrimStart - 0.1; // Leave at least 0.1s
+                    
+                    // Calculate new trim based on initial trim + change
+                    const newTrimEnd = Math.max(0, Math.min(startTrimEnd + trimSeconds, maxTrim));
+                    const actualTrimChange = newTrimEnd - startTrimEnd;
+                    
+                    placedClip.trimEnd = newTrimEnd;
+                    
+                    // Update visual width
+                    // Width decreases as we trim from end
+                    const newWidth = startWidth - (actualTrimChange * pixelsPerSecond);
+                    
+                    // Ensure minimum width
+                    if (newWidth >= 20) {
+                        clipElement.style.width = `${newWidth}px`;
+                    } else {
+                        // Cap at minimum width
+                        const maxAllowedTrim = (startWidth - 20) / pixelsPerSecond;
+                        placedClip.trimEnd = startTrimEnd + maxAllowedTrim;
+                        clipElement.style.width = '20px';
+                    }
+                }
+                
+                // Redraw waveform with new dimensions
+                const newWidth = parseFloat(clipElement.style.width);
+                this.drawWaveform(clipElement, sourceClip.audioBuffer, newWidth, placedClip.trimStart, placedClip.trimEnd);
+                
+            } else if (isDragging) {
+                const deltaX = e.clientX - startX;
+                const newLeft = Math.max(0, startLeft + deltaX);
+                
+                // Get current track
+                const track = this.sequencerTracks.find(t => 
+                    t.element.querySelector('.track-timeline') === timeline
+                );
+                
+                // Snap to grid or adjacent clips (no boundary constraints - track extends infinitely)
+                const snappedLeft = this.snapToGridOrClip(newLeft, track, clipElement);
+                clipElement.style.left = `${snappedLeft}px`;
+            }
         });
         
         document.addEventListener('mouseup', () => {
-            if (isDragging) {
+            if (isResizing) {
+                isResizing = false;
+                resizeDirection = null;
+                clipElement.classList.remove('resizing');
+                clipElement.style.cursor = 'move';
+                
+                // Update stored position
+                const track = this.sequencerTracks.find(t => 
+                    t.element.querySelector('.track-timeline') === timeline
+                );
+                if (track) {
+                    const placedClip = track.clips.find(c => c.element === clipElement);
+                    if (placedClip) {
+                        placedClip.pixelPosition = parseInt(clipElement.style.left);
+                        placedClip.barPosition = placedClip.pixelPosition / this.barWidth;
+                        console.log(`✂️ Clip trimmed - Start: ${placedClip.trimStart.toFixed(2)}s, End: ${placedClip.trimEnd.toFixed(2)}s`);
+                    }
+                }
+                
+                // Ensure timeline expands to fit
+                this.expandTimelineToFitClips(timeline);
+                
+            } else if (isDragging) {
                 isDragging = false;
                 clipElement.classList.remove('dragging');
                 
@@ -1212,8 +1428,10 @@ export class Sequencer {
      * @param {HTMLElement} clipElement - The clip element containing the canvas
      * @param {AudioBuffer} audioBuffer - The audio buffer to visualize
      * @param {number} width - The width of the clip in pixels
+     * @param {number} trimStart - Seconds to trim from start (default 0)
+     * @param {number} trimEnd - Seconds to trim from end (default 0)
      */
-    drawWaveform(clipElement, audioBuffer, width) {
+    drawWaveform(clipElement, audioBuffer, width, trimStart = 0, trimEnd = 0) {
         if (!audioBuffer) return;
         
         const canvas = clipElement.querySelector('.timeline-clip-waveform');
@@ -1239,7 +1457,15 @@ export class Sequencer {
         ctx.scale(dpr, dpr);
         
         const data = audioBuffer.getChannelData(0); // Get first channel
-        const step = Math.ceil(data.length / width);
+        const sampleRate = audioBuffer.sampleRate;
+        
+        // Calculate the range of samples to display based on trim
+        const totalSamples = data.length;
+        const startSample = Math.floor(trimStart * sampleRate);
+        const endSample = Math.floor((audioBuffer.duration - trimEnd) * sampleRate);
+        const trimmedLength = endSample - startSample;
+        
+        const step = Math.ceil(trimmedLength / width);
         const amp = clipHeight / 2;
         
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
@@ -1252,7 +1478,10 @@ export class Sequencer {
             
             // Find min and max in this segment
             for (let j = 0; j < step; j++) {
-                const datum = data[(i * step) + j];
+                const sampleIndex = startSample + (i * step) + j;
+                if (sampleIndex >= endSample) break;
+                
+                const datum = data[sampleIndex];
                 if (datum < min) min = datum;
                 if (datum > max) max = datum;
             }
@@ -1378,44 +1607,44 @@ export class Sequencer {
     updateClipsList() {
         if (!this.clipsList) return;
         
-        if (this.clips.size === 0) {
-            this.clipsList.innerHTML = `
-                <div class="clip-help-text">
-                    Load tracks in the DJ Mixer tab to create clips
-                </div>
-            `;
-            return;
-        }
-        
         this.clipsList.innerHTML = '';
         
-        this.clips.forEach((clip, id) => {
-            const clipElement = document.createElement('div');
-            clipElement.className = 'clip-item';
-            clipElement.draggable = true;
-            clipElement.dataset.clipId = id;
-            
-            clipElement.innerHTML = `
-                <span class="clip-name">${clip.name}</span>
-                <span class="clip-duration">${this.formatDuration(clip.duration)}</span>
-            `;
-            
-            // Drag events
-            clipElement.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', id);
-                clipElement.classList.add('dragging');
+        if (this.clips.size === 0) {
+            // Show help text when no clips
+            const helpText = document.createElement('div');
+            helpText.className = 'clip-help-text';
+            helpText.textContent = 'Load tracks in the DJ Mixer tab to create clips';
+            this.clipsList.appendChild(helpText);
+        } else {
+            // Add all clips
+            this.clips.forEach((clip, id) => {
+                const clipElement = document.createElement('div');
+                clipElement.className = 'clip-item';
+                clipElement.draggable = true;
+                clipElement.dataset.clipId = id;
+                
+                clipElement.innerHTML = `
+                    <span class="clip-name">${clip.name}</span>
+                    <span class="clip-duration">${this.formatDuration(clip.duration)}</span>
+                `;
+                
+                // Drag events
+                clipElement.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', id);
+                    clipElement.classList.add('dragging');
+                });
+                
+                clipElement.addEventListener('dragend', () => {
+                    clipElement.classList.remove('dragging');
+                });
+                
+                this.clipsList.appendChild(clipElement);
             });
-            
-            clipElement.addEventListener('dragend', () => {
-                clipElement.classList.remove('dragging');
-            });
-            
-            this.clipsList.appendChild(clipElement);
-        });
+        }
         
-        // Add "Add Track" button at the end
+        // Always add "Add Track" button at the end (even when no clips)
         const addTrackBtn = document.createElement('button');
-        addTrackBtn.className = 'clip-item';
+        addTrackBtn.className = 'clip-item add-track-btn';
         addTrackBtn.style.cursor = 'pointer';
         addTrackBtn.innerHTML = `<span class="clip-name">➕ Add New Track</span>`;
         addTrackBtn.addEventListener('click', () => {
@@ -1518,6 +1747,9 @@ export class Sequencer {
                 const startEnvelope = scheduleTime;
                 const clipDuration = placedClip.sourceClip.duration || source.buffer.duration;
                 
+                // Store base volume for dynamic updates (before ADSR)
+                const baseVolume = effects.volume;
+                
                 // Set initial volume to 0 for envelope
                 clipGain.gain.setValueAtTime(0, startEnvelope);
                 
@@ -1598,28 +1830,49 @@ export class Sequencer {
                     delayMerger.connect(this.outputGain);
                 }
                 
+                // Store effect nodes for real-time updates
+                placedClip.activeEffectNodes = {
+                    source: source,
+                    gainNode: clipGain,
+                    filter: filter,
+                    delayNode: delay,
+                    delayFeedback: delayFeedback,
+                    delayMix: delayMix,
+                    delayDry: delayDry,
+                    baseVolume: baseVolume,
+                    envelopeStartTime: startEnvelope,
+                    clipDuration: clipDuration
+                };
+                
                 // If clip has start/end times (loop region), use offset and duration
                 if (placedClip.sourceClip.startTime !== undefined && placedClip.sourceClip.startTime > 0) {
-                    const offset = placedClip.sourceClip.startTime + clipOffset;
-                    const duration = placedClip.sourceClip.duration;
+                    // Account for both trim and loop region start
+                    const trimStart = placedClip.trimStart || 0;
+                    const trimEnd = placedClip.trimEnd || 0;
+                    const offset = placedClip.sourceClip.startTime + clipOffset + trimStart;
+                    const duration = placedClip.sourceClip.duration - trimEnd;
                     
                     // Calculate how much of the clip to play within the loop range
                     const clipMaxDuration = Math.min(
-                        duration,
+                        duration - trimStart,
                         playbackDuration - (clipStartTime - playbackStartOffset - clipOffset)
                     );
                     
                     source.start(scheduleTime, offset, clipMaxDuration);
                 } else {
-                    // Calculate duration to play (might be cut off by loop end)
+                    // Account for trim points
+                    const trimStart = placedClip.trimStart || 0;
+                    const trimEnd = placedClip.trimEnd || 0;
                     const clipDuration = source.buffer.duration;
-                    const maxDuration = playbackDuration - (clipStartTime - playbackStartOffset - clipOffset);
-                    const playDuration = Math.min(clipDuration - clipOffset, maxDuration);
+                    const trimmedDuration = clipDuration - trimStart - trimEnd;
                     
-                    if (clipOffset > 0) {
-                        source.start(scheduleTime, clipOffset, playDuration);
-                    } else if (playDuration < clipDuration) {
-                        source.start(scheduleTime, 0, playDuration);
+                    const maxDuration = playbackDuration - (clipStartTime - playbackStartOffset - clipOffset);
+                    const playDuration = Math.min(trimmedDuration - clipOffset, maxDuration);
+                    
+                    const startOffset = trimStart + clipOffset;
+                    
+                    if (startOffset > 0 || playDuration < clipDuration) {
+                        source.start(scheduleTime, startOffset, playDuration);
                     } else {
                         source.start(scheduleTime);
                     }
@@ -1664,6 +1917,10 @@ export class Sequencer {
                         // Already stopped
                     }
                     clip.sourceNode = null;
+                }
+                // Clear active effect nodes
+                if (clip.activeEffectNodes) {
+                    clip.activeEffectNodes = null;
                 }
             });
         });
@@ -1929,6 +2186,35 @@ export class Sequencer {
         }
     }
     
+    toggleEffectsPanel() {
+        const effectsPanel = document.getElementById('sequencerEffectsPanel');
+        const toggleBtn = document.getElementById('toggleEffectsPanelBtn');
+        
+        if (!effectsPanel) return;
+        
+        this.effectsPanelVisible = !this.effectsPanelVisible;
+        
+        if (this.effectsPanelVisible) {
+            // Only show if there's a selected clip
+            const selectedClip = document.querySelector('.timeline-clip.selected');
+            if (selectedClip) {
+                effectsPanel.style.display = 'block';
+            }
+            if (toggleBtn) {
+                toggleBtn.innerHTML = '🎛️ Hide Effects';
+                toggleBtn.classList.add('active');
+            }
+            console.log('🎛️ Effects panel shown');
+        } else {
+            effectsPanel.style.display = 'none';
+            if (toggleBtn) {
+                toggleBtn.innerHTML = '🎛️ Show Effects';
+                toggleBtn.classList.remove('active');
+            }
+            console.log('🎛️ Effects panel hidden');
+        }
+    }
+    
     // Get the routing gain node for master output connection
     getRoutingGain() {
         if (!this.routingGain && this.audioContext) {
@@ -2068,10 +2354,20 @@ export class Sequencer {
         }
         
         // Show panel and update workspace layout
-        this.effectsPanel.style.display = 'block';
-        const workspace = document.querySelector('.sequencer-workspace');
-        if (workspace) {
-            workspace.classList.add('effects-visible');
+        // Only show if effects panel is not manually hidden
+        if (this.effectsPanelVisible) {
+            this.effectsPanel.style.display = 'block';
+            const workspace = document.querySelector('.sequencer-workspace');
+            if (workspace) {
+                workspace.classList.add('effects-visible');
+            }
+            
+            // Update toggle button state
+            const toggleBtn = document.getElementById('toggleEffectsPanelBtn');
+            if (toggleBtn) {
+                toggleBtn.innerHTML = '🎛️ Hide Effects';
+                toggleBtn.classList.add('active');
+            }
         }
     }
     
@@ -2089,6 +2385,13 @@ export class Sequencer {
         const workspace = document.querySelector('.sequencer-workspace');
         if (workspace) {
             workspace.classList.remove('effects-visible');
+        }
+        
+        // Update toggle button state
+        const toggleBtn = document.getElementById('toggleEffectsPanelBtn');
+        if (toggleBtn) {
+            toggleBtn.innerHTML = '🎛️ Show Effects';
+            toggleBtn.classList.remove('active');
         }
     }
     
@@ -2146,7 +2449,117 @@ export class Sequencer {
         if (effects) {
             effects[effectName] = value;
             console.log(`🎛️ Updated ${effectName} for clip ${clipId}:`, value);
+            
+            // Apply effect changes to currently playing clips in real-time
+            if (this.isPlaying) {
+                this.applyEffectToPlayingClips(clipId, effectName, value, effects);
+            }
         }
+    }
+    
+    applyEffectToPlayingClips(clipId, effectName, value, allEffects) {
+        // Find all instances of this clip across all tracks
+        this.sequencerTracks.forEach(track => {
+            track.clips.forEach(placedClip => {
+                // Check if this is the same source clip and if it has active effect nodes
+                if (placedClip.id === clipId && placedClip.activeEffectNodes) {
+                    const nodes = placedClip.activeEffectNodes;
+                    const now = this.audioContext.currentTime;
+                    
+                    try {
+                        switch(effectName) {
+                            case 'volume':
+                                // Update gain while preserving ADSR envelope shape
+                                // Cancel scheduled values and recalculate envelope with new volume
+                                nodes.gainNode.gain.cancelScheduledValues(now);
+                                
+                                // Calculate current position in ADSR envelope
+                                const timeSinceStart = now - nodes.envelopeStartTime;
+                                const attackTime = allEffects.adsrAttack;
+                                const decayTime = allEffects.adsrDecay;
+                                const releaseStart = nodes.clipDuration - allEffects.adsrRelease;
+                                
+                                if (timeSinceStart < attackTime) {
+                                    // Still in attack phase
+                                    const attackProgress = timeSinceStart / attackTime;
+                                    nodes.gainNode.gain.setValueAtTime(value * attackProgress, now);
+                                    nodes.gainNode.gain.linearRampToValueAtTime(value, nodes.envelopeStartTime + attackTime);
+                                    nodes.gainNode.gain.linearRampToValueAtTime(value * allEffects.adsrSustain, nodes.envelopeStartTime + attackTime + decayTime);
+                                } else if (timeSinceStart < attackTime + decayTime) {
+                                    // In decay phase
+                                    const decayProgress = (timeSinceStart - attackTime) / decayTime;
+                                    const currentLevel = value - (value - value * allEffects.adsrSustain) * decayProgress;
+                                    nodes.gainNode.gain.setValueAtTime(currentLevel, now);
+                                    nodes.gainNode.gain.linearRampToValueAtTime(value * allEffects.adsrSustain, nodes.envelopeStartTime + attackTime + decayTime);
+                                } else if (timeSinceStart < releaseStart) {
+                                    // In sustain phase
+                                    nodes.gainNode.gain.setValueAtTime(value * allEffects.adsrSustain, now);
+                                } else {
+                                    // In release phase
+                                    const releaseProgress = (timeSinceStart - releaseStart) / allEffects.adsrRelease;
+                                    const currentLevel = value * allEffects.adsrSustain * (1 - releaseProgress);
+                                    nodes.gainNode.gain.setValueAtTime(currentLevel, now);
+                                }
+                                
+                                // Schedule release
+                                const sustainEndTime = nodes.envelopeStartTime + releaseStart;
+                                if (sustainEndTime > now) {
+                                    nodes.gainNode.gain.setValueAtTime(value * allEffects.adsrSustain, sustainEndTime);
+                                    nodes.gainNode.gain.linearRampToValueAtTime(0, nodes.envelopeStartTime + nodes.clipDuration);
+                                }
+                                
+                                nodes.baseVolume = value;
+                                break;
+                                
+                            case 'pitch':
+                                // Update playback rate
+                                nodes.source.playbackRate.setValueAtTime(Math.pow(2, value / 12), now);
+                                break;
+                                
+                            case 'filterFreq':
+                                // Update filter frequency
+                                nodes.filter.frequency.setValueAtTime(value, now);
+                                break;
+                                
+                            case 'filterType':
+                                // Update filter type
+                                nodes.filter.type = value;
+                                break;
+                                
+                            case 'delay':
+                                // Update delay wet/dry mix
+                                nodes.delayMix.gain.setValueAtTime(value, now);
+                                nodes.delayDry.gain.setValueAtTime(1 - value, now);
+                                nodes.delayFeedback.gain.setValueAtTime(value * 0.5, now);
+                                break;
+                                
+                            case 'delayTime':
+                                // Update delay time
+                                nodes.delayNode.delayTime.setValueAtTime(value, now);
+                                break;
+                                
+                            case 'adsrAttack':
+                            case 'adsrDecay':
+                            case 'adsrSustain':
+                            case 'adsrRelease':
+                                // ADSR changes require recalculating the entire envelope
+                                // This is complex during playback, so we'll apply it on next play
+                                console.log(`⚠️ ADSR parameter ${effectName} will apply on next playback`);
+                                break;
+                                
+                            case 'reverb':
+                                // Note: Reverb implementation would need more complex setup for real-time changes
+                                console.log(`⚠️ Reverb changes will apply on next playback`);
+                                break;
+                        }
+                        
+                        console.log(`🔄 Applied ${effectName}=${value} to playing clip ${clipId}`);
+                    } catch (error) {
+                        console.warn(`Failed to apply ${effectName} to playing clip:`, error);
+                    }
+                }
+            });
+        });
     }
     
     resetClipEffects() {

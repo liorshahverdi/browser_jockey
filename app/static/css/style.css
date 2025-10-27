@@ -3596,7 +3596,8 @@ h1 {
 }
 
 .sequencer-container.fullscreen .sequencer-timeline-container {
-    max-height: calc(100vh - 250px);
+    max-height: calc(100vh - 200px); /* More space in fullscreen */
+    min-height: 400px;
 }
 
 /* Hide visualizer and oscilloscope when sequencer is in fullscreen mode */
@@ -3647,6 +3648,12 @@ body.sequencer-fullscreen .visualization-wrapper {
     transform: translateY(0);
 }
 
+.sequencer-btn.active {
+    background: linear-gradient(135deg, rgba(118, 75, 162, 0.9), rgba(102, 126, 234, 0.9));
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.6);
+}
+
 .bpm-control {
     display: flex;
     align-items: center;
@@ -3686,6 +3693,7 @@ body.sequencer-fullscreen .visualization-wrapper {
     grid-template-columns: 250px 1fr;
     gap: 20px;
     margin-top: 20px;
+    align-items: start; /* Align items to top, let them size naturally */
 }
 
 /* Clips Panel */
@@ -3694,10 +3702,20 @@ body.sequencer-fullscreen .visualization-wrapper {
     border-radius: 12px;
     padding: 15px;
     border: 2px solid rgba(255, 255, 255, 0.1);
-    max-height: 600px;
+    min-height: 300px; /* Minimum height */
+    max-height: 85vh; /* Match timeline - larger when effects hidden */
+    height: auto; /* Auto-size to match timeline */
     overflow-y: auto;
-    transition: all 0.3s ease;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    transition: max-height 0.3s ease;
     scroll-behavior: smooth;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.sequencer-workspace.effects-visible .clips-panel {
+    max-height: 80vh; /* Smaller when effects visible */
 }
 
 /* Webkit scrollbar styling for clips panel */
@@ -3775,6 +3793,8 @@ body.sequencer-fullscreen .visualization-wrapper {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex: 1; /* Allow clips list to grow within panel */
+    min-height: 0; /* Allow flexbox to shrink if needed */
 }
 
 .clip-item {
@@ -3822,6 +3842,25 @@ body.sequencer-fullscreen .visualization-wrapper {
     padding: 20px;
 }
 
+/* Add Track Button - special styling */
+.add-track-btn {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.6), rgba(56, 142, 60, 0.6)) !important;
+    border-color: rgba(76, 175, 80, 0.5) !important;
+    cursor: pointer !important;
+}
+
+.add-track-btn:hover {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.8), rgba(56, 142, 60, 0.8)) !important;
+    border-color: rgba(76, 175, 80, 0.8) !important;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.8) !important;
+}
+
+.add-track-btn .clip-name {
+    text-align: center;
+    font-size: 1rem;
+    margin-bottom: 0;
+}
+
 /* Sequencer Timeline */
 .sequencer-timeline-container {
     background: rgba(0, 0, 0, 0.4);
@@ -3830,9 +3869,16 @@ body.sequencer-fullscreen .visualization-wrapper {
     border: 2px solid rgba(255, 255, 255, 0.1);
     overflow-x: auto;
     overflow-y: auto;
-    max-height: 600px;
+    min-height: 300px; /* Minimum height for empty state */
+    max-height: 85vh; /* Larger when effects panel hidden - allow vertical expansion */
+    height: auto; /* Auto-size based on content */
     scroll-behavior: smooth;
     cursor: grab;
+    transition: max-height 0.3s ease; /* Smooth transition when toggling effects */
+}
+
+.sequencer-workspace.effects-visible .sequencer-timeline-container {
+    max-height: 80vh; /* Slightly smaller when effects panel visible */
 }
 
 .sequencer-timeline-container:active {
@@ -3934,7 +3980,7 @@ body.sequencer-fullscreen .visualization-wrapper {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    min-height: 300px;
+    /* Removed min-height to allow natural sizing based on track count */
     width: fit-content; /* Allow tracks to expand beyond viewport */
     min-width: 100%; /* At minimum, fill container */
 }
@@ -4082,6 +4128,41 @@ body.sequencer-fullscreen .visualization-wrapper {
 .timeline-clip.dragging {
     opacity: 0.7;
     z-index: 1000;
+}
+
+.timeline-clip.resizing {
+    opacity: 0.8;
+    z-index: 1000;
+}
+
+/* Resize handles */
+.timeline-clip::before,
+.timeline-clip::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    z-index: 10;
+    cursor: ew-resize;
+}
+
+.timeline-clip::before {
+    left: 0;
+    border-left: 2px solid rgba(255, 255, 255, 0.6);
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.timeline-clip::after {
+    right: 0;
+    border-right: 2px solid rgba(255, 255, 255, 0.6);
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.timeline-clip:hover::before,
+.timeline-clip:hover::after {
+    border-color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .timeline-clip-waveform {
@@ -4289,14 +4370,14 @@ body.sequencer-fullscreen .visualization-wrapper {
 /* Adjust sequencer workspace grid when effects panel is visible */
 .sequencer-workspace {
     display: grid;
-    grid-template-columns: 250px 1fr;
+    grid-template-columns: 250px 1fr; /* Default: clips panel + timeline (full width) */
     gap: 20px;
     margin-top: 20px;
     transition: grid-template-columns 0.3s ease;
 }
 
 .sequencer-workspace.effects-visible {
-    grid-template-columns: 250px 1fr 280px;
+    grid-template-columns: 250px 1fr 280px; /* clips panel + timeline + effects panel */
 }
 
 /* Highlight selected clip */
