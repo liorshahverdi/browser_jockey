@@ -139,6 +139,9 @@ export function initAudioEffects(context, trackNumber) {
     
     // Create pitch shifter using Tone.js if available
     let pitchShifter = null;
+    // TEMPORARILY DISABLED: Tone.js integration has connection issues with Web Audio API
+    // Will use playbackRate for pitch shifting (affects tempo) until proper integration is fixed
+    /*
     if (typeof Tone !== 'undefined') {
         try {
             // Set Tone to use our existing AudioContext
@@ -156,6 +159,7 @@ export function initAudioEffects(context, trackNumber) {
             console.error('Error creating Tone.js pitch shifter:', err);
         }
     }
+    */
     
     return { 
         gain, 
@@ -180,32 +184,51 @@ export function connectEffectsChain(source, effects, merger, audioContext) {
     try { gain.connect(panner); } catch (e) { /* Already connected */ }
     
     // Insert pitch shifter if available
-    // Try both connection paths - one will succeed
+    // Tone.js nodes have internal Web Audio nodes that need special handling
+    let pitchShifterConnected = false;
     if (pitchShifter) {
-        // Try connecting through pitch shifter
+        // Connect Web Audio node (panner) to Tone.js node (pitchShifter)
         try {
-            panner.connect(pitchShifter.input);
-            console.log('✅ Panner → Pitch Shifter connected');
+            // Tone.js ToneAudioNode has .input which is a Gain node (Web Audio API)
+            // We need to connect to the internal Web Audio node, not the Tone.js wrapper
+            const pitchShifterInput = pitchShifter.input || pitchShifter._internalChannels?.[0] || pitchShifter;
+            panner.connect(pitchShifterInput);
+            console.log('✅ Panner → Pitch Shifter connected (via internal node)');
+            pitchShifterConnected = true;
         } catch (err) {
-            console.log('ℹ️ Panner → Pitch Shifter: already connected or unavailable');
+            console.warn('⚠️ Panner → Pitch Shifter failed:', err.message);
+            // Try direct connection as last resort
+            try {
+                panner.connect(pitchShifter);
+                console.log('✅ Panner → Pitch Shifter connected (direct)');
+                pitchShifterConnected = true;
+            } catch (err2) {
+                console.warn('⚠️ Direct connection also failed:', err2.message);
+                pitchShifterConnected = false;
+            }
         }
         
-        try {
-            pitchShifter.connect(filter);
-            console.log('✅ Pitch Shifter → Filter connected');
-        } catch (err) {
-            console.log('ℹ️ Pitch Shifter → Filter: already connected');
+        // Connect Tone.js node (pitchShifter) to Web Audio node (filter)
+        if (pitchShifterConnected) {
+            try {
+                // Tone.js .connect() method handles connecting to Web Audio nodes
+                pitchShifter.connect(filter);
+                console.log('✅ Pitch Shifter → Filter connected');
+            } catch (err) {
+                console.warn('⚠️ Pitch Shifter → Filter failed:', err.message);
+                pitchShifterConnected = false;
+            }
         }
     }
     
-    // ALSO try direct connection as fallback
-    // If pitch shifter path is working, this will fail (already connected), which is fine
-    // If pitch shifter path is broken, this will succeed and audio will flow
-    try { 
-        panner.connect(filter);
-        console.log('✅ Panner → Filter direct connection (fallback)');
-    } catch (e) { 
-        console.log('ℹ️ Panner → Filter: already connected (using pitch shifter path)');
+    // If pitch shifter didn't connect successfully, use direct connection
+    if (!pitchShifterConnected) {
+        try { 
+            panner.connect(filter);
+            console.log('✅ Panner → Filter direct connection' + (pitchShifter ? ' (pitch shifter failed, using fallback)' : ' (no pitch shifter)'));
+        } catch (e) { 
+            console.log('ℹ️ Panner → Filter: already connected');
+        }
     }
     
     // Reverb path

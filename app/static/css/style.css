@@ -4374,7 +4374,8 @@ body.sequencer-fullscreen .visualization-wrapper {
     background: rgba(255, 0, 0, 0.8);
     box-shadow: 0 0 10px rgba(255, 0, 0, 0.6);
     z-index: 1001;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: ew-resize;
 }
 
 .playhead::before {
@@ -4383,6 +4384,8 @@ body.sequencer-fullscreen .visualization-wrapper {
     top: -20px;
     left: 50%;
     transform: translateX(-50%);
+    pointer-events: auto;
+    cursor: pointer;
     color: rgba(255, 0, 0, 0.8);
     font-size: 16px;
 }

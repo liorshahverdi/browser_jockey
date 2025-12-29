@@ -11,6 +11,7 @@ export class Sequencer {
         this.currentBPM = 120;
         this.numberOfBars = 8;
         this.isPlaying = false;
+        this.isPaused = false;
         this.currentTime = 0;
         this.playheadInterval = null;
         this.barWidth = 150; // pixels per bar (base value)
@@ -27,6 +28,15 @@ export class Sequencer {
         this.loopStartBar = 0; // 0-indexed: 0 = bar 1
         this.loopEndBar = null; // 0-indexed: 7 = bar 8 (null means loop to end)
         this.loopTimeout = null;
+        
+        // Playhead position when stopped (in bars)
+        this.playheadPosition = 0;
+        this.playheadManuallySet = false; // Track if user manually dragged playhead
+        
+        // Playback state for live loop updates
+        this.playbackStartTime = null;
+        this.playbackStartBar = 0;
+        this.playbackEndBar = 0;
         
         // Effects panel state
         this.effectsPanelVisible = true; // Start visible by default
@@ -161,11 +171,23 @@ export class Sequencer {
         this.loopStartBarInput?.addEventListener('change', (e) => {
             this.loopStartBar = Math.max(0, parseInt(e.target.value) - 1); // Convert to 0-indexed
             this.updateTimelineLoopMarkers();
+            
+            // If playing in loop mode, restart playback with new loop boundaries
+            if (this.isPlaying && this.loopEnabled) {
+                console.log('🔄 Loop start changed during playback - restarting...');
+                this.restartPlaybackWithNewLoop();
+            }
         });
         this.loopEndBarInput?.addEventListener('change', (e) => {
             const value = parseInt(e.target.value);
             this.loopEndBar = value > 0 ? value - 1 : this.numberOfBars - 1; // Convert to 0-indexed
             this.updateTimelineLoopMarkers();
+            
+            // If playing in loop mode, restart playback with new loop boundaries
+            if (this.isPlaying && this.loopEnabled) {
+                console.log('🔄 Loop end changed during playback - restarting...');
+                this.restartPlaybackWithNewLoop();
+            }
         });
         
         // Bar controls
@@ -489,6 +511,12 @@ export class Sequencer {
                     console.log(`🎯 Click-set loop START to bar ${barNum + 1}.${fraction}%`);
                     
                     this.updateTimelineLoopMarkers();
+                    
+                    // If playing in loop mode, restart playback with new loop boundaries
+                    if (this.isPlaying && this.loopEnabled) {
+                        console.log('🔄 Loop start changed during playback - restarting...');
+                        this.restartPlaybackWithNewLoop();
+                    }
                 } else if (markerClickCount === 1) {
                     // Second click - set end marker
                     // Make sure end is after start
@@ -506,6 +534,12 @@ export class Sequencer {
                         console.log(`✅ Loop markers set! Click again to reset.`);
                         
                         this.updateTimelineLoopMarkers();
+                        
+                        // If playing in loop mode, restart playback with new loop boundaries
+                        if (this.isPlaying && this.loopEnabled) {
+                            console.log('🔄 Loop end changed during playback - restarting...');
+                            this.restartPlaybackWithNewLoop();
+                        }
                     } else {
                         console.log(`⚠️ End marker must be after start marker`);
                     }
@@ -525,6 +559,12 @@ export class Sequencer {
                     console.log(`🎯 Click-set loop START to bar ${barNum + 1}.${fraction}%`);
                     
                     this.updateTimelineLoopMarkers();
+                    
+                    // If playing in loop mode, restart playback with new loop boundaries
+                    if (this.isPlaying && this.loopEnabled) {
+                        console.log('🔄 Loop markers reset during playback - restarting...');
+                        this.restartPlaybackWithNewLoop();
+                    }
                 }
             }, 250); // 250ms delay to distinguish between click and double-click
         });
@@ -1459,19 +1499,28 @@ export class Sequencer {
         const data = audioBuffer.getChannelData(0); // Get first channel
         const sampleRate = audioBuffer.sampleRate;
         
+        // Calculate the original untrimmed width for proper scaling
+        const originalDuration = audioBuffer.duration;
+        const trimmedDuration = originalDuration - trimStart - trimEnd;
+        const secondsPerBar = (60 / this.currentBPM) * 4;
+        const pixelsPerSecond = this.barWidth / secondsPerBar;
+        const originalWidth = originalDuration * pixelsPerSecond;
+        
         // Calculate the range of samples to display based on trim
         const totalSamples = data.length;
         const startSample = Math.floor(trimStart * sampleRate);
         const endSample = Math.floor((audioBuffer.duration - trimEnd) * sampleRate);
         const trimmedLength = endSample - startSample;
         
-        const step = Math.ceil(trimmedLength / width);
+        // Use original width for step calculation to maintain waveform scale
+        const step = Math.ceil(trimmedLength / originalWidth);
         const amp = clipHeight / 2;
         
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.clearRect(0, 0, width, clipHeight);
         
-        // Draw waveform
+        // Draw waveform using original scale
+        // We draw as if it's the full width, which makes the visible portion show correct detail
         for (let i = 0; i < width; i++) {
             let min = 1.0;
             let max = -1.0;
@@ -1661,7 +1710,12 @@ export class Sequencer {
     }
     
     play() {
-        if (this.isPlaying) return;
+        if (this.isPlaying) {
+            console.log('⚠️ Already playing');
+            return;
+        }
+        
+        console.log('▶️ Play button clicked');
         
         // Dispatch event to ensure main audio context is initialized
         document.dispatchEvent(new CustomEvent('sequencerPlayRequested'));
@@ -1673,15 +1727,32 @@ export class Sequencer {
         
         const secondsPerBar = (60 / this.currentBPM) * 4;
         
-        // Determine playback range based on loop settings
+        // Determine playback range based on pause state first, then loop settings
         let startBar, endBar;
-        if (this.loopEnabled) {
+        if (this.isPaused && this.playheadPosition > 0) {
+            // Resume from paused position (works in both loop and non-loop mode)
+            startBar = this.playheadPosition;
+            if (this.loopEnabled) {
+                endBar = this.loopEndBar || this.numberOfBars;
+            } else {
+                endBar = this.numberOfBars;
+            }
+            console.log(`▶️ Resuming from bar ${(startBar + 1).toFixed(2)}`);
+        } else if (this.loopEnabled) {
             startBar = this.loopStartBar || 0;
             endBar = this.loopEndBar || this.numberOfBars;
         } else {
-            startBar = 0;
+            // Use playhead position as start if it's been set and we're not looping
+            startBar = this.playheadPosition || 0;
             endBar = this.numberOfBars;
         }
+        
+        // Clear pause state when playing
+        this.isPaused = false;
+        
+        // Store playback state for live loop updates
+        this.playbackStartBar = startBar;
+        this.playbackEndBar = endBar;
         
         const playbackDuration = (endBar - startBar) * secondsPerBar;
         const playbackStartOffset = startBar * secondsPerBar;
@@ -1888,13 +1959,58 @@ export class Sequencer {
     }
     
     pause() {
+        console.log('⏸️ Pause button clicked');
         this.isPlaying = false;
-        this.stopPlayhead();
-        // TODO: Implement pause (would need to track current position)
+        this.isPaused = true;
+        
+        // Update activity indicator
+        document.dispatchEvent(new CustomEvent('sequencerStopped'));
+        
+        // Stop the playhead interval but DON'T remove the playhead visual
+        if (this.playheadInterval) {
+            clearInterval(this.playheadInterval);
+            this.playheadInterval = null;
+        }
+        
+        // Save current playhead position by reading from the DOM
+        const firstTimeline = this.sequencerTracks[0]?.element.querySelector('.track-timeline');
+        const playhead = firstTimeline?.querySelector('.playhead');
+        if (playhead) {
+            const currentPosition = parseFloat(playhead.style.left) || 0;
+            this.playheadPosition = currentPosition / this.barWidth;
+            // Don't mark as manually set - this is just a pause position
+            console.log(`⏸️ Paused at bar ${(this.playheadPosition + 1).toFixed(2)}`);
+        }
+        
+        // Clear loop timeout if exists
+        if (this.loopTimeout) {
+            clearTimeout(this.loopTimeout);
+            this.loopTimeout = null;
+        }
+        
+        // Stop all playing audio sources
+        this.sequencerTracks.forEach(track => {
+            track.clips.forEach(clip => {
+                if (clip.sourceNode) {
+                    try {
+                        clip.sourceNode.stop();
+                    } catch (e) {
+                        // Already stopped
+                    }
+                    clip.sourceNode = null;
+                }
+                // Clear active effect nodes
+                if (clip.activeEffectNodes) {
+                    clip.activeEffectNodes = null;
+                }
+            });
+        });
     }
     
     stop() {
+        console.log('⏹️ Stop button clicked');
         this.isPlaying = false;
+        this.isPaused = false;
         this.currentTime = 0;
         this.stopPlayhead();
         
@@ -1924,15 +2040,40 @@ export class Sequencer {
                 }
             });
         });
+        
+        // Restore playhead to manually set position, or reset to start
+        if (this.playheadManuallySet && this.playheadPosition > 0) {
+            // Restore to where user manually dragged it
+            const position = this.playheadPosition * this.barWidth;
+            this.updatePlayheadPosition(position);
+        } else {
+            // Reset to beginning
+            this.playheadPosition = 0;
+            this.playheadManuallySet = false;
+        }
+        
+        console.log('⏹️ Sequencer stopped');
     }
     
     startPlayhead(duration, startBar = 0, endBar = null) {
         const startTime = Date.now();
+        this.playbackStartTime = startTime; // Store for live loop updates
         const secondsPerBar = (60 / this.currentBPM) * 4;
         const startPosition = startBar * this.barWidth;
         
         this.playheadInterval = setInterval(() => {
             const elapsed = (Date.now() - startTime) / 1000;
+            const currentBarPosition = startBar + (elapsed / secondsPerBar);
+            
+            // Check if loop boundaries changed and playhead is outside new range
+            if (this.loopEnabled && this.isPlaying) {
+                if (currentBarPosition >= this.loopEndBar) {
+                    // Reached or passed loop end - restart loop
+                    this.stop();
+                    setTimeout(() => this.play(), 10);
+                    return;
+                }
+            }
             
             if (elapsed >= duration) {
                 if (this.loopEnabled) {
@@ -1959,6 +2100,33 @@ export class Sequencer {
         this.removePlayhead();
     }
     
+    restartPlaybackWithNewLoop() {
+        // Get current playhead position
+        const firstTimeline = this.sequencerTracks[0]?.element.querySelector('.track-timeline');
+        const playhead = firstTimeline?.querySelector('.playhead');
+        let currentPosition = 0;
+        if (playhead) {
+            currentPosition = parseFloat(playhead.style.left) || 0;
+        }
+        const currentBarPosition = currentPosition / this.barWidth;
+        
+        // Stop current playback
+        this.stop();
+        
+        // If current position is within new loop range, resume from there
+        // Otherwise start from loop start
+        if (currentBarPosition >= this.loopStartBar && currentBarPosition < this.loopEndBar) {
+            this.playheadPosition = currentBarPosition;
+            this.isPaused = true; // Trick to make it resume from current position
+        } else {
+            this.playheadPosition = 0;
+            this.isPaused = false;
+        }
+        
+        // Restart playback after brief delay
+        setTimeout(() => this.play(), 50);
+    }
+    
     updatePlayheadPosition(position) {
         this.sequencerTracks.forEach(track => {
             const timeline = track.element.querySelector('.track-timeline');
@@ -1968,6 +2136,9 @@ export class Sequencer {
                 playhead = document.createElement('div');
                 playhead.className = 'playhead';
                 timeline.appendChild(playhead);
+                
+                // Make playhead draggable
+                this.makePlayheadDraggable(playhead, timeline);
             }
             
             playhead.style.left = `${position}px`;
@@ -1980,6 +2151,85 @@ export class Sequencer {
             const playhead = timeline.querySelector('.playhead');
             if (playhead) {
                 playhead.remove();
+            }
+        });
+    }
+    
+    restartPlaybackWithNewLoop() {
+        // Get current playhead position
+        const firstTimeline = this.sequencerTracks[0]?.element.querySelector('.track-timeline');
+        const playhead = firstTimeline?.querySelector('.playhead');
+        let currentPosition = 0;
+        if (playhead) {
+            currentPosition = parseFloat(playhead.style.left) || 0;
+        }
+        const currentBarPosition = currentPosition / this.barWidth;
+        
+        // Stop current playback
+        this.stop();
+        
+        // If current position is within new loop range, resume from there
+        // Otherwise start from loop start
+        if (currentBarPosition >= this.loopStartBar && currentBarPosition < this.loopEndBar) {
+            this.playheadPosition = currentBarPosition;
+            this.isPaused = true; // Trick to make it resume from current position
+        } else {
+            this.playheadPosition = 0;
+            this.isPaused = false;
+        }
+        
+        // Restart playback after brief delay
+        setTimeout(() => this.play(), 50);
+    }
+    
+    makePlayheadDraggable(playhead, timeline) {
+        let isDragging = false;
+        let startX = 0;
+        
+        playhead.addEventListener('mousedown', (e) => {
+            // Only allow dragging when not playing
+            if (this.isPlaying) return;
+            
+            isDragging = true;
+            startX = e.clientX;
+            playhead.style.opacity = '0.6';
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const rect = timeline.getBoundingClientRect();
+            const timelineContainer = document.querySelector('.sequencer-timeline-container');
+            const scrollLeft = timelineContainer ? timelineContainer.scrollLeft : 0;
+            
+            // Calculate position in pixels (account for scroll)
+            let position = e.clientX - rect.left + scrollLeft;
+            
+            // Constrain to timeline bounds
+            const maxPosition = this.numberOfBars * this.barWidth;
+            position = Math.max(0, Math.min(position, maxPosition));
+            
+            // Update all playheads
+            this.sequencerTracks.forEach(track => {
+                const tl = track.element.querySelector('.track-timeline');
+                const ph = tl.querySelector('.playhead');
+                if (ph) {
+                    ph.style.left = `${position}px`;
+                }
+            });
+            
+            // Store position in bars
+            this.playheadPosition = position / this.barWidth;
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                playhead.style.opacity = '1';
+                this.playheadManuallySet = true; // Mark as manually set
+                console.log(`🎯 Playhead set to bar ${(this.playheadPosition + 1).toFixed(2)}`);
             }
         });
     }
@@ -2138,6 +2388,12 @@ export class Sequencer {
                 
                 // Final update of markers
                 this.updateTimelineLoopMarkers();
+                
+                // If playing in loop mode, restart playback with new loop boundaries
+                if (this.isPlaying && this.loopEnabled) {
+                    console.log('🔄 Loop marker dragged during playback - restarting...');
+                    this.restartPlaybackWithNewLoop();
+                }
             }
         });
     }
