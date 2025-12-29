@@ -8,6 +8,29 @@ export function formatTime(seconds) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
+/**
+ * Update progress display for reverse playback using buffer-based controller
+ * This provides smooth visual feedback without manual currentTime manipulation
+ * @param {PlaybackController} playbackController - The playback controller instance
+ * @param {Function} updateProgressCallback - Callback to update the UI progress
+ */
+export function updateReverseProgress(playbackController, updateProgressCallback) {
+    if (!playbackController || playbackController.mode !== 'reverse') {
+        return;
+    }
+    
+    // Get current time from playback controller (it calculates based on buffer position)
+    const currentTime = playbackController.getCurrentTime();
+    
+    // Update UI
+    if (updateProgressCallback) {
+        updateProgressCallback(currentTime);
+    }
+    
+    // Continue updating
+    requestAnimationFrame(() => updateReverseProgress(playbackController, updateProgressCallback));
+}
+
 // Update loop region display
 export function updateLoopRegion(loopState, loopRegion, loopMarkerStart, loopMarkerEnd, duration, zoomState) {
     if (loopState.start !== null && loopState.end !== null) {

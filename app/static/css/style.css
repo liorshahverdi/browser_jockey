@@ -663,23 +663,29 @@ h1 {
 .tempo-control-inline input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     background: linear-gradient(135deg, #00ffff, #0080ff);
     cursor: pointer;
     box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
-    border: 2px solid rgba(255, 255, 255, 0.8);
+    transition: transform 0.2s;
+}
+
+.tempo-control-inline input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
 }
 
 .tempo-control-inline input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     background: linear-gradient(135deg, #00ffff, #0080ff);
     cursor: pointer;
+    border: none;
     box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
-    border: 2px solid rgba(255, 255, 255, 0.8);
+    transition: transform 0.2s;
 }
 
 .tempo-control label {
@@ -958,6 +964,153 @@ h1 {
     cursor: pointer;
     border: none;
     box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+    transition: transform 0.2s;
+}
+
+/* Pitch Control Styling */
+.pitch-control-inline {
+    flex: 1;
+    padding: 15px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 200px;
+}
+
+.pitch-control-inline label {
+    display: block;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 12px;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.pitch-control-inline span {
+    color: #00ff00;
+    font-weight: 700;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+.pitch-slider {
+    writing-mode: bt-lr; /* IE */
+    -webkit-appearance: slider-vertical; /* Webkit */
+    appearance: slider-vertical; /* Standard */
+    width: 8px;
+    height: 150px;
+    padding: 0;
+    margin: 10px 0;
+    background: linear-gradient(180deg, 
+        rgba(0, 255, 0, 0.6) 0%, 
+        rgba(255, 255, 255, 0.6) 50%, 
+        rgba(255, 165, 0, 0.6) 100%
+    );
+    border-radius: 5px;
+    outline: none;
+    cursor: pointer;
+}
+
+.pitch-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00ff00, #00aa00);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    transition: transform 0.2s;
+}
+
+.pitch-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+}
+
+.pitch-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00ff00, #00aa00);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    transition: transform 0.2s;
+}
+
+/* Tone Control Styling */
+.tone-control-inline {
+    flex: 1;
+    padding: 15px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 200px;
+}
+
+.tone-control-inline label {
+    display: block;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 12px;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.tone-control-inline span {
+    color: #ffa500;
+    font-weight: 700;
+    text-shadow: 0 0 5px rgba(255, 165, 0, 0.5);
+}
+
+.tone-slider {
+    writing-mode: bt-lr; /* IE */
+    -webkit-appearance: slider-vertical; /* Webkit */
+    appearance: slider-vertical; /* Standard */
+    width: 8px;
+    height: 150px;
+    padding: 0;
+    margin: 10px 0;
+    background: linear-gradient(180deg, 
+        rgba(255, 255, 255, 0.6) 0%, 
+        rgba(255, 165, 0, 0.6) 100%
+    );
+    border-radius: 5px;
+    outline: none;
+    cursor: pointer;
+}
+
+.tone-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffa500, #ff8c00);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+    transition: transform 0.2s;
+}
+
+.tone-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
+}
+
+.tone-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffa500, #ff8c00);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
     transition: transform 0.2s;
 }
 

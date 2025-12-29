@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 </head>
 <body>
     <div class="container">
@@ -125,13 +126,21 @@
                             </div>
                         </div>
                         <div class="tempo-volume-row">
+                            <div class="volume-control-inline">
+                                <label>Volume: <span id="volumeValue1">100%</span></label>
+                                <input type="range" id="volumeSlider1" min="0" max="100" step="1" value="100" class="volume-slider">
+                            </div>
                             <div class="tempo-control-inline">
                                 <label>Tempo: <span id="tempoValue1">1.0x</span></label>
                                 <input type="range" id="tempoSlider1" min="0.25" max="2.0" step="0.05" value="1.0">
                             </div>
-                            <div class="volume-control-inline">
-                                <label>Volume: <span id="volumeValue1">100%</span></label>
-                                <input type="range" id="volumeSlider1" min="0" max="100" step="1" value="100" class="volume-slider">
+                            <div class="tone-control-inline">
+                                <label>Tone: <span id="toneValue1">10kHz</span></label>
+                                <input type="range" id="toneSlider1" min="20" max="20000" step="10" value="10000" class="tone-slider">
+                            </div>
+                            <div class="pitch-control-inline">
+                                <label>Pitch: <span id="pitchValue1">0</span></label>
+                                <input type="range" id="pitchSlider1" min="-12" max="12" step="0.1" value="0" class="pitch-slider">
                             </div>
                         </div>
                         <div class="pan-control-inline">
@@ -491,13 +500,21 @@
                             </div>
                         </div>
                         <div class="tempo-volume-row">
+                            <div class="volume-control-inline">
+                                <label>Volume: <span id="volumeValue2">100%</span></label>
+                                <input type="range" id="volumeSlider2" min="0" max="100" step="1" value="100" class="volume-slider">
+                            </div>
                             <div class="tempo-control-inline">
                                 <label>Tempo: <span id="tempoValue2">1.0x</span></label>
                                 <input type="range" id="tempoSlider2" min="0.25" max="2.0" step="0.05" value="1.0">
                             </div>
-                            <div class="volume-control-inline">
-                                <label>Volume: <span id="volumeValue2">100%</span></label>
-                                <input type="range" id="volumeSlider2" min="0" max="100" step="1" value="100" class="volume-slider">
+                            <div class="tone-control-inline">
+                                <label>Tone: <span id="toneValue2">10kHz</span></label>
+                                <input type="range" id="toneSlider2" min="20" max="20000" step="10" value="10000" class="tone-slider">
+                            </div>
+                            <div class="pitch-control-inline">
+                                <label>Pitch: <span id="pitchValue2">0</span></label>
+                                <input type="range" id="pitchSlider2" min="-12" max="12" step="0.1" value="0" class="pitch-slider">
                             </div>
                         </div>
                         <div class="pan-control-inline">

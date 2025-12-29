@@ -6,8 +6,11 @@ import {
     clearLoopPoints, 
     animateReversePlayback, 
     stopReversePlayback, 
-    handleLoopPlayback 
+    handleLoopPlayback,
+    updateReverseProgress
 } from './modules/loop-controls.js';
+import { AudioBufferManager } from './modules/audio-buffer-manager.js';
+import { PlaybackController } from './modules/playback-controller.js';
 import { 
     drawWaveform, 
     redrawWaveformWithZoom, 
@@ -102,6 +105,10 @@ const volumeSlider1 = document.getElementById('volumeSlider1');
 const volumeValue1 = document.getElementById('volumeValue1');
 const panSlider1 = document.getElementById('panSlider1');
 const panValue1 = document.getElementById('panValue1');
+const pitchSlider1 = document.getElementById('pitchSlider1');
+const pitchValue1 = document.getElementById('pitchValue1');
+const toneSlider1 = document.getElementById('toneSlider1');
+const toneValue1 = document.getElementById('toneValue1');
 const waveform1 = document.getElementById('waveform1');
 const waveformProgress1 = document.getElementById('waveformProgress1');
 const loopMarkerStart1 = document.getElementById('loopMarkerStart1');
@@ -152,6 +159,10 @@ const volumeSlider2 = document.getElementById('volumeSlider2');
 const volumeValue2 = document.getElementById('volumeValue2');
 const panSlider2 = document.getElementById('panSlider2');
 const panValue2 = document.getElementById('panValue2');
+const pitchSlider2 = document.getElementById('pitchSlider2');
+const pitchValue2 = document.getElementById('pitchValue2');
+const toneSlider2 = document.getElementById('toneSlider2');
+const toneValue2 = document.getElementById('toneValue2');
 const waveform2 = document.getElementById('waveform2');
 const waveformProgress2 = document.getElementById('waveformProgress2');
 const loopMarkerStart2 = document.getElementById('loopMarkerStart2');
@@ -326,10 +337,20 @@ const masterPanValue = document.getElementById('masterPanValue');
 let audioContext;
 let analyser;
 let source1, source2;
+let source1Connected = false; // Track if source1 is connected to effects chain
+let source2Connected = false; // Track if source2 is connected to effects chain
 let merger; // To mix both tracks
 let dataArray;
 let bufferLength;
 let animationId;
+
+// Buffer-based reverse playback managers
+let bufferManager1 = null;
+let bufferManager2 = null;
+let playbackController1 = null;
+let playbackController2 = null;
+let reverseProgressAnimationId1 = null;
+let reverseProgressAnimationId2 = null;
 
 // Sequencer instance
 let sequencer = null;
@@ -362,12 +383,12 @@ let autotuneEnabled = false;
 let autotuneState = null;
 
 // Audio effects nodes for Track 1
-let gain1, reverb1, delay1, filter1, panner1, adsr1;
+let gain1, reverb1, delay1, filter1, panner1, adsr1, pitchShifter1;
 let reverbWet1, delayWet1;
 let finalMix1; // Final mixer for Track 1 effect chain
 
 // Audio effects nodes for Track 2
-let gain2, reverb2, delay2, filter2, panner2, adsr2;
+let gain2, reverb2, delay2, filter2, panner2, adsr2, pitchShifter2;
 let reverbWet2, delayWet2;
 let finalMix2; // Final mixer for Track 2 effect chain
 
@@ -533,16 +554,9 @@ async function loadRecordingToTrack1() {
                 tabCaptureSource1 = null;
             }
             
-            // Disconnect existing source1 if it's the tab capture
-            if (source1) {
-                try {
-                    source1.disconnect();
-                    console.log('Disconnected existing source1');
-                } catch (e) {
-                    console.log('Error disconnecting source1:', e);
-                }
-                source1 = null;
-            }
+            // Don't disconnect source1 - we'll reuse it for the new audio
+            // Once a MediaElementSource is created, it stays attached to the element
+            // and will automatically play the new audio when the element's src changes
             
             // Clear tab capture state
             window.tabCaptureState1 = null;
@@ -617,41 +631,9 @@ async function loadRecordingToTrack1() {
             placeholder.classList.add('hidden');
         }
         
-        // If audio context exists but source1 doesn't, create it now
-        // This ensures the audio will play when user clicks play button
-        if (audioContext && !source1 && audioElement1.src) {
-            console.log('Creating MediaElementSource for Track 1');
-            try {
-                source1 = audioContext.createMediaElementSource(audioElement1);
-                
-                // Connect to the effects chain
-                source1.connect(gain1);
-                gain1.connect(panner1);
-                panner1.connect(filter1);
-                
-                filter1.connect(reverb1.convolver);
-                reverb1.convolver.connect(reverb1.wet);
-                filter1.connect(reverb1.dry);
-                
-                const reverbMix1 = audioContext.createGain();
-                reverb1.wet.connect(reverbMix1);
-                reverb1.dry.connect(reverbMix1);
-                
-                reverbMix1.connect(delay1.node);
-                delay1.node.connect(delay1.wet);
-                reverbMix1.connect(delay1.dry);
-                
-                const finalMix1 = audioContext.createGain();
-                delay1.wet.connect(finalMix1);
-                delay1.dry.connect(finalMix1);
-                
-                finalMix1.connect(merger);
-                
-                console.log('Track 1 audio source connected successfully');
-            } catch (err) {
-                console.error('Error creating MediaElementSource for Track 1:', err);
-            }
-        }
+        // Don't create MediaElementSource here - it should only be created once per audio element
+        // The source will be created when play is first clicked if it doesn't exist
+        // This prevents the error: "Failed to execute 'connect' on 'AudioNode': Overload resolution failed"
         
         console.log('Recording successfully loaded to Track 1');
         alert('Recording loaded to Track 1! Click Play to hear it.');
@@ -700,16 +682,9 @@ async function loadRecordingToTrack2() {
                 tabCaptureSource2 = null;
             }
             
-            // Disconnect existing source2 if it's the tab capture
-            if (source2) {
-                try {
-                    source2.disconnect();
-                    console.log('Disconnected existing source2');
-                } catch (e) {
-                    console.log('Error disconnecting source2:', e);
-                }
-                source2 = null;
-            }
+            // Don't disconnect source2 - we'll reuse it for the new audio
+            // Once a MediaElementSource is created, it stays attached to the element
+            // and will automatically play the new audio when the element's src changes
             
             // Clear tab capture state
             window.tabCaptureState2 = null;
@@ -783,41 +758,9 @@ async function loadRecordingToTrack2() {
             placeholder.classList.add('hidden');
         }
         
-        // If audio context exists but source2 doesn't, create it now
-        // This ensures the audio will play when user clicks play button
-        if (audioContext && !source2 && audioElement2.src) {
-            console.log('Creating MediaElementSource for Track 2');
-            try {
-                source2 = audioContext.createMediaElementSource(audioElement2);
-                
-                // Connect to the effects chain
-                source2.connect(gain2);
-                gain2.connect(panner2);
-                panner2.connect(filter2);
-                
-                filter2.connect(reverb2.convolver);
-                reverb2.convolver.connect(reverb2.wet);
-                filter2.connect(reverb2.dry);
-                
-                const reverbMix2 = audioContext.createGain();
-                reverb2.wet.connect(reverbMix2);
-                reverb2.dry.connect(reverbMix2);
-                
-                reverbMix2.connect(delay2.node);
-                delay2.node.connect(delay2.wet);
-                reverbMix2.connect(delay2.dry);
-                
-                const finalMix2 = audioContext.createGain();
-                delay2.wet.connect(finalMix2);
-                delay2.dry.connect(finalMix2);
-                
-                finalMix2.connect(merger);
-                
-                console.log('Track 2 audio source connected successfully');
-            } catch (err) {
-                console.error('Error creating MediaElementSource for Track 2:', err);
-            }
-        }
+        // Don't create MediaElementSource here - it should only be created once per audio element
+        // The source will be created when play is first clicked if it doesn't exist
+        // This prevents the error: "Failed to execute 'connect' on 'AudioNode': Overload resolution failed"
         
         console.log('Recording successfully loaded to Track 2');
         alert('Recording loaded to Track 2! Click Play to hear it.');
@@ -856,15 +799,23 @@ function playBothTracks() {
         
         // Handle reverse animations if needed
         if (loopState1.reverse && loopState1.enabled) {
-            stopReversePlayback(loopState1);
-            loopState1.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
+            if (playbackController1 && playbackController1.mode === 'reverse') {
+                playbackController1.play();
+            } else {
+                stopReversePlayback(loopState1);
+                loopState1.lastReverseTime = performance.now();
+                animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
+            }
         }
         
         if (loopState2.reverse && loopState2.enabled) {
-            stopReversePlayback(loopState2);
-            loopState2.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
+            if (playbackController2 && playbackController2.mode === 'reverse') {
+                playbackController2.play();
+            } else {
+                stopReversePlayback(loopState2);
+                loopState2.lastReverseTime = performance.now();
+                animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
+            }
         }
     });
 }
@@ -894,15 +845,23 @@ function playBothAndRecord() {
         
         // Handle reverse animations if needed
         if (loopState1.reverse && loopState1.enabled) {
-            stopReversePlayback(loopState1);
-            loopState1.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
+            if (playbackController1 && playbackController1.mode === 'reverse') {
+                playbackController1.play();
+            } else {
+                stopReversePlayback(loopState1);
+                loopState1.lastReverseTime = performance.now();
+                animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
+            }
         }
         
         if (loopState2.reverse && loopState2.enabled) {
-            stopReversePlayback(loopState2);
-            loopState2.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
+            if (playbackController2 && playbackController2.mode === 'reverse') {
+                playbackController2.play();
+            } else {
+                stopReversePlayback(loopState2);
+                loopState2.lastReverseTime = performance.now();
+                animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
+            }
         }
     });
 }
@@ -2904,6 +2863,7 @@ function initAudioContext() {
         delay1 = effects1.delay;
         filter1 = effects1.filter;
         adsr1 = effects1.adsr;
+        pitchShifter1 = effects1.pitchShifter;
         
         const effects2 = initAudioEffects(audioContext, 2);
         gain2 = effects2.gain;
@@ -2912,6 +2872,7 @@ function initAudioContext() {
         delay2 = effects2.delay;
         filter2 = effects2.filter;
         adsr2 = effects2.adsr;
+        pitchShifter2 = effects2.pitchShifter;
         
         // Initialize effect chain managers
         effectChain1 = new EffectChain(1, audioContext);
@@ -2931,77 +2892,134 @@ function initAudioContext() {
         }
     }
     
-    // Connect track 1 if it exists and isn't already connected
+    //Connect track 1 if it exists and isn't already connected
     if (audioElement1.src && !source1) {
-        source1 = audioContext.createMediaElementSource(audioElement1);
-        
-        // Effects chain for Track 1:
-        // source1 -> gain1 -> panner1 -> filter1 -> reverb (wet/dry) -> delay (wet/dry) -> merger
-        
-        source1.connect(gain1);
-        gain1.connect(panner1);
-        panner1.connect(filter1);
-        
-        // Reverb path: filter1 -> reverb -> reverbWet --\
-        filter1.connect(reverb1.convolver);                // |
-        reverb1.convolver.connect(reverb1.wet);            // |
-                                                            // v
-        // Dry path: filter1 -> reverbDry ---------------> merge point
-        filter1.connect(reverb1.dry);                       //
-                                                            //
-        // Merge reverb wet and dry                         //
-        const reverbMix1 = audioContext.createGain();       //
-        reverb1.wet.connect(reverbMix1);                    //
-        reverb1.dry.connect(reverbMix1);                    //
-        
-        // Delay path: reverbMix1 -> delay -> delayWet --\
-        reverbMix1.connect(delay1.node);                    // |
-        delay1.node.connect(delay1.wet);                    // |
-                                                            // v
-        // Dry path: reverbMix1 -> delayDry -------------> final merge
-        reverbMix1.connect(delay1.dry);                     //
-                                                            //
-        // Final merge and connect to mixer - use global finalMix1
-        if (!finalMix1) {
-            finalMix1 = audioContext.createGain();
+        try {
+            source1 = audioContext.createMediaElementSource(audioElement1);
+            console.log('✅ Created new MediaElementSource for Track 1');
+        } catch (e) {
+            // If creating fails, it means the element already has a source
+            // This shouldn't happen, but log it for debugging
+            console.warn('❌ Could not create MediaElementSource for Track 1:', e.message);
+            console.warn('This usually means the element already has a source attached');
+            return; // Skip connection since we can't create the source
         }
-        delay1.wet.connect(finalMix1);                      //
-        delay1.dry.connect(finalMix1);                      //
+    } else if (source1) {
+        console.log('ℹ️ Source1 already exists, reusing it');
+    } else {
+        console.log('⚠️ No audio loaded in Track 1');
+    }
+    
+    // Set up effect chain connections for track 1 if source exists and not yet connected
+    if (source1 && !source1Connected) {
+        console.log('🔗 Connecting Track 1 effect chain...');
+        try {
+            // Use the proper connectEffectsChain function
+            const effects1 = { gain: gain1, panner: panner1, filter: filter1, reverb: reverb1, delay: delay1, pitchShifter: pitchShifter1 };
+            const { reverbMix: reverbMix1, finalMix: fm1 } = connectEffectsChain(
+                source1,
+                effects1,
+                merger,
+                audioContext
+            );
+            
+            // Store finalMix1 globally if needed
+            if (!finalMix1) {
+                finalMix1 = fm1;
+            }
+            
+            source1Connected = true; // Mark as connected
+            console.log('✅ Track 1 file connected to effect chain and merger');
+            
+            // Connect playback controller to effects chain if it exists
+            if (playbackController1 && !playbackController1.gainNode.numberOfOutputs) {
+                playbackController1.connectToEffectsChain(filter1);
+                console.log('✅ PlaybackController 1 connected to effects chain');
+            }
+        } catch (e) {
+            console.warn('⚠️ Track 1 connection error (already connected):', e.message);
+            source1Connected = true; // Assume it's already connected
+        }
+    } else if (source1Connected) {
+        console.log('ℹ️ Track 1 already connected to effect chain');
         
-        finalMix1.connect(merger);
-        console.log('Track 1 file connected to effect chain and merger');
+        // Still try to connect playback controller if not done yet
+        if (playbackController1 && filter1) {
+            try {
+                // Check if already connected by checking if gain node has outputs
+                const hasOutputs = playbackController1.gainNode.numberOfOutputs > 0;
+                if (!hasOutputs) {
+                    playbackController1.connectToEffectsChain(filter1);
+                    console.log('✅ PlaybackController 1 connected to effects chain (late connection)');
+                }
+            } catch (e) {
+                // Already connected, ignore
+            }
+        }
     }
     
     // Connect track 2 if it exists and isn't already connected
     if (audioElement2.src && !source2) {
-        source2 = audioContext.createMediaElementSource(audioElement2);
-        
-        // Effects chain for Track 2 (same as Track 1)
-        source2.connect(gain2);
-        gain2.connect(panner2);
-        panner2.connect(filter2);
-        
-        filter2.connect(reverb2.convolver);
-        reverb2.convolver.connect(reverb2.wet);
-        filter2.connect(reverb2.dry);
-        
-        const reverbMix2 = audioContext.createGain();
-        reverb2.wet.connect(reverbMix2);
-        reverb2.dry.connect(reverbMix2);
-        
-        reverbMix2.connect(delay2.node);
-        delay2.node.connect(delay2.wet);
-        reverbMix2.connect(delay2.dry);
-        
-        // Final merge and connect to mixer - use global finalMix2
-        if (!finalMix2) {
-            finalMix2 = audioContext.createGain();
+        try {
+            source2 = audioContext.createMediaElementSource(audioElement2);
+            console.log('✅ Created new MediaElementSource for Track 2');
+        } catch (e) {
+            console.warn('❌ Could not create MediaElementSource for Track 2:', e.message);
+            console.warn('This usually means the element already has a source attached');
+            return;
         }
-        delay2.wet.connect(finalMix2);
-        delay2.dry.connect(finalMix2);
+    } else if (source2) {
+        console.log('ℹ️ Source2 already exists, reusing it');
+    } else {
+        console.log('⚠️ No audio loaded in Track 2');
+    }
+    
+    // Set up effect chain connections for track 2 if source exists and not yet connected
+    if (source2 && !source2Connected) {
+        console.log('🔗 Connecting Track 2 effect chain...');
+        try {
+            // Use the proper connectEffectsChain function
+            const effects2 = { gain: gain2, panner: panner2, filter: filter2, reverb: reverb2, delay: delay2, pitchShifter: pitchShifter2 };
+            const { reverbMix: reverbMix2, finalMix: fm2 } = connectEffectsChain(
+                source2,
+                effects2,
+                merger,
+                audioContext
+            );
+            
+            // Store finalMix2 globally if needed
+            if (!finalMix2) {
+                finalMix2 = fm2;
+            }
+            
+            source2Connected = true; // Mark as connected
+            console.log('✅ Track 2 file connected to effect chain and merger');
+            
+            // Connect playback controller to effects chain if it exists
+            if (playbackController2 && !playbackController2.gainNode.numberOfOutputs) {
+                playbackController2.connectToEffectsChain(filter2);
+                console.log('✅ PlaybackController 2 connected to effects chain');
+            }
+        } catch (e) {
+            console.warn('⚠️ Track 2 connection error (already connected):', e.message);
+            source2Connected = true; // Assume it's already connected
+        }
+    } else if (source2Connected) {
+        console.log('ℹ️ Track 2 already connected to effect chain');
         
-        finalMix2.connect(merger);
-        console.log('Track 2 file connected to effect chain and merger');
+        // Still try to connect playback controller if not done yet
+        if (playbackController2 && filter2) {
+            try {
+                // Check if already connected
+                const hasOutputs = playbackController2.gainNode.numberOfOutputs > 0;
+                if (!hasOutputs) {
+                    playbackController2.connectToEffectsChain(filter2);
+                    console.log('✅ PlaybackController 2 connected to effects chain (late connection)');
+                }
+            } catch (e) {
+                // Already connected, ignore
+            }
+        }
     }
 }
 
@@ -3534,15 +3552,8 @@ audioFile1.addEventListener('change', async (e) => {
                 tabCaptureSource1 = null;
             }
             
-            // Disconnect existing source1
-            if (source1) {
-                try {
-                    source1.disconnect();
-                } catch (e) {
-                    console.log('Error disconnecting source1:', e);
-                }
-                source1 = null;
-            }
+            // Don't disconnect source1 - we'll reuse it for the new audio file
+            // Once a MediaElementSource is created, it stays attached to the element
             
             // Clear tab capture state
             window.tabCaptureState1 = null;
@@ -3625,6 +3636,26 @@ audioFile1.addEventListener('change', async (e) => {
             alert('⚠️ Error analyzing audio file: ' + error.message + '\n\nThe file will still play, but waveform/BPM/key detection may not work.');
         }
         
+        // Initialize buffer manager and playback controller for reverse playback
+        try {
+            if (!audioContext) {
+                initAudioContext();
+            }
+            
+            console.log('Initializing buffer-based reverse playback for Track 1...');
+            bufferManager1 = new AudioBufferManager(audioContext);
+            await bufferManager1.loadAudioBuffer(file, 'track1');
+            
+            // Create playback controller - will connect later once source1 is created
+            playbackController1 = new PlaybackController(audioContext, audioElement1, filter1, 'track1');
+            playbackController1.bufferManager = bufferManager1;
+            
+            console.log('✅ Buffer-based reverse playback initialized for Track 1');
+        } catch (error) {
+            console.error('Error initializing reverse playback:', error);
+            // Non-fatal - reverse playback won't work but normal playback will
+        }
+        
         if (!scene) {
             initThreeJS();
             initOscilloscope();
@@ -3635,41 +3666,10 @@ audioFile1.addEventListener('change', async (e) => {
             placeholder.classList.add('hidden');
         }
         
-        // Don't set source1 to null - it will be created/reused automatically when play is clicked
-        // If audioContext exists but source1 doesn't, create it now
-        if (audioContext && !source1 && audioElement1.src) {
-            console.log('Creating MediaElementSource for Track 1 after file load');
-            try {
-                source1 = audioContext.createMediaElementSource(audioElement1);
-                
-                // Connect to the effects chain
-                source1.connect(gain1);
-                gain1.connect(panner1);
-                panner1.connect(filter1);
-                
-                filter1.connect(reverb1.convolver);
-                reverb1.convolver.connect(reverb1.wet);
-                filter1.connect(reverb1.dry);
-                
-                const reverbMix1 = audioContext.createGain();
-                reverb1.wet.connect(reverbMix1);
-                reverb1.dry.connect(reverbMix1);
-                
-                reverbMix1.connect(delay1.node);
-                delay1.node.connect(delay1.wet);
-                reverbMix1.connect(delay1.dry);
-                
-                const finalMix1 = audioContext.createGain();
-                delay1.wet.connect(finalMix1);
-                delay1.dry.connect(finalMix1);
-                
-                finalMix1.connect(merger);
-                
-                console.log('Track 1 audio source connected successfully');
-            } catch (err) {
-                console.error('Error creating MediaElementSource for Track 1:', err);
-            }
-        }
+        // Don't create MediaElementSource here - it should only be created once per audio element
+        // The source will be created when play is first clicked if it doesn't exist
+        // This prevents the error: "Failed to execute 'connect' on 'AudioNode': Overload resolution failed"
+        // which happens when trying to create multiple MediaElementSource nodes for the same element
         
         // Check if both tracks are loaded to enable dual buttons
         checkDualTrackButtonsState();
@@ -3705,15 +3705,8 @@ audioFile2.addEventListener('change', async (e) => {
                 tabCaptureSource2 = null;
             }
             
-            // Disconnect existing source2
-            if (source2) {
-                try {
-                    source2.disconnect();
-                } catch (e) {
-                    console.log('Error disconnecting source2:', e);
-                }
-                source2 = null;
-            }
+            // Don't disconnect source2 - we'll reuse it for the new audio file
+            // Once a MediaElementSource is created, it stays attached to the element
             
             // Clear tab capture state
             window.tabCaptureState2 = null;
@@ -3799,6 +3792,26 @@ audioFile2.addEventListener('change', async (e) => {
             alert('⚠️ Error analyzing audio file: ' + error.message + '\n\nThe file will still play, but waveform/BPM/key detection may not work.');
         }
         
+        // Initialize buffer manager and playback controller for reverse playback
+        try {
+            if (!audioContext) {
+                initAudioContext();
+            }
+            
+            console.log('Initializing buffer-based reverse playback for Track 2...');
+            bufferManager2 = new AudioBufferManager(audioContext);
+            await bufferManager2.loadAudioBuffer(file, 'track2');
+            
+            // Create playback controller - will connect later once source2 is created
+            playbackController2 = new PlaybackController(audioContext, audioElement2, filter2, 'track2');
+            playbackController2.bufferManager = bufferManager2;
+            
+            console.log('✅ Buffer-based reverse playback initialized for Track 2');
+        } catch (error) {
+            console.error('Error initializing reverse playback:', error);
+            // Non-fatal - reverse playback won't work but normal playback will
+        }
+        
         if (!scene) {
             initThreeJS();
             initOscilloscope();
@@ -3809,41 +3822,10 @@ audioFile2.addEventListener('change', async (e) => {
             placeholder.classList.add('hidden');
         }
         
-        // Don't set source2 to null - it will be created/reused automatically when play is clicked
-        // If audioContext exists but source2 doesn't, create it now
-        if (audioContext && !source2 && audioElement2.src) {
-            console.log('Creating MediaElementSource for Track 2 after file load');
-            try {
-                source2 = audioContext.createMediaElementSource(audioElement2);
-                
-                // Connect to the effects chain
-                source2.connect(gain2);
-                gain2.connect(panner2);
-                panner2.connect(filter2);
-                
-                filter2.connect(reverb2.convolver);
-                reverb2.convolver.connect(reverb2.wet);
-                filter2.connect(reverb2.dry);
-                
-                const reverbMix2 = audioContext.createGain();
-                reverb2.wet.connect(reverbMix2);
-                reverb2.dry.connect(reverbMix2);
-                
-                reverbMix2.connect(delay2.node);
-                delay2.node.connect(delay2.wet);
-                reverbMix2.connect(delay2.dry);
-                
-                const finalMix2 = audioContext.createGain();
-                delay2.wet.connect(finalMix2);
-                delay2.dry.connect(finalMix2);
-                
-                finalMix2.connect(merger);
-                
-                console.log('Track 2 audio source connected successfully');
-            } catch (err) {
-                console.error('Error creating MediaElementSource for Track 2:', err);
-            }
-        }
+        // Don't create MediaElementSource here - it should only be created once per audio element
+        // The source will be created when play is first clicked if it doesn't exist
+        // This prevents the error: "Failed to execute 'connect' on 'AudioNode': Overload resolution failed"
+        // which happens when trying to create multiple MediaElementSource nodes for the same element
         
         // Check if both tracks are loaded to enable dual buttons
         checkDualTrackButtonsState();
@@ -4501,17 +4483,41 @@ playBtn1.addEventListener('click', () => {
         return;
     }
     
+    console.log('🎬 Play button clicked for Track 1');
     initAudioContext();
     audioContext.resume().then(() => {
-        audioElement1.play();
+        console.log('🔊 Audio context resumed, attempting to play...');
+        console.log('Audio element src:', audioElement1.src);
+        console.log('Audio element duration:', audioElement1.duration);
+        console.log('Audio element ready state:', audioElement1.readyState);
+        console.log('🎚️ Track 1 gain value:', gain1 ? gain1.gain.value : 'not initialized');
+        console.log('🎚️ Master gain value:', gainMaster ? gainMaster.gain.value : 'not initialized');
+        console.log('🎚️ Merger gain value:', merger ? merger.gain.value : 'not initialized');
+        console.log('🔗 Source1 exists:', !!source1);
+        console.log('🔗 Source1 connected:', source1Connected);
+        
+        audioElement1.play()
+            .then(() => {
+                console.log('✅ Audio playing successfully');
+            })
+            .catch((error) => {
+                console.error('❌ Error playing audio:', error);
+            });
+            
         vinylAnimation1.style.display = 'flex'; // Show vinyl animation
         if (!animationId) draw();
-        // Start reverse animation if in reverse mode
+        
+        // Handle reverse playback if enabled
         if (loopState1.reverse && loopState1.enabled) {
-            // Stop any existing animation first to prevent duplicates
-            stopReversePlayback(loopState1);
-            loopState1.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
+            if (playbackController1 && playbackController1.mode === 'reverse') {
+                // Use buffer-based reverse playback
+                playbackController1.play();
+            } else {
+                // Fall back to legacy reverse animation
+                stopReversePlayback(loopState1);
+                loopState1.lastReverseTime = performance.now();
+                animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
+            }
         }
     });
 });
@@ -4530,12 +4536,18 @@ playBtn2.addEventListener('click', () => {
         audioElement2.play();
         vinylAnimation2.style.display = 'flex'; // Show vinyl animation
         if (!animationId) draw();
-        // Start reverse animation if in reverse mode
+        
+        // Handle reverse playback if enabled
         if (loopState2.reverse && loopState2.enabled) {
-            // Stop any existing animation first to prevent duplicates
-            stopReversePlayback(loopState2);
-            loopState2.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
+            if (playbackController2 && playbackController2.mode === 'reverse') {
+                // Use buffer-based reverse playback
+                playbackController2.play();
+            } else {
+                // Fall back to legacy reverse animation
+                stopReversePlayback(loopState2);
+                loopState2.lastReverseTime = performance.now();
+                animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
+            }
         }
     });
 });
@@ -4551,8 +4563,13 @@ pauseBtn1.addEventListener('click', () => {
     
     audioElement1.pause();
     vinylAnimation1.style.display = 'none'; // Hide vinyl animation
-    // Stop reverse animation when pausing
-    stopReversePlayback(loopState1);
+    
+    // Stop reverse playback
+    if (loopState1.reverse && playbackController1 && playbackController1.mode === 'reverse') {
+        playbackController1.pause();
+    } else {
+        stopReversePlayback(loopState1);
+    }
 });
 
 pauseBtn2.addEventListener('click', () => {
@@ -4565,8 +4582,13 @@ pauseBtn2.addEventListener('click', () => {
     
     audioElement2.pause();
     vinylAnimation2.style.display = 'none'; // Hide vinyl animation
-    // Stop reverse animation when pausing
-    stopReversePlayback(loopState2);
+    
+    // Stop reverse playback
+    if (loopState2.reverse && playbackController2 && playbackController2.mode === 'reverse') {
+        playbackController2.pause();
+    } else {
+        stopReversePlayback(loopState2);
+    }
 });
 
 // Stop button handlers
@@ -4742,6 +4764,24 @@ reverseLoopBtn1.addEventListener('click', () => {
         return;
     }
     
+    // Check if playback controller is available
+    if (!playbackController1) {
+        console.error('Playback controller not initialized. Falling back to legacy reverse playback.');
+        // Fall back to legacy behavior
+        loopState1.reverse = !loopState1.reverse;
+        loopState1.enabled = true;
+        reverseLoopBtn1.classList.toggle('active');
+        
+        if (loopState1.reverse && !audioElement1.paused) {
+            stopReversePlayback(loopState1);
+            loopState1.lastReverseTime = performance.now();
+            animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
+        } else {
+            stopReversePlayback(loopState1);
+        }
+        return;
+    }
+    
     // Toggle reverse mode (keep loop enabled)
     loopState1.reverse = !loopState1.reverse;
     loopState1.enabled = true; // Always enable loop when reverse is on
@@ -4760,21 +4800,46 @@ reverseLoopBtn1.addEventListener('click', () => {
     }
     
     if (loopState1.reverse) {
-        // Stop any existing animation first to prevent duplicates
+        // Stop legacy reverse animation
         stopReversePlayback(loopState1);
-        // DON'T jump to end - let it play from current position for seamless transition
-        // Only start reverse animation if playing
+        
+        // Switch to buffer-based reverse playback
+        console.log('Switching to buffer-based reverse playback for Track 1');
+        playbackController1.setLoopPoints(loopState1.start, loopState1.end);
+        playbackController1.switchToReverseMode();
+        
+        // If paused, don't start playing automatically
         if (!audioElement1.paused) {
-            loopState1.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement1, loopState1, updateWaveformProgress1);
+            playbackController1.play();
         }
+        
+        // Start progress animation for UI updates
+        if (reverseProgressAnimationId1) {
+            cancelAnimationFrame(reverseProgressAnimationId1);
+        }
+        
+        const updateProgress = () => {
+            if (loopState1.reverse && playbackController1.mode === 'reverse') {
+                updateWaveformProgress1();
+                reverseProgressAnimationId1 = requestAnimationFrame(updateProgress);
+            }
+        };
+        updateProgress();
+        
+        console.log('✅ Buffer-based reverse playback active for Track 1');
     } else {
-        // Stop reverse animation but keep loop points
-        stopReversePlayback(loopState1);
+        // Stop reverse animation and switch back to normal
+        if (reverseProgressAnimationId1) {
+            cancelAnimationFrame(reverseProgressAnimationId1);
+            reverseProgressAnimationId1 = null;
+        }
+        
+        playbackController1.switchToNormalMode();
+        
         // Re-enable normal loop button when turning off reverse
         loopBtn1.classList.add('active');
-        // Loop remains enabled in normal mode
-        // DON'T jump playhead - continue from current position
+        
+        console.log('✅ Switched back to normal playback for Track 1');
     }
 });
 
@@ -4782,6 +4847,24 @@ reverseLoopBtn2.addEventListener('click', () => {
     // Check if loop points are set
     if (loopState2.start === null || loopState2.end === null) {
         alert('⚠️ Please set loop points (A-B) first by clicking on the waveform!');
+        return;
+    }
+    
+    // Check if playback controller is available
+    if (!playbackController2) {
+        console.error('Playback controller not initialized. Falling back to legacy reverse playback.');
+        // Fall back to legacy behavior
+        loopState2.reverse = !loopState2.reverse;
+        loopState2.enabled = true;
+        reverseLoopBtn2.classList.toggle('active');
+        
+        if (loopState2.reverse && !audioElement2.paused) {
+            stopReversePlayback(loopState2);
+            loopState2.lastReverseTime = performance.now();
+            animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
+        } else {
+            stopReversePlayback(loopState2);
+        }
         return;
     }
     
@@ -4803,21 +4886,46 @@ reverseLoopBtn2.addEventListener('click', () => {
     }
     
     if (loopState2.reverse) {
-        // Stop any existing animation first to prevent duplicates
+        // Stop legacy reverse animation
         stopReversePlayback(loopState2);
-        // DON'T jump to end - let it play from current position for seamless transition
-        // Only start reverse animation if playing
+        
+        // Switch to buffer-based reverse playback
+        console.log('Switching to buffer-based reverse playback for Track 2');
+        playbackController2.setLoopPoints(loopState2.start, loopState2.end);
+        playbackController2.switchToReverseMode();
+        
+        // If paused, don't start playing automatically
         if (!audioElement2.paused) {
-            loopState2.lastReverseTime = performance.now();
-            animateReversePlayback(audioElement2, loopState2, updateWaveformProgress2);
+            playbackController2.play();
         }
+        
+        // Start progress animation for UI updates
+        if (reverseProgressAnimationId2) {
+            cancelAnimationFrame(reverseProgressAnimationId2);
+        }
+        
+        const updateProgress = () => {
+            if (loopState2.reverse && playbackController2.mode === 'reverse') {
+                updateWaveformProgress2();
+                reverseProgressAnimationId2 = requestAnimationFrame(updateProgress);
+            }
+        };
+        updateProgress();
+        
+        console.log('✅ Buffer-based reverse playback active for Track 2');
     } else {
-        // Stop reverse animation but keep loop points
-        stopReversePlayback(loopState2);
+        // Stop reverse animation and switch back to normal
+        if (reverseProgressAnimationId2) {
+            cancelAnimationFrame(reverseProgressAnimationId2);
+            reverseProgressAnimationId2 = null;
+        }
+        
+        playbackController2.switchToNormalMode();
+        
         // Re-enable normal loop button when turning off reverse
         loopBtn2.classList.add('active');
-        // Loop remains enabled in normal mode
-        // DON'T jump playhead - continue from current position
+        
+        console.log('✅ Switched back to normal playback for Track 2');
     }
 });
 
@@ -5474,13 +5582,31 @@ window.addEventListener('loadSequencerRecording', async (event) => {
 // Tempo sliders
 tempoSlider1.addEventListener('input', (e) => {
     const tempo = parseFloat(e.target.value);
-    audioElement1.playbackRate = tempo;
+    
+    // If we have a pitch shifter, tempo is independent of pitch
+    // Otherwise, combine tempo with pitch shift (vinyl-style)
+    if (pitchShifter1) {
+        audioElement1.playbackRate = tempo;
+    } else {
+        const pitch = parseFloat(pitchSlider1.value);
+        const pitchShift = Math.pow(2, pitch / 12);
+        audioElement1.playbackRate = tempo * pitchShift;
+    }
     tempoValue1.textContent = tempo.toFixed(2) + 'x';
 });
 
 tempoSlider2.addEventListener('input', (e) => {
     const tempo = parseFloat(e.target.value);
-    audioElement2.playbackRate = tempo;
+    
+    // If we have a pitch shifter, tempo is independent of pitch
+    // Otherwise, combine tempo with pitch shift (vinyl-style)
+    if (pitchShifter2) {
+        audioElement2.playbackRate = tempo;
+    } else {
+        const pitch = parseFloat(pitchSlider2.value);
+        const pitchShift = Math.pow(2, pitch / 12);
+        audioElement2.playbackRate = tempo * pitchShift;
+    }
     tempoValue2.textContent = tempo.toFixed(2) + 'x';
 });
 
@@ -5529,6 +5655,80 @@ panSlider2.addEventListener('input', (e) => {
         panValue2.textContent = `L ${Math.abs(pan)}%`;
     } else {
         panValue2.textContent = `R ${pan}%`;
+    }
+});
+
+// Pitch sliders
+pitchSlider1.addEventListener('input', (e) => {
+    const pitch = parseFloat(e.target.value);
+    
+    // Use Tone.js pitch shifter if available (true pitch shifting without tempo change)
+    if (pitchShifter1) {
+        pitchShifter1.pitch = pitch; // Set pitch in semitones
+    } else {
+        // Fallback to playback rate (affects both pitch and tempo)
+        const pitchShift = Math.pow(2, pitch / 12);
+        const currentTempo = parseFloat(tempoSlider1.value);
+        audioElement1.playbackRate = currentTempo * pitchShift;
+    }
+    
+    // Update label
+    if (pitch === 0) {
+        pitchValue1.textContent = '0';
+    } else if (pitch > 0) {
+        pitchValue1.textContent = `+${pitch.toFixed(1)}`;
+    } else {
+        pitchValue1.textContent = pitch.toFixed(1);
+    }
+});
+
+pitchSlider2.addEventListener('input', (e) => {
+    const pitch = parseFloat(e.target.value);
+    
+    // Use Tone.js pitch shifter if available (true pitch shifting without tempo change)
+    if (pitchShifter2) {
+        pitchShifter2.pitch = pitch; // Set pitch in semitones
+    } else {
+        // Fallback to playback rate (affects both pitch and tempo)
+        const pitchShift = Math.pow(2, pitch / 12);
+        const currentTempo = parseFloat(tempoSlider2.value);
+        audioElement2.playbackRate = currentTempo * pitchShift;
+    }
+    
+    // Update label
+    if (pitch === 0) {
+        pitchValue2.textContent = '0';
+    } else if (pitch > 0) {
+        pitchValue2.textContent = `+${pitch.toFixed(1)}`;
+    } else {
+        pitchValue2.textContent = pitch.toFixed(1);
+    }
+});
+
+// Tone sliders (filter control)
+toneSlider1.addEventListener('input', (e) => {
+    const freq = parseInt(e.target.value);
+    if (filter1) {
+        filter1.frequency.value = freq;
+    }
+    // Update label
+    if (freq >= 1000) {
+        toneValue1.textContent = (freq / 1000).toFixed(1) + 'kHz';
+    } else {
+        toneValue1.textContent = freq + 'Hz';
+    }
+});
+
+toneSlider2.addEventListener('input', (e) => {
+    const freq = parseInt(e.target.value);
+    if (filter2) {
+        filter2.frequency.value = freq;
+    }
+    // Update label
+    if (freq >= 1000) {
+        toneValue2.textContent = (freq / 1000).toFixed(1) + 'kHz';
+    } else {
+        toneValue2.textContent = freq + 'Hz';
     }
 });
 

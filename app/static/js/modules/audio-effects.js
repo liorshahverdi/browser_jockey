@@ -131,11 +131,31 @@ export function initAudioEffects(context, trackNumber) {
     // Create filter (low-pass by default)
     const filter = context.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = 20000; // Wide open by default
+    filter.frequency.value = 10000; // Middle position by default (allows brightening and darkening)
     filter.Q.value = 1.0;
     
     // Create ADSR envelope
     const adsr = createADSREnvelope(context);
+    
+    // Create pitch shifter using Tone.js if available
+    let pitchShifter = null;
+    if (typeof Tone !== 'undefined') {
+        try {
+            // Set Tone to use our existing AudioContext
+            if (!Tone.context || Tone.context.rawContext !== context) {
+                Tone.setContext(context);
+            }
+            pitchShifter = new Tone.PitchShift({
+                pitch: 0, // No pitch shift by default (in semitones)
+                windowSize: 0.1, // Smaller window for better quality
+                delayTime: 0, // No additional delay
+                feedback: 0 // No feedback
+            });
+            console.log(`Pitch shifter created for track ${trackNumber}`);
+        } catch (err) {
+            console.error('Error creating Tone.js pitch shifter:', err);
+        }
+    }
     
     return { 
         gain, 
@@ -143,47 +163,77 @@ export function initAudioEffects(context, trackNumber) {
         reverb: { convolver: reverb, wet: reverbWet, dry: reverbDry }, 
         delay: { node: delay, feedback, wet: delayWet, dry: delayDry }, 
         filter,
-        adsr
+        adsr,
+        pitchShifter
     };
 }
 
 // Connect effects chain for a track
 export function connectEffectsChain(source, effects, merger, audioContext) {
-    const { gain, panner, filter, reverb, delay } = effects;
+    const { gain, panner, filter, reverb, delay, pitchShifter } = effects;
     
     // Effects chain:
-    // source -> gain -> panner -> filter -> reverb (wet/dry) -> delay (wet/dry) -> merger
+    // source -> gain -> panner -> pitchShifter (if available) -> filter -> reverb (wet/dry) -> delay (wet/dry) -> merger
     
-    source.connect(gain);
-    gain.connect(panner);
-    panner.connect(filter);
+    // Wrap all connections in try-catch to make this function idempotent (safe to call multiple times)
+    try { source.connect(gain); } catch (e) { /* Already connected */ }
+    try { gain.connect(panner); } catch (e) { /* Already connected */ }
+    
+    // Insert pitch shifter if available
+    // Try both connection paths - one will succeed
+    if (pitchShifter) {
+        // Try connecting through pitch shifter
+        try {
+            panner.connect(pitchShifter.input);
+            console.log('✅ Panner → Pitch Shifter connected');
+        } catch (err) {
+            console.log('ℹ️ Panner → Pitch Shifter: already connected or unavailable');
+        }
+        
+        try {
+            pitchShifter.connect(filter);
+            console.log('✅ Pitch Shifter → Filter connected');
+        } catch (err) {
+            console.log('ℹ️ Pitch Shifter → Filter: already connected');
+        }
+    }
+    
+    // ALSO try direct connection as fallback
+    // If pitch shifter path is working, this will fail (already connected), which is fine
+    // If pitch shifter path is broken, this will succeed and audio will flow
+    try { 
+        panner.connect(filter);
+        console.log('✅ Panner → Filter direct connection (fallback)');
+    } catch (e) { 
+        console.log('ℹ️ Panner → Filter: already connected (using pitch shifter path)');
+    }
     
     // Reverb path
-    filter.connect(reverb.convolver);
-    reverb.convolver.connect(reverb.wet);
+    try { filter.connect(reverb.convolver); } catch (e) { /* Already connected */ }
+    try { reverb.convolver.connect(reverb.wet); } catch (e) { /* Already connected */ }
     
     // Dry path
-    filter.connect(reverb.dry);
+    try { filter.connect(reverb.dry); } catch (e) { /* Already connected */ }
     
     // Merge reverb wet and dry
     const reverbMix = audioContext.createGain();
-    reverb.wet.connect(reverbMix);
-    reverb.dry.connect(reverbMix);
+    try { reverb.wet.connect(reverbMix); } catch (e) { /* Already connected */ }
+    try { reverb.dry.connect(reverbMix); } catch (e) { /* Already connected */ }
     
     // Delay path
-    reverbMix.connect(delay.node);
-    delay.node.connect(delay.wet);
+    try { reverbMix.connect(delay.node); } catch (e) { /* Already connected */ }
+    try { delay.node.connect(delay.wet); } catch (e) { /* Already connected */ }
     
     // Dry path
-    reverbMix.connect(delay.dry);
+    try { reverbMix.connect(delay.dry); } catch (e) { /* Already connected */ }
     
     // Final merge and connect to mixer
     const finalMix = audioContext.createGain();
-    delay.wet.connect(finalMix);
-    delay.dry.connect(finalMix);
+    try { delay.wet.connect(finalMix); } catch (e) { /* Already connected */ }
+    try { delay.dry.connect(finalMix); } catch (e) { /* Already connected */ }
     
     // Connect to merger - let the panner's stereo output go through naturally
-    finalMix.connect(merger);
+    try { finalMix.connect(merger); } catch (e) { /* Already connected */ }
     
     return { reverbMix, finalMix };
 }
