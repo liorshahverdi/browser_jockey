@@ -52,10 +52,13 @@ export class PlaybackController {
             const elapsedTime = this.audioContext.currentTime - this.reverseStartTime;
             const loopDuration = this.loopEnd - this.loopStart;
             
-            // In reverse mode, we're moving backwards from our start offset
-            // Wrap around if we've looped
-            const reversePosition = (this.reverseStartOffset - elapsedTime) % loopDuration;
-            currentPosition = this.loopStart + (reversePosition < 0 ? loopDuration + reversePosition : reversePosition);
+            // As time elapsed, we moved forward through the reversed buffer
+            // So reversePosition increases from reverseStartOffset
+            const reversePosition = (this.reverseStartOffset + elapsedTime) % loopDuration;
+            // Convert to actual track time (decreasing as we go backwards)
+            currentPosition = this.loopEnd - reversePosition;
+            
+            console.log(`📍 Calculated position: reversePos=${reversePosition.toFixed(2)}s, actualTime=${currentPosition.toFixed(2)}s`);
         }
         
         // Stop buffer source if playing
@@ -63,15 +66,23 @@ export class PlaybackController {
             try {
                 this.bufferSource.stop();
                 this.bufferSource.disconnect();
+                console.log('⏹️ Buffer source stopped and disconnected');
             } catch (e) {
                 console.warn('Error stopping buffer source:', e);
             }
             this.bufferSource = null;
         }
         
+        // Clear reverse state
+        this.reverseStartTime = null;
+        this.reverseStartOffset = null;
+        
         // Resume media element at the calculated position
         if (this.audioElement) {
             this.audioElement.currentTime = currentPosition;
+            // Restore volume
+            this.audioElement.volume = 1;
+            console.log('🔊 Audio element volume restored');
             if (this.isPlaying) {
                 this.audioElement.play().catch(e => {
                     console.error('Error resuming audio element:', e);
@@ -80,13 +91,15 @@ export class PlaybackController {
         }
         
         this.mode = 'normal';
-        console.log(`✅ Switched to normal mode at position ${currentPosition.toFixed(2)}s`);
+        console.log(`✅ Switched to normal mode at position ${currentPosition.toFixed(2)}s, isPlaying=${this.isPlaying}`);
     }
 
     /**
      * Switch to reverse playback mode (AudioBufferSourceNode)
      */
     switchToReverseMode() {
+        console.log(`🔄 switchToReverseMode called for ${this.trackId}, current mode: ${this.mode}`);
+        
         if (this.mode === 'reverse') {
             console.log(`Already in reverse mode for ${this.trackId}`);
             return;
@@ -96,22 +109,39 @@ export class PlaybackController {
         
         // Validate loop points
         if (this.loopStart === null || this.loopEnd === null) {
-            console.error('Cannot switch to reverse mode: no loop points set');
+            console.error('❌ Cannot switch to reverse mode: no loop points set');
+            console.error(`   loopStart: ${this.loopStart}, loopEnd: ${this.loopEnd}`);
             return;
         }
+        
+        console.log(`✅ Loop points validated: start=${this.loopStart.toFixed(2)}s, end=${this.loopEnd.toFixed(2)}s`);
         
         // Store current playback state
         this.isPlaying = !this.audioElement.paused;
         const currentTime = this.audioElement.currentTime;
         
+        console.log(`📊 Audio element state: paused=${this.audioElement.paused}, currentTime=${currentTime.toFixed(2)}s`);
+        console.log(`📊 Will play in reverse: ${this.isPlaying}`);
+        
         // Pause media element (we'll use buffer source instead)
         if (this.audioElement) {
             this.audioElement.pause();
+            console.log('⏸️ Audio element paused for reverse playback');
+        }
+        
+        // Mute the audio element's volume to ensure no forward audio plays
+        // (MediaElementSource may still output even when paused)
+        if (this.audioElement) {
+            this.audioElement.volume = 0;
+            console.log('🔇 Audio element volume muted');
         }
         
         // Calculate position within loop
         let positionInLoop = currentTime - this.loopStart;
         const loopDuration = this.loopEnd - this.loopStart;
+        
+        console.log(`📊 Position calculation: currentTime=${currentTime.toFixed(2)}s, loopStart=${this.loopStart.toFixed(2)}s`);
+        console.log(`📊 Position in loop (before bounds check): ${positionInLoop.toFixed(2)}s`);
         
         // Ensure position is within loop bounds
         if (positionInLoop < 0) {
@@ -120,11 +150,13 @@ export class PlaybackController {
             positionInLoop = positionInLoop % loopDuration;
         }
         
+        console.log(`📊 Final position in loop: ${positionInLoop.toFixed(2)}s (loop duration: ${loopDuration.toFixed(2)}s)`);
+        
         // Start buffer source with reversed audio
         this.startReversePlayback(positionInLoop);
         
         this.mode = 'reverse';
-        console.log(`✅ Switched to reverse mode at loop position ${positionInLoop.toFixed(2)}s`);
+        console.log(`✅ Mode set to 'reverse' for ${this.trackId}`);
     }
 
     /**
@@ -132,12 +164,15 @@ export class PlaybackController {
      * @param {number} positionInLoop - Current position within the loop (0 = loop start)
      */
     startReversePlayback(positionInLoop = 0) {
+        console.log(`🔧 startReversePlayback called for ${this.trackId}, positionInLoop: ${positionInLoop.toFixed(2)}s`);
+        
         if (!this.bufferManager) {
-            console.error('BufferManager not set');
+            console.error('❌ BufferManager not set');
             return;
         }
         
         // Get reversed loop buffer
+        console.log(`🔧 Creating loop buffer: start=${this.loopStart}, end=${this.loopEnd}`);
         const reversedBuffer = this.bufferManager.createLoopBuffer(
             this.trackId,
             this.loopStart,
@@ -145,15 +180,18 @@ export class PlaybackController {
         );
         
         if (!reversedBuffer) {
-            console.error('Failed to create reversed buffer');
+            console.error('❌ Failed to create reversed buffer');
             return;
         }
+        
+        console.log(`✅ Got reversed buffer: duration=${reversedBuffer.duration.toFixed(2)}s, channels=${reversedBuffer.numberOfChannels}`);
         
         // Stop any existing buffer source
         if (this.bufferSource) {
             try {
                 this.bufferSource.stop();
                 this.bufferSource.disconnect();
+                console.log('🛑 Stopped previous buffer source');
             } catch (e) {
                 // Ignore errors from already-stopped sources
             }
@@ -166,8 +204,12 @@ export class PlaybackController {
         this.bufferSource.loopStart = 0;
         this.bufferSource.loopEnd = reversedBuffer.duration;
         
+        console.log(`🔧 Buffer source created with loop: ${this.bufferSource.loop}, loopEnd: ${this.bufferSource.loopEnd.toFixed(2)}s`);
+        
         // Connect to gain node, which connects to effects chain
         this.bufferSource.connect(this.gainNode);
+        console.log(`🔌 Buffer source connected to gainNode`);
+        console.log(`🔌 GainNode connected to effects chain: ${this.effectChainInput ? 'YES' : 'NO'}`);
         
         // The reversed buffer plays from end to start
         // If we're at position 2s in a 10s loop, in the reversed buffer
@@ -183,7 +225,9 @@ export class PlaybackController {
         // The buffer will loop seamlessly thanks to buffer.loop = true
         if (this.isPlaying) {
             this.bufferSource.start(0, reverseOffset);
-            console.log(`🎵 Reverse playback started at offset ${reverseOffset.toFixed(2)}s with seamless looping`);
+            console.log(`🎵 Reverse playback STARTED at offset ${reverseOffset.toFixed(2)}s with seamless looping`);
+        } else {
+            console.log(`⏸️ Reverse playback created but NOT started (isPlaying=false)`);
         }
     }
 
@@ -222,23 +266,41 @@ export class PlaybackController {
         
         if (this.mode === 'normal') {
             this.audioElement.pause();
+            console.log(`⏸️ Normal playback paused for ${this.trackId}`);
         } else {
             // For buffer source, we need to stop and remember position
             if (this.bufferSource) {
                 try {
                     // Calculate current position before stopping
+                    let currentPosition = this.loopStart;
                     if (this.reverseStartTime) {
                         const elapsedTime = this.audioContext.currentTime - this.reverseStartTime;
                         const loopDuration = this.loopEnd - this.loopStart;
                         const reversePosition = (this.reverseStartOffset - elapsedTime) % loopDuration;
                         this.currentPositionInLoop = reversePosition < 0 ? loopDuration + reversePosition : reversePosition;
+                        currentPosition = this.loopEnd - this.currentPositionInLoop;
                     }
+                    
+                    console.log(`⏸️ Stopping reverse playback for ${this.trackId} at position ${currentPosition.toFixed(2)}s`);
                     
                     this.bufferSource.stop();
                     this.bufferSource.disconnect();
                     this.bufferSource = null;
+                    
+                    // Update audio element to match current position
+                    this.audioElement.currentTime = currentPosition;
+                    
+                    // Restore volume
+                    this.audioElement.volume = 1;
+                    
+                    // Switch back to normal mode
+                    this.mode = 'normal';
+                    this.reverseStartTime = null;
+                    this.reverseStartOffset = null;
+                    
+                    console.log(`✅ Switched back to normal mode at ${currentPosition.toFixed(2)}s`);
                 } catch (e) {
-                    console.warn('Error stopping buffer source:', e);
+                    console.error(`❌ Error stopping buffer source for ${this.trackId}:`, e);
                 }
             }
         }
@@ -299,12 +361,27 @@ export class PlaybackController {
             return this.audioElement.currentTime;
         } else {
             // Calculate position in reverse mode
-            if (this.reverseStartTime && this.bufferSource) {
-                const elapsedTime = this.audioContext.currentTime - this.reverseStartTime;
+            if (this.reverseStartTime && this.bufferSource && this.loopStart !== null && this.loopEnd !== null) {
+                const currentTime = this.audioContext.currentTime;
+                const elapsedTime = currentTime - this.reverseStartTime;
                 const loopDuration = this.loopEnd - this.loopStart;
-                const reversePosition = (this.reverseStartOffset - elapsedTime) % loopDuration;
-                const positionInLoop = reversePosition < 0 ? loopDuration + reversePosition : reversePosition;
-                return this.loopStart + (loopDuration - positionInLoop);
+                
+                // As the reversed buffer plays forward, we move through it
+                // reversePosition increases from reverseStartOffset to loopDuration, then wraps
+                let reversePosition = (this.reverseStartOffset + elapsedTime) % loopDuration;
+                
+                // Convert buffer position to actual track time
+                // In the reversed buffer, position 0 = loopEnd, position loopDuration = loopStart
+                // So as reversePosition increases, actualTime decreases (moving backwards)
+                const actualTime = this.loopEnd - reversePosition;
+                
+                // Debug logging every 0.5 seconds
+                if (!this._lastLogTime || (currentTime - this._lastLogTime) > 0.5) {
+                    console.log(`⏱️ ${this.trackId} Reverse Position: elapsed=${elapsedTime.toFixed(2)}s, reversePos=${reversePosition.toFixed(2)}s, actualTime=${actualTime.toFixed(2)}s`);
+                    this._lastLogTime = currentTime;
+                }
+                
+                return actualTime;
             }
             return this.loopStart;
         }

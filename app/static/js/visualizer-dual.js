@@ -2932,9 +2932,15 @@ function initAudioContext() {
             console.log('✅ Track 1 file connected to effect chain and merger');
             
             // Connect playback controller to effects chain if it exists
-            if (playbackController1 && !playbackController1.gainNode.numberOfOutputs) {
-                playbackController1.connectToEffectsChain(filter1);
-                console.log('✅ PlaybackController 1 connected to effects chain');
+            // The buffer source should connect to gain1 (entry point of effects chain)
+            if (playbackController1) {
+                try {
+                    playbackController1.effectChainInput = gain1;
+                    playbackController1.connectToEffectsChain(gain1);
+                    console.log('✅ PlaybackController 1 connected to effects chain (gain1)');
+                } catch (e) {
+                    console.warn('PlaybackController 1 already connected:', e.message);
+                }
             }
         } catch (e) {
             console.warn('⚠️ Track 1 connection error (already connected):', e.message);
@@ -2944,16 +2950,14 @@ function initAudioContext() {
         console.log('ℹ️ Track 1 already connected to effect chain');
         
         // Still try to connect playback controller if not done yet
-        if (playbackController1 && filter1) {
+        if (playbackController1 && gain1) {
             try {
-                // Check if already connected by checking if gain node has outputs
-                const hasOutputs = playbackController1.gainNode.numberOfOutputs > 0;
-                if (!hasOutputs) {
-                    playbackController1.connectToEffectsChain(filter1);
-                    console.log('✅ PlaybackController 1 connected to effects chain (late connection)');
-                }
+                playbackController1.effectChainInput = gain1;
+                playbackController1.connectToEffectsChain(gain1);
+                console.log('✅ PlaybackController 1 connected to effects chain (late connection to gain1)');
             } catch (e) {
                 // Already connected, ignore
+                console.log('PlaybackController 1 connection skipped:', e.message);
             }
         }
     }
@@ -2996,9 +3000,15 @@ function initAudioContext() {
             console.log('✅ Track 2 file connected to effect chain and merger');
             
             // Connect playback controller to effects chain if it exists
-            if (playbackController2 && !playbackController2.gainNode.numberOfOutputs) {
-                playbackController2.connectToEffectsChain(filter2);
-                console.log('✅ PlaybackController 2 connected to effects chain');
+            // The buffer source should connect to gain2 (entry point of effects chain)
+            if (playbackController2) {
+                try {
+                    playbackController2.effectChainInput = gain2;
+                    playbackController2.connectToEffectsChain(gain2);
+                    console.log('✅ PlaybackController 2 connected to effects chain (gain2)');
+                } catch (e) {
+                    console.warn('PlaybackController 2 already connected:', e.message);
+                }
             }
         } catch (e) {
             console.warn('⚠️ Track 2 connection error (already connected):', e.message);
@@ -3008,16 +3018,14 @@ function initAudioContext() {
         console.log('ℹ️ Track 2 already connected to effect chain');
         
         // Still try to connect playback controller if not done yet
-        if (playbackController2 && filter2) {
+        if (playbackController2 && gain2) {
             try {
-                // Check if already connected
-                const hasOutputs = playbackController2.gainNode.numberOfOutputs > 0;
-                if (!hasOutputs) {
-                    playbackController2.connectToEffectsChain(filter2);
-                    console.log('✅ PlaybackController 2 connected to effects chain (late connection)');
-                }
+                playbackController2.effectChainInput = gain2;
+                playbackController2.connectToEffectsChain(gain2);
+                console.log('✅ PlaybackController 2 connected to effects chain (late connection to gain2)');
             } catch (e) {
                 // Already connected, ignore
+                console.log('PlaybackController 2 connection skipped:', e.message);
             }
         }
     }
@@ -3646,8 +3654,9 @@ audioFile1.addEventListener('change', async (e) => {
             bufferManager1 = new AudioBufferManager(audioContext);
             await bufferManager1.loadAudioBuffer(file, 'track1');
             
-            // Create playback controller - will connect later once source1 is created
-            playbackController1 = new PlaybackController(audioContext, audioElement1, filter1, 'track1');
+            // Create playback controller - it will connect to effects chain later in initAudioContext
+            // Pass null for now since gain1 doesn't exist yet
+            playbackController1 = new PlaybackController(audioContext, audioElement1, null, 'track1');
             playbackController1.bufferManager = bufferManager1;
             
             console.log('✅ Buffer-based reverse playback initialized for Track 1');
@@ -3802,8 +3811,9 @@ audioFile2.addEventListener('change', async (e) => {
             bufferManager2 = new AudioBufferManager(audioContext);
             await bufferManager2.loadAudioBuffer(file, 'track2');
             
-            // Create playback controller - will connect later once source2 is created
-            playbackController2 = new PlaybackController(audioContext, audioElement2, filter2, 'track2');
+            // Create playback controller - it will connect to effects chain later in initAudioContext
+            // Pass null for now since gain2 doesn't exist yet
+            playbackController2 = new PlaybackController(audioContext, audioElement2, null, 'track2');
             playbackController2.bufferManager = bufferManager2;
             
             console.log('✅ Buffer-based reverse playback initialized for Track 2');
@@ -4392,7 +4402,20 @@ waveform2.parentElement.addEventListener('mousemove', (e) => {
 // Helper function to update waveform progress for Track 1
 function updateWaveformProgress1() {
     if (audioElement1.duration) {
-        const currentTime = audioElement1.currentTime;
+        // Use PlaybackController if in reverse mode, otherwise use audio element
+        let currentTime;
+        if (playbackController1 && playbackController1.mode === 'reverse') {
+            currentTime = playbackController1.getCurrentTime();
+            
+            // Debug logging (throttled)
+            if (!updateWaveformProgress1._lastLog || (Date.now() - updateWaveformProgress1._lastLog) > 500) {
+                console.log(`📊 updateWaveformProgress1: mode=reverse, currentTime=${currentTime.toFixed(2)}s`);
+                updateWaveformProgress1._lastLog = Date.now();
+            }
+        } else {
+            currentTime = audioElement1.currentTime;
+        }
+        
         const duration = audioElement1.duration;
         
         // Calculate visible time window based on zoom
@@ -4405,6 +4428,13 @@ function updateWaveformProgress1() {
             // Map current time to visible waveform position
             const percentage = ((currentTime - visibleStartTime) / visibleDuration) * 100;
             waveformProgress1.style.width = Math.max(0, Math.min(100, percentage)) + '%';
+            
+            // Debug logging (throttled)
+            if (playbackController1 && playbackController1.mode === 'reverse' && 
+                (!updateWaveformProgress1._lastWidthLog || (Date.now() - updateWaveformProgress1._lastWidthLog) > 500)) {
+                console.log(`📏 Progress bar width set to ${percentage.toFixed(1)}% (currentTime=${currentTime.toFixed(2)}s, visibleStart=${visibleStartTime.toFixed(2)}s, visibleDuration=${visibleDuration.toFixed(2)}s)`);
+                updateWaveformProgress1._lastWidthLog = Date.now();
+            }
         } else if (currentTime < visibleStartTime) {
             // Playhead is before visible range
             waveformProgress1.style.width = '0%';
@@ -4418,7 +4448,14 @@ function updateWaveformProgress1() {
 // Helper function to update waveform progress for Track 2
 function updateWaveformProgress2() {
     if (audioElement2.duration) {
-        const currentTime = audioElement2.currentTime;
+        // Use PlaybackController if in reverse mode, otherwise use audio element
+        let currentTime;
+        if (playbackController2 && playbackController2.mode === 'reverse') {
+            currentTime = playbackController2.getCurrentTime();
+        } else {
+            currentTime = audioElement2.currentTime;
+        }
+        
         const duration = audioElement2.duration;
         
         // Calculate visible time window based on zoom
@@ -4818,10 +4855,19 @@ reverseLoopBtn1.addEventListener('click', () => {
             cancelAnimationFrame(reverseProgressAnimationId1);
         }
         
+        let animFrameCount = 0;
         const updateProgress = () => {
             if (loopState1.reverse && playbackController1.mode === 'reverse') {
+                // Debug logging every 10 frames (~6 times per second)
+                animFrameCount++;
+                if (animFrameCount % 10 === 0) {
+                    const currentTime = playbackController1.getCurrentTime();
+                    console.log(`🎬 Animation frame ${animFrameCount}: calling updateWaveformProgress1(), currentTime=${currentTime.toFixed(2)}s`);
+                }
                 updateWaveformProgress1();
                 reverseProgressAnimationId1 = requestAnimationFrame(updateProgress);
+            } else {
+                console.log(`⛔ Animation loop stopped: reverse=${loopState1.reverse}, mode=${playbackController1.mode}`);
             }
         };
         updateProgress();
@@ -5662,17 +5708,21 @@ panSlider2.addEventListener('input', (e) => {
 pitchSlider1.addEventListener('input', (e) => {
     const pitch = parseFloat(e.target.value);
     
-    // Use Tone.js pitch shifter if available (true pitch shifting without tempo change)
-    if (pitchShifter1) {
-        pitchShifter1.pitch = pitch; // Set pitch in semitones
-    } else {
-        // Fallback to playback rate (affects both pitch and tempo)
-        const pitchShift = Math.pow(2, pitch / 12);
-        const currentTempo = parseFloat(tempoSlider1.value);
-        audioElement1.playbackRate = currentTempo * pitchShift;
-    }
+    // NOTE: Tone.js pitch shifting is currently disabled due to Web Audio API integration issues
+    // Using playbackRate instead (this affects BOTH pitch and tempo)
+    const pitchShift = Math.pow(2, pitch / 12); // Convert semitones to frequency ratio
+    const baseTempo = 1.0; // Base tempo (pitch slider assumes tempo starts at 1.0)
+    const combinedRate = baseTempo * pitchShift;
     
-    // Update label
+    audioElement1.playbackRate = combinedRate;
+    
+    // Update tempo slider to show the actual playback rate
+    tempoSlider1.value = combinedRate;
+    tempoValue1.textContent = `${combinedRate.toFixed(2)}x`;
+    
+    console.log(`Track 1 pitch: ${pitch} semitones, playback rate: ${combinedRate.toFixed(3)}x`);
+    
+    // Update pitch label
     if (pitch === 0) {
         pitchValue1.textContent = '0';
     } else if (pitch > 0) {
@@ -5685,17 +5735,21 @@ pitchSlider1.addEventListener('input', (e) => {
 pitchSlider2.addEventListener('input', (e) => {
     const pitch = parseFloat(e.target.value);
     
-    // Use Tone.js pitch shifter if available (true pitch shifting without tempo change)
-    if (pitchShifter2) {
-        pitchShifter2.pitch = pitch; // Set pitch in semitones
-    } else {
-        // Fallback to playback rate (affects both pitch and tempo)
-        const pitchShift = Math.pow(2, pitch / 12);
-        const currentTempo = parseFloat(tempoSlider2.value);
-        audioElement2.playbackRate = currentTempo * pitchShift;
-    }
+    // NOTE: Tone.js pitch shifting is currently disabled due to Web Audio API integration issues
+    // Using playbackRate instead (this affects BOTH pitch and tempo)
+    const pitchShift = Math.pow(2, pitch / 12); // Convert semitones to frequency ratio
+    const baseTempo = 1.0; // Base tempo (pitch slider assumes tempo starts at 1.0)
+    const combinedRate = baseTempo * pitchShift;
     
-    // Update label
+    audioElement2.playbackRate = combinedRate;
+    
+    // Update tempo slider to show the actual playback rate
+    tempoSlider2.value = combinedRate;
+    tempoValue2.textContent = `${combinedRate.toFixed(2)}x`;
+    
+    console.log(`Track 2 pitch: ${pitch} semitones, playback rate: ${combinedRate.toFixed(3)}x`);
+    
+    // Update pitch label
     if (pitch === 0) {
         pitchValue2.textContent = '0';
     } else if (pitch > 0) {
@@ -5705,30 +5759,64 @@ pitchSlider2.addEventListener('input', (e) => {
     }
 });
 
-// Tone sliders (filter control)
+// Tone sliders (EQ-style control using highshelf filter)
 toneSlider1.addEventListener('input', (e) => {
-    const freq = parseInt(e.target.value);
-    if (filter1) {
-        filter1.frequency.value = freq;
+    const value = parseInt(e.target.value);
+    
+    if (filter1 && audioContext) {
+        // Map slider value (20-20000) to gain control (-12dB to +12dB)
+        // Center point (10000) = 0dB (no change)
+        // Lower values = cut highs, higher values = boost highs
+        const normalizedValue = (value - 10000) / 10000; // -1 to +1
+        const gainDB = normalizedValue * 12; // -12dB to +12dB
+        
+        // Use highshelf filter for tone control
+        filter1.type = 'highshelf';
+        filter1.frequency.value = 2000; // Shelf frequency at 2kHz
+        filter1.gain.value = gainDB;
+        
+        console.log(`Track 1 tone (highshelf) set to ${gainDB.toFixed(1)}dB at 2kHz`);
     }
+    
     // Update label
-    if (freq >= 1000) {
-        toneValue1.textContent = (freq / 1000).toFixed(1) + 'kHz';
+    const normalizedValue = (value - 10000) / 10000;
+    const gainDB = normalizedValue * 12;
+    if (Math.abs(gainDB) < 0.5) {
+        toneValue1.textContent = 'Flat';
+    } else if (gainDB > 0) {
+        toneValue1.textContent = `+${gainDB.toFixed(1)}dB`;
     } else {
-        toneValue1.textContent = freq + 'Hz';
+        toneValue1.textContent = `${gainDB.toFixed(1)}dB`;
     }
 });
 
 toneSlider2.addEventListener('input', (e) => {
-    const freq = parseInt(e.target.value);
-    if (filter2) {
-        filter2.frequency.value = freq;
+    const value = parseInt(e.target.value);
+    
+    if (filter2 && audioContext) {
+        // Map slider value (20-20000) to gain control (-12dB to +12dB)
+        // Center point (10000) = 0dB (no change)
+        // Lower values = cut highs, higher values = boost highs
+        const normalizedValue = (value - 10000) / 10000; // -1 to +1
+        const gainDB = normalizedValue * 12; // -12dB to +12dB
+        
+        // Use highshelf filter for tone control
+        filter2.type = 'highshelf';
+        filter2.frequency.value = 2000; // Shelf frequency at 2kHz
+        filter2.gain.value = gainDB;
+        
+        console.log(`Track 2 tone (highshelf) set to ${gainDB.toFixed(1)}dB at 2kHz`);
     }
+    
     // Update label
-    if (freq >= 1000) {
-        toneValue2.textContent = (freq / 1000).toFixed(1) + 'kHz';
+    const normalizedValue = (value - 10000) / 10000;
+    const gainDB = normalizedValue * 12;
+    if (Math.abs(gainDB) < 0.5) {
+        toneValue2.textContent = 'Flat';
+    } else if (gainDB > 0) {
+        toneValue2.textContent = `+${gainDB.toFixed(1)}dB`;
     } else {
-        toneValue2.textContent = freq + 'Hz';
+        toneValue2.textContent = `${gainDB.toFixed(1)}dB`;
     }
 });
 
