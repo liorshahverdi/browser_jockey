@@ -871,12 +871,26 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
         if (isReverseMode && isPlaying) {
             console.log('🔄 Restarting reverse mode with new timestretched buffer');
             const currentPosition = playbackCtrl.currentPositionInLoop || 0;
-            playbackCtrl.pause();
+            
+            // Stop the old buffer source without calling pause() (which would switch to normal mode)
+            if (playbackCtrl.bufferSource) {
+                try {
+                    playbackCtrl.bufferSource.stop();
+                    playbackCtrl.bufferSource.disconnect();
+                    playbackCtrl.bufferSource = null;
+                } catch (e) {
+                    // Ignore errors from already-stopped sources
+                }
+            }
+            
             // Ensure loop points are set for position tracking
             playbackCtrl.loopStart = loopState.start;
             playbackCtrl.loopEnd = loopState.end;
-            playbackCtrl.startReversePlayback(currentPosition, reversedStretchedBuffer);
+            
+            // Set isPlaying BEFORE calling startReversePlayback
             playbackCtrl.isPlaying = true;
+            
+            playbackCtrl.startReversePlayback(currentPosition, reversedStretchedBuffer);
         }
         // If playing (not in reverse mode), switch to forward buffer playback
         else if (!isReverseMode && isPlaying) {
