@@ -110,9 +110,67 @@ export async function initAudioEffects(context, trackNumber) {
     const gain = context.createGain();
     gain.gain.value = 1.0;
     
-    // Create stereo panner (for left/right panning)
-    const panner = context.createStereoPanner();
-    panner.pan.value = 0; // Center by default
+    // Simple stereo panning using splitter/merger with gain nodes
+    // Route BOTH input channels to BOTH output channels for proper stereo panning
+    const splitter = context.createChannelSplitter(2);
+    const merger = context.createChannelMerger(2);
+    
+    // Create 4 gain nodes for routing both inputs to both outputs
+    const leftToLeftGain = context.createGain();
+    const leftToRightGain = context.createGain();
+    const rightToLeftGain = context.createGain();
+    const rightToRightGain = context.createGain();
+    
+    leftToLeftGain.gain.value = 1.0;
+    leftToRightGain.gain.value = 1.0;
+    rightToLeftGain.gain.value = 1.0;
+    rightToRightGain.gain.value = 1.0;
+    
+    // Route: input → splitter → [4 gain paths] → merger → output
+    // Left input to both outputs
+    splitter.connect(leftToLeftGain, 0);
+    splitter.connect(leftToRightGain, 0);
+    // Right input to both outputs  
+    splitter.connect(rightToLeftGain, 1);
+    splitter.connect(rightToRightGain, 1);
+    
+    // Connect to output channels (multiple sources sum)
+    leftToLeftGain.connect(merger, 0, 0);     // → left output
+    rightToLeftGain.connect(merger, 0, 0);    // → left output
+    leftToRightGain.connect(merger, 0, 1);    // → right output
+    rightToRightGain.connect(merger, 0, 1);   // → right output
+    
+    // Pan control object
+    const panControl = {
+        _value: 0,
+        get value() { return this._value; },
+        set value(val) {
+            this._value = Math.max(-1, Math.min(1, val));
+            // When pan = 1 (right): left output muted, right output full
+            // When pan = -1 (left): left output full, right output muted
+            const leftOut = 1.0 - Math.max(0, this._value);  // 1.0 at center/left, 0.0 at right
+            const rightOut = 1.0 + Math.min(0, this._value); // 1.0 at center/right, 0.0 at left
+            
+            // Apply same gain to both input channels for each output
+            leftToLeftGain.gain.value = leftOut;
+            rightToLeftGain.gain.value = leftOut;
+            leftToRightGain.gain.value = rightOut;
+            rightToRightGain.gain.value = rightOut;
+        }
+    };
+    
+    // Panner wrapper object
+    const pannerWrapper = {
+        input: splitter,
+        output: merger,
+        pan: panControl,
+        connect(destination) {
+            this.output.connect(destination);
+        },
+        disconnect() {
+            this.output.disconnect();
+        }
+    };
     
     // Create reverb
     const reverb = createReverb(context);
@@ -187,7 +245,7 @@ export async function initAudioEffects(context, trackNumber) {
     
     return { 
         gain, 
-        panner,
+        panner: pannerWrapper,
         reverb: { convolver: reverb, wet: reverbWet, dry: reverbDry }, 
         delay: { node: delay, feedback, wet: delayWet, dry: delayDry }, 
         filter,
@@ -208,14 +266,24 @@ export function connectEffectsChain(source, effects, merger, audioContext, times
     
     // Wrap all connections in try-catch to make this function idempotent (safe to call multiple times)
     try { source.connect(gain); } catch (e) { /* Already connected */ }
-    try { gain.connect(panner); } catch (e) { /* Already connected */ }
+    // Custom panner has input/output properties
+    try { 
+        if (panner.input) {
+            gain.connect(panner.input);
+        } else {
+            gain.connect(panner);
+        }
+    } catch (e) { /* Already connected */ }
     
     // Insert timestretch node if available
-    let currentNode = panner;
+    let currentNode = panner.output || panner;
     if (timestretchNode) {
         try {
             panner.disconnect();
-            panner.connect(timestretchNode);
+            if (panner.output) {
+                panner.output.disconnect();
+            }
+            (panner.output || panner).connect(timestretchNode);
             currentNode = timestretchNode;
             console.log('✅ Timestretch node connected in chain');
         } catch (err) {

@@ -3071,7 +3071,7 @@ async function initAudioContext() {
         dataArray = new Uint8Array(bufferLength);
         
         // Create mixer gain node to combine both stereo tracks
-        // Using a GainNode instead of ChannelMerger because both tracks output stereo
+        // Using a GainNode to sum multiple stereo inputs while preserving stereo
         merger = audioContext.createGain();
         merger.gain.value = 1.0;
         
@@ -3095,12 +3095,12 @@ async function initAudioContext() {
         // Connect merger to master effects chain
         // merger -> filterMaster -> pannerMaster -> reverbMaster -> delayMaster -> gainMaster -> analyser/destination
         merger.connect(filterMaster);
-        filterMaster.connect(pannerMaster);
+        filterMaster.connect(pannerMaster.input || pannerMaster);
         
         // Reverb path
-        pannerMaster.connect(reverbMaster.convolver);
+        (pannerMaster.output || pannerMaster).connect(reverbMaster.convolver);
         reverbMaster.convolver.connect(reverbMaster.wet);
-        pannerMaster.connect(reverbMaster.dry);
+        (pannerMaster.output || pannerMaster).connect(reverbMaster.dry);
         
         const reverbMixMaster = audioContext.createGain();
         reverbMaster.wet.connect(reverbMixMaster);
@@ -6115,7 +6115,6 @@ panSlider1.addEventListener('input', (e) => {
     const pan = parseInt(e.target.value);
     if (panner1) {
         panner1.pan.value = pan / 100; // Convert to -1.0 to 1.0 range
-        console.log(`Track 1 pan: ${pan}% (${panner1.pan.value.toFixed(2)})`);
     }
     // Update label
     if (pan === 0) {
@@ -6131,7 +6130,6 @@ panSlider2.addEventListener('input', (e) => {
     const pan = parseInt(e.target.value);
     if (panner2) {
         panner2.pan.value = pan / 100; // Convert to -1.0 to 1.0 range
-        console.log(`Track 2 pan: ${pan}% (${panner2.pan.value.toFixed(2)})`);
     }
     // Update label
     if (pan === 0) {
@@ -7371,9 +7369,11 @@ function animate() {
                 }
             });
             
-            scene.rotation.y += 0.002 + bassLevel * 0.005 + Math.sin(Date.now() * 0.001) * 0.001;
-            scene.rotation.z = Math.sin(Date.now() * 0.001) * trebleLevel * 0.03;
-            scene.rotation.x = Math.cos(Date.now() * 0.0008) * bassLevel * 0.02;
+            if (scene) {
+                scene.rotation.y += 0.002 + bassLevel * 0.005 + Math.sin(Date.now() * 0.001) * 0.001;
+                scene.rotation.z = Math.sin(Date.now() * 0.001) * trebleLevel * 0.03;
+                scene.rotation.x = Math.cos(Date.now() * 0.0008) * bassLevel * 0.02;
+            }
             
         } else if (currentMode === 'bars') {
             visualizationObjects.forEach((bar, i) => {
@@ -7528,11 +7528,15 @@ function animate() {
     }
     
     // Smooth camera movement
-    camera.position.x += (cameraRotation.y - camera.position.x) * 0.05;
-    camera.position.y = 10 + cameraRotation.x * 10;
-    camera.lookAt(scene.position);
+    if (camera && scene) {
+        camera.position.x += (cameraRotation.y - camera.position.x) * 0.05;
+        camera.position.y = 10 + cameraRotation.x * 10;
+        camera.lookAt(scene.position);
+    }
     
-    renderer.render(scene, camera);
+    if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+    }
 }
 
 // For audio drawing
