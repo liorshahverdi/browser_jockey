@@ -894,33 +894,6 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
                 playbackCtrl.isPlaying = true; // Set BEFORE calling startForwardBufferPlayback
                 playbackCtrl.startForwardBufferPlayback(currentPosition);
             }
-            
-            // Auto-adjust zoom based on stretch ratio
-            const zoomState = trackNum === 1 ? zoomState1 : zoomState2;
-            if (stretchRatio !== 1.0 && zoomState) {
-                // Stretch < 1.0 (slower) = zoom in, Stretch > 1.0 (faster) = zoom out
-                const targetZoom = 1.0 / stretchRatio;
-                const zoomLevel = trackNum === 1 ? zoomLevel1Display : zoomLevel2Display;
-                
-                if (targetZoom !== zoomState.level) {
-                    zoomState.level = Math.max(1, Math.min(10, targetZoom));
-                    if (zoomLevel) {
-                        zoomLevel.textContent = `${zoomState.level.toFixed(1)}x`;
-                    }
-                    
-                    // Redraw waveform with new zoom
-                    const waveform = trackNum === 1 ? waveform1 : waveform2;
-                    const trackId = `track${trackNum}`;
-                    if (bufferManager1 || bufferManager2) {
-                        const bufferMgr = trackNum === 1 ? bufferManager1 : bufferManager2;
-                        const audioBuffer = bufferMgr?.buffers?.get(trackId)?.original;
-                        if (audioBuffer) {
-                            redrawWaveformWithZoom(waveform, audioBuffer, zoomState, trackId);
-                            console.log(`🔍 Auto-zoomed to ${zoomState.level.toFixed(1)}x for ${stretchRatio.toFixed(2)}x stretch`);
-                        }
-                    }
-                }
-            }
         }
         
         // Update UI
