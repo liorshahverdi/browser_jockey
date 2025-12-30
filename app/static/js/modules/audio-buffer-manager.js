@@ -210,10 +210,13 @@ export class AudioBufferManager {
                 player.start(0);
             }, outputDuration);
 
+            // Extract the raw AudioBuffer from ToneAudioBuffer
+            const rawBuffer = processedBuffer.get ? processedBuffer.get() : processedBuffer._buffer || processedBuffer;
+            
             // Reverse if needed
-            let finalBuffer = processedBuffer;
+            let finalBuffer = rawBuffer;
             if (reverse) {
-                finalBuffer = this.reverseAudioBuffer(processedBuffer);
+                finalBuffer = this.reverseAudioBuffer(rawBuffer);
             }
 
             // Cache the result
