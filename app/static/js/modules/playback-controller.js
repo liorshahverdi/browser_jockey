@@ -27,7 +27,8 @@ export class PlaybackController {
         
         // References (set externally)
         this.bufferManager = null;
-        this.timestretchedBuffer = null; // Store pre-rendered timestretched buffer
+        this.timestretchedBuffer = null; // Store pre-rendered timestretched buffer (forward)
+        this.timestretchedBufferReversed = null; // Store pre-rendered timestretched buffer (reversed)
         
         // For tracking playback position in reverse mode
         this.reverseStartTime = null;
@@ -37,7 +38,7 @@ export class PlaybackController {
     }
 
     /**
-     * Switch to normal playback mode (MediaElementSourceNode)
+     * Switch to normal playback mode (MediaElementSourceNode or BufferSourceNode if timestretched)
      */
     switchToNormalMode() {
         if (this.mode === 'normal') {
@@ -54,9 +55,12 @@ export class PlaybackController {
             const elapsedTime = this.audioContext.currentTime - this.reverseStartTime;
             const loopDuration = this.loopEnd - this.loopStart;
             
+            // Account for playback rate in position calculation
+            const effectiveElapsed = elapsedTime * (this.playbackRate || 1.0);
+            
             // As time elapsed, we moved forward through the reversed buffer
             // So reversePosition increases from reverseStartOffset
-            const reversePosition = (this.reverseStartOffset + elapsedTime) % loopDuration;
+            const reversePosition = (this.reverseStartOffset + effectiveElapsed) % loopDuration;
             // Convert to actual track time (decreasing as we go backwards)
             currentPosition = this.loopEnd - reversePosition;
             
@@ -79,16 +83,23 @@ export class PlaybackController {
         this.reverseStartTime = null;
         this.reverseStartOffset = null;
         
-        // Resume media element at the calculated position
-        if (this.audioElement) {
-            this.audioElement.currentTime = currentPosition;
-            // Restore volume
-            this.audioElement.volume = 1;
-            console.log('🔊 Audio element volume restored');
-            if (this.isPlaying) {
-                this.audioElement.play().catch(e => {
-                    console.error('Error resuming audio element:', e);
-                });
+        // If timestretched buffer exists, use forward buffer source mode
+        // Otherwise use media element
+        if (this.timestretchedBuffer && this.isPlaying) {
+            console.log('🎵 Using timestretched buffer for forward playback');
+            this.startForwardBufferPlayback(currentPosition);
+        } else {
+            // Resume media element at the calculated position
+            if (this.audioElement) {
+                this.audioElement.currentTime = currentPosition;
+                // Restore volume
+                this.audioElement.volume = 1;
+                console.log('🔊 Audio element volume restored');
+                if (this.isPlaying) {
+                    this.audioElement.play().catch(e => {
+                        console.error('Error resuming audio element:', e);
+                    });
+                }
             }
         }
         
@@ -154,8 +165,10 @@ export class PlaybackController {
         
         console.log(`📊 Final position in loop: ${positionInLoop.toFixed(2)}s (loop duration: ${loopDuration.toFixed(2)}s)`);
         
-        // Start buffer source with reversed audio (use timestretched buffer if available)
-        this.startReversePlayback(positionInLoop, this.timestretchedBuffer);
+        // Start buffer source with reversed audio
+        // Use reversed timestretched buffer if available, otherwise generate standard reversed buffer
+        const bufferToUse = this.timestretchedBufferReversed || null;
+        this.startReversePlayback(positionInLoop, bufferToUse);
         
         this.mode = 'reverse';
         console.log(`✅ Mode set to 'reverse' for ${this.trackId}`);
@@ -240,6 +253,63 @@ export class PlaybackController {
             console.log(`🎵 Reverse playback STARTED at offset ${reverseOffset.toFixed(2)}s with seamless looping`);
         } else {
             console.log(`⏸️ Reverse playback created but NOT started (isPlaying=false)`);
+        }
+    }
+
+    /**
+     * Start forward playback using AudioBufferSourceNode (for timestretched audio)
+     * @param {number} positionInLoop - Current position within the loop (0 = loop start)
+     */
+    startForwardBufferPlayback(positionInLoop = 0) {
+        console.log(`🔧 startForwardBufferPlayback called for ${this.trackId}, positionInLoop: ${positionInLoop.toFixed(2)}s`);
+        
+        if (!this.timestretchedBuffer) {
+            console.error('❌ No timestretched buffer available for forward playback');
+            return;
+        }
+        
+        console.log(`✅ Using timestretched forward buffer: duration=${this.timestretchedBuffer.duration.toFixed(2)}s`);
+        
+        // Stop any existing buffer source
+        if (this.bufferSource) {
+            try {
+                this.bufferSource.stop();
+                this.bufferSource.disconnect();
+                console.log('🛑 Stopped previous buffer source');
+            } catch (e) {
+                // Ignore errors from already-stopped sources
+            }
+        }
+        
+        // Mute media element since we're using buffer source
+        if (this.audioElement) {
+            this.audioElement.volume = 0;
+        }
+        
+        // Create new buffer source for forward playback
+        this.bufferSource = this.audioContext.createBufferSource();
+        this.bufferSource.buffer = this.timestretchedBuffer;
+        this.bufferSource.loop = true; // Enable seamless looping
+        this.bufferSource.loopStart = 0;
+        this.bufferSource.loopEnd = this.timestretchedBuffer.duration;
+        this.bufferSource.playbackRate.value = this.currentPlaybackRate; // Apply current tempo
+        
+        console.log(`🔧 Forward buffer source created with loop, duration: ${this.bufferSource.loopEnd.toFixed(2)}s, playbackRate: ${this.currentPlaybackRate.toFixed(2)}x`);
+        
+        // Connect to gain node, which connects to effects chain
+        this.bufferSource.connect(this.gainNode);
+        console.log(`🔌 Buffer source connected to gainNode`);
+        
+        // Store timing info for position tracking
+        this.reverseStartTime = this.audioContext.currentTime;
+        this.reverseStartOffset = positionInLoop;
+        
+        // Start playback at the calculated offset
+        if (this.isPlaying) {
+            this.bufferSource.start(0, positionInLoop);
+            console.log(`🎵 Forward buffer playback STARTED at offset ${positionInLoop.toFixed(2)}s with seamless looping`);
+        } else {
+            console.log(`⏸️ Forward buffer playback created but NOT started (isPlaying=false)`);
         }
     }
 
@@ -340,6 +410,11 @@ export class PlaybackController {
     setLoopPoints(start, end) {
         this.loopStart = start;
         this.loopEnd = end;
+        
+        // Clear timestretched buffers when loop points change
+        // They'll need to be regenerated for the new loop range
+        this.timestretchedBuffer = null;
+        this.timestretchedBufferReversed = null;
         
         console.log(`Loop points set for ${this.trackId}: ${start.toFixed(2)}s - ${end.toFixed(2)}s`);
         

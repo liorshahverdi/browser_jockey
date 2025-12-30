@@ -823,10 +823,8 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
         // Get pitch shift value (independent of stretch)
         const pitchShift = pitchSlider ? parseFloat(pitchSlider.value) : 0;
         
-        // Check if in reverse mode
-        const isReverse = loopState.reverse && playbackCtrl && playbackCtrl.mode === 'reverse';
-        
-        // Use AudioBufferManager to create timestretched buffer
+        // Always create forward (non-reversed) timestretched buffer
+        // PlaybackController will handle reversing when needed
         const trackId = `track${trackNum}`;
         const stretchedBuffer = await audioBufferMgr.createTimestretchedBuffer(
             trackId,
@@ -834,23 +832,30 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
             loopState.end,
             stretchRatio,
             pitchShift,
-            isReverse
+            false // Always create forward version
         );
         
         if (!stretchedBuffer) {
             throw new Error('Failed to create timestretched buffer');
         }
         
-        // Store the timestretched buffer in the playback controller
+        // Create reversed version for seamless mode switching
+        const reversedStretchedBuffer = audioBufferMgr.reverseAudioBuffer(stretchedBuffer);
+        
+        // Store both versions in the playback controller
         if (playbackCtrl) {
-            playbackCtrl.timestretchedBuffer = stretchedBuffer;
+            playbackCtrl.timestretchedBuffer = stretchedBuffer; // Forward version
+            playbackCtrl.timestretchedBufferReversed = reversedStretchedBuffer; // Reversed version
         }
         
+        // Check if currently in reverse mode
+        const isReverseMode = loopState.reverse && playbackCtrl && playbackCtrl.mode === 'reverse';
+        
         // If in reverse mode and playing, restart with new timestretched buffer
-        if (isReverse && playbackCtrl && playbackCtrl.isPlaying) {
+        if (isReverseMode && playbackCtrl && playbackCtrl.isPlaying) {
             const currentPosition = playbackCtrl.currentPositionInLoop || 0;
             playbackCtrl.pause();
-            playbackCtrl.startReversePlayback(currentPosition, stretchedBuffer);
+            playbackCtrl.startReversePlayback(currentPosition, reversedStretchedBuffer);
             playbackCtrl.isPlaying = true;
         }
         
