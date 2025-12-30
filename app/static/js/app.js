@@ -848,14 +848,23 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
             playbackCtrl.timestretchedBufferReversed = reversedStretchedBuffer; // Reversed version
         }
         
-        // Check if currently in reverse mode
+        // Check if currently in reverse mode or normal mode
         const isReverseMode = loopState.reverse && playbackCtrl && playbackCtrl.mode === 'reverse';
+        const isNormalMode = playbackCtrl && playbackCtrl.mode === 'normal';
         
         // If in reverse mode and playing, restart with new timestretched buffer
         if (isReverseMode && playbackCtrl && playbackCtrl.isPlaying) {
             const currentPosition = playbackCtrl.currentPositionInLoop || 0;
             playbackCtrl.pause();
             playbackCtrl.startReversePlayback(currentPosition, reversedStretchedBuffer);
+            playbackCtrl.isPlaying = true;
+        }
+        // If in normal mode and playing, switch to forward buffer playback
+        else if (isNormalMode && playbackCtrl && playbackCtrl.isPlaying) {
+            const audioElement = trackNum === 1 ? audioElement1 : audioElement2;
+            const currentPosition = audioElement.currentTime - loopState.start;
+            playbackCtrl.pause();
+            playbackCtrl.startForwardBufferPlayback(currentPosition);
             playbackCtrl.isPlaying = true;
         }
         
