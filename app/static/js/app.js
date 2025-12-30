@@ -5264,6 +5264,11 @@ reverseLoopBtn1.addEventListener('click', () => {
         
         playbackController1.switchToNormalMode();
         
+        // If still playing with buffer source (timestretched), restart progress animation
+        if (playbackController1.isPlaying && playbackController1.bufferSource) {
+            startProgressAnimation1();
+        }
+        
         // Re-enable normal loop button when turning off reverse
         loopBtn1.classList.add('active');
         
@@ -5349,6 +5354,11 @@ reverseLoopBtn2.addEventListener('click', () => {
         stopProgressAnimation2();
         
         playbackController2.switchToNormalMode();
+        
+        // If still playing with buffer source (timestretched), restart progress animation
+        if (playbackController2.isPlaying && playbackController2.bufferSource) {
+            startProgressAnimation2();
+        }
         
         // Re-enable normal loop button when turning off reverse
         loopBtn2.classList.add('active');
