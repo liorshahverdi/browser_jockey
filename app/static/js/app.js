@@ -4775,13 +4775,24 @@ playBtn1.addEventListener('click', async () => {
         console.log('🔗 Source1 exists:', !!source1);
         console.log('🔗 Source1 connected:', source1Connected);
         
-        audioElement1.play()
-            .then(() => {
-                console.log('✅ Audio playing successfully');
-            })
-            .catch((error) => {
-                console.error('❌ Error playing audio:', error);
-            });
+        // Check if timestretched buffer exists and loop is active
+        const hasTimestretchedBuffer = playbackController1 && playbackController1.timestretchedBuffer && loopState1.enabled;
+        
+        if (hasTimestretchedBuffer && !loopState1.reverse) {
+            // Use forward buffer playback for timestretched audio
+            console.log('🎵 Using timestretched forward buffer playback');
+            playbackController1.startForwardBufferPlayback(0);
+            playbackController1.isPlaying = true;
+        } else {
+            // Use normal MediaElement playback
+            audioElement1.play()
+                .then(() => {
+                    console.log('✅ Audio playing successfully');
+                })
+                .catch((error) => {
+                    console.error('❌ Error playing audio:', error);
+                });
+        }
             
         vinylAnimation1.style.display = 'flex'; // Show vinyl animation
         if (!animationId) draw();
@@ -4812,7 +4823,19 @@ playBtn2.addEventListener('click', async () => {
     
     await initAudioContext();
     audioContext.resume().then(() => {
-        audioElement2.play();
+        // Check if timestretched buffer exists and loop is active
+        const hasTimestretchedBuffer = playbackController2 && playbackController2.timestretchedBuffer && loopState2.enabled;
+        
+        if (hasTimestretchedBuffer && !loopState2.reverse) {
+            // Use forward buffer playback for timestretched audio
+            console.log('🎵 Using timestretched forward buffer playback');
+            playbackController2.startForwardBufferPlayback(0);
+            playbackController2.isPlaying = true;
+        } else {
+            // Use normal MediaElement playback
+            audioElement2.play();
+        }
+        
         vinylAnimation2.style.display = 'flex'; // Show vinyl animation
         if (!animationId) draw();
         
