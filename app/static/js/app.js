@@ -6115,6 +6115,7 @@ panSlider1.addEventListener('input', (e) => {
     const pan = parseInt(e.target.value);
     if (panner1) {
         panner1.pan.value = pan / 100; // Convert to -1.0 to 1.0 range
+        console.log(`Track 1 pan: ${pan}% (${panner1.pan.value.toFixed(2)})`);
     }
     // Update label
     if (pan === 0) {
@@ -6130,6 +6131,7 @@ panSlider2.addEventListener('input', (e) => {
     const pan = parseInt(e.target.value);
     if (panner2) {
         panner2.pan.value = pan / 100; // Convert to -1.0 to 1.0 range
+        console.log(`Track 2 pan: ${pan}% (${panner2.pan.value.toFixed(2)})`);
     }
     // Update label
     if (pan === 0) {
