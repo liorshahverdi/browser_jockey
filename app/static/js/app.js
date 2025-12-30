@@ -894,6 +894,9 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
             
             // Start forward buffer playback
             if (playbackCtrl) {
+                // Set loop points for position tracking (don't use setLoopPoints as it clears buffers)
+                playbackCtrl.loopStart = loopState.start;
+                playbackCtrl.loopEnd = loopState.end;
                 playbackCtrl.isPlaying = true; // Set BEFORE calling startForwardBufferPlayback
                 playbackCtrl.startForwardBufferPlayback(Math.max(0, currentPosition));
                 
@@ -4869,6 +4872,9 @@ playBtn1.addEventListener('click', async () => {
         if (hasTimestretchedBuffer && !loopState1.reverse) {
             // Use forward buffer playback for timestretched audio
             console.log('🎵 Using timestretched forward buffer playback');
+            // Set loop points for position tracking (don't use setLoopPoints as it clears buffers)
+            playbackController1.loopStart = loopState1.start;
+            playbackController1.loopEnd = loopState1.end;
             playbackController1.isPlaying = true; // Set BEFORE calling startForwardBufferPlayback
             playbackController1.startForwardBufferPlayback(0);
             startProgressAnimation1(); // Start progress animation for buffer playback
@@ -4918,6 +4924,9 @@ playBtn2.addEventListener('click', async () => {
         if (hasTimestretchedBuffer && !loopState2.reverse) {
             // Use forward buffer playback for timestretched audio
             console.log('🎵 Using timestretched forward buffer playback');
+            // Set loop points for position tracking (don't use setLoopPoints as it clears buffers)
+            playbackController2.loopStart = loopState2.start;
+            playbackController2.loopEnd = loopState2.end;
             playbackController2.isPlaying = true; // Set BEFORE calling startForwardBufferPlayback
             playbackController2.startForwardBufferPlayback(0);
             startProgressAnimation2(); // Start progress animation for buffer playback
