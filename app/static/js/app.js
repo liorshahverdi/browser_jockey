@@ -885,8 +885,8 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
             
             // Start forward buffer playback
             if (playbackCtrl) {
+                playbackCtrl.isPlaying = true; // Set BEFORE calling startForwardBufferPlayback
                 playbackCtrl.startForwardBufferPlayback(currentPosition);
-                playbackCtrl.isPlaying = true;
             }
         }
         
@@ -4803,8 +4803,8 @@ playBtn1.addEventListener('click', async () => {
         if (hasTimestretchedBuffer && !loopState1.reverse) {
             // Use forward buffer playback for timestretched audio
             console.log('🎵 Using timestretched forward buffer playback');
+            playbackController1.isPlaying = true; // Set BEFORE calling startForwardBufferPlayback
             playbackController1.startForwardBufferPlayback(0);
-            playbackController1.isPlaying = true;
         } else {
             // Use normal MediaElement playback
             audioElement1.play()
@@ -4851,8 +4851,8 @@ playBtn2.addEventListener('click', async () => {
         if (hasTimestretchedBuffer && !loopState2.reverse) {
             // Use forward buffer playback for timestretched audio
             console.log('🎵 Using timestretched forward buffer playback');
+            playbackController2.isPlaying = true; // Set BEFORE calling startForwardBufferPlayback
             playbackController2.startForwardBufferPlayback(0);
-            playbackController2.isPlaying = true;
         } else {
             // Use normal MediaElement playback
             audioElement2.play();
