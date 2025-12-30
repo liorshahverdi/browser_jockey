@@ -2931,12 +2931,12 @@ function reconnectEffectChain(trackNumber, effectsConfig) {
     const isTrack1 = trackNumber === 1;
     const effectNodes = isTrack1 ? {
         filter: filter1,
-        adsr: { envelope: adsrEnvelope1 },
+        adsr: adsr1,
         reverb: reverb1,
         delay: delay1
     } : {
         filter: filter2,
-        adsr: { envelope: adsrEnvelope2 },
+        adsr: adsr2,
         reverb: reverb2,
         delay: delay2
     };
@@ -2979,7 +2979,7 @@ function reconnectMasterEffectChain(effectsConfig) {
     
     const effectNodes = {
         filter: masterFilter,
-        adsr: { envelope: masterAdsrEnvelope },
+        adsr: adsrMaster,
         reverb: masterReverb,
         delay: masterDelay
     };
@@ -2989,7 +2989,7 @@ function reconnectMasterEffectChain(effectsConfig) {
     // Disconnect all master effects
     try {
         if (masterFilter) masterFilter.disconnect();
-        if (masterAdsrEnvelope) masterAdsrEnvelope.disconnect();
+        if (adsrMaster?.envelope) adsrMaster.envelope.disconnect();
         if (masterReverb) {
             masterReverb.wet.disconnect();
             masterReverb.dry.disconnect();
