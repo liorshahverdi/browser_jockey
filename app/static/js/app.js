@@ -839,8 +839,20 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
             throw new Error('Failed to create timestretched buffer');
         }
         
+        // Validate that stretchedBuffer is actually an AudioBuffer
+        if (!(stretchedBuffer instanceof AudioBuffer)) {
+            console.error('❌ stretchedBuffer is not an AudioBuffer:', stretchedBuffer);
+            throw new Error('Created buffer is not a valid AudioBuffer');
+        }
+        
         // Create reversed version for seamless mode switching
         const reversedStretchedBuffer = audioBufferMgr.reverseAudioBuffer(stretchedBuffer);
+        
+        // Validate reversed buffer
+        if (!(reversedStretchedBuffer instanceof AudioBuffer)) {
+            console.error('❌ reversedStretchedBuffer is not an AudioBuffer:', reversedStretchedBuffer);
+            throw new Error('Reversed buffer is not a valid AudioBuffer');
+        }
         
         // Store both versions in the playback controller
         if (playbackCtrl) {

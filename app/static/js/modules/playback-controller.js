@@ -268,6 +268,14 @@ export class PlaybackController {
             return;
         }
         
+        // Validate it's actually an AudioBuffer
+        if (!(this.timestretchedBuffer instanceof AudioBuffer)) {
+            console.error('❌ timestretchedBuffer is not an AudioBuffer:', this.timestretchedBuffer);
+            console.error('Type:', typeof this.timestretchedBuffer);
+            console.error('Constructor:', this.timestretchedBuffer?.constructor?.name);
+            return;
+        }
+        
         console.log(`✅ Using timestretched forward buffer: duration=${this.timestretchedBuffer.duration.toFixed(2)}s`);
         
         // Stop any existing buffer source
