@@ -1671,6 +1671,156 @@ h1 {
     font-size: 1.2rem;
 }
 
+/* BPM Sync Controls */
+.sync-controls-section {
+    margin-top: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.08), rgba(138, 43, 226, 0.08));
+    border-radius: 10px;
+    border: 2px solid rgba(0, 255, 255, 0.3);
+}
+
+.sync-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #00ffff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.sync-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.sync-btn {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    max-width: 280px;
+}
+
+.sync-btn.active {
+    background: linear-gradient(135deg, #00ffff, #ff00ff);
+    border-color: rgba(0, 255, 255, 0.8);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.6),
+                0 0 30px rgba(255, 0, 255, 0.4),
+                0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: syncPulse 2s ease-in-out infinite;
+}
+
+@keyframes syncPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.6),
+                    0 0 30px rgba(255, 0, 255, 0.4),
+                    0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.8),
+                    0 0 40px rgba(255, 0, 255, 0.6),
+                    0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+}
+
+.sync-btn.active:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 0 35px rgba(0, 255, 255, 0.9),
+                0 0 50px rgba(255, 0, 255, 0.7),
+                0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+.auto-sync-toggle {
+    position: relative;
+}
+
+.auto-sync-toggle.active {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 140, 0, 0.3));
+    border-color: rgba(255, 215, 0, 0.8);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5),
+                0 0 30px rgba(255, 140, 0, 0.3);
+    animation: autoSyncPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes autoSyncPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.5),
+                    0 0 30px rgba(255, 140, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.7),
+                    0 0 40px rgba(255, 140, 0, 0.5);
+    }
+}
+
+.sync-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    margin-left: 8px;
+    transition: all 0.3s ease;
+    vertical-align: middle;
+}
+
+.sync-btn.active .sync-indicator,
+.auto-sync-toggle.active .sync-indicator {
+    background: #00ff00;
+    box-shadow: 0 0 10px #00ff00, 0 0 20px rgba(0, 255, 0, 0.5);
+    animation: indicatorPulse 1s ease-in-out infinite;
+}
+
+@keyframes indicatorPulse {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.6;
+        transform: scale(1.2);
+    }
+}
+
+.sync-status-display {
+    text-align: center;
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 2px solid rgba(0, 255, 255, 0.2);
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sync-status-display #syncStatusText {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+}
+
+.sync-status-display.active #syncStatusText {
+    color: #00ffff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+    font-size: 1.2rem;
+    animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% {
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+    }
+    50% {
+        text-shadow: 0 0 20px rgba(0, 255, 255, 0.9),
+                     0 0 30px rgba(255, 0, 255, 0.5);
+    }
+}
+
 /* Crossfader Section */
 .crossfader-section {
     margin-top: 0;

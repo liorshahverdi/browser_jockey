@@ -240,6 +240,26 @@
                             <span class="dual-icon">▶️⏺️</span> Play Both & Record
                         </button>
                     </div>
+                    <div class="sync-controls-section">
+                        <div class="sync-header">🔗 BPM Sync</div>
+                        <div class="sync-buttons">
+                            <button id="syncTrack1to2Btn" class="control-btn dual-control-btn sync-btn" disabled>
+                                <span class="dual-icon">1→2</span> Sync Track 1 → Track 2
+                                <span class="sync-indicator" id="syncIndicator1to2"></span>
+                            </button>
+                            <button id="syncTrack2to1Btn" class="control-btn dual-control-btn sync-btn" disabled>
+                                <span class="dual-icon">2→1</span> Sync Track 2 → Track 1
+                                <span class="sync-indicator" id="syncIndicator2to1"></span>
+                            </button>
+                            <button id="autoSyncToggle" class="control-btn dual-control-btn auto-sync-toggle" disabled>
+                                <span class="dual-icon">⚡</span> Auto-Sync
+                                <span class="sync-indicator" id="autoSyncIndicator"></span>
+                            </button>
+                        </div>
+                        <div class="sync-status-display" id="syncStatusDisplay">
+                            <span id="syncStatusText">--</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Crossfader Section -->

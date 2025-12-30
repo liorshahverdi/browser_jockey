@@ -232,6 +232,27 @@ const recordedAudio = document.getElementById('recordedAudio');
 const playBothBtn = document.getElementById('playBothBtn');
 const playBothRecordBtn = document.getElementById('playBothRecordBtn');
 
+// BPM Sync elements
+const syncTrack1to2Btn = document.getElementById('syncTrack1to2Btn');
+const syncTrack2to1Btn = document.getElementById('syncTrack2to1Btn');
+const autoSyncToggle = document.getElementById('autoSyncToggle');
+const syncStatusDisplay = document.getElementById('syncStatusDisplay');
+const syncStatusText = document.getElementById('syncStatusText');
+const syncIndicator1to2 = document.getElementById('syncIndicator1to2');
+const syncIndicator2to1 = document.getElementById('syncIndicator2to1');
+const autoSyncIndicator = document.getElementById('autoSyncIndicator');
+
+// Debug: Check if sync elements exist
+console.log('🔍 Sync button elements check:', {
+    syncTrack1to2Btn: syncTrack1to2Btn ? 'Found' : 'NOT FOUND',
+    syncTrack2to1Btn: syncTrack2to1Btn ? 'Found' : 'NOT FOUND',  
+    autoSyncToggle: autoSyncToggle ? 'Found' : 'NOT FOUND',
+    syncStatusDisplay: syncStatusDisplay ? 'Found' : 'NOT FOUND',
+    syncStatusText: syncStatusText ? 'Found' : 'NOT FOUND',
+    bpm1Display: bpm1Display ? 'Found' : 'NOT FOUND',
+    bpm2Display: bpm2Display ? 'Found' : 'NOT FOUND'
+});
+
 // Vinyl animation elements
 const vinylAnimation1 = document.getElementById('vinylAnimation1');
 const vinylAnimation2 = document.getElementById('vinylAnimation2');
@@ -2834,6 +2855,9 @@ async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, 
     if (keyDisplay) {
         keyDisplay.textContent = key;
     }
+    
+    // Check if sync buttons should be enabled
+    checkSyncButtonsState();
     
     // Set audio element source for playback (only if not already set)
     if (!audioElement.src || audioElement.src === '') {
@@ -5604,6 +5628,146 @@ loadToTrack2Btn.addEventListener('click', loadRecordingToTrack2);
 playBothBtn.addEventListener('click', playBothTracks);
 playBothRecordBtn.addEventListener('click', playBothAndRecord);
 
+// BPM Sync State
+let syncState = {
+    autoSyncEnabled: false,
+    syncDirection: null, // '1to2' or '2to1'
+    isManualChange: true // Track if tempo change is manual or programmatic
+};
+
+// BPM Sync Functions
+function getBPMValue(bpmElement) {
+    const bpmText = bpmElement.textContent.trim();
+    if (bpmText === '--' || bpmText === '') return null;
+    const bpm = parseFloat(bpmText);
+    return isNaN(bpm) ? null : bpm;
+}
+
+function updateSyncStatus(sourceBPM, targetBPM, direction) {
+    if (sourceBPM && targetBPM) {
+        syncStatusDisplay.classList.add('active');
+        
+        // Get current tempo values to show effective BPM
+        const sourceTempo = direction === '1to2' ? parseFloat(tempoSlider1.value) : parseFloat(tempoSlider2.value);
+        const targetTempo = direction === '1to2' ? parseFloat(tempoSlider2.value) : parseFloat(tempoSlider1.value);
+        
+        const sourceEffectiveBPM = sourceBPM * sourceTempo;
+        const targetEffectiveBPM = targetBPM * targetTempo;
+        
+        if (direction === '1to2') {
+            syncStatusText.textContent = `Track 1: ${sourceBPM}×${sourceTempo.toFixed(2)} = ${sourceEffectiveBPM.toFixed(1)} BPM ↔ Track 2: ${targetBPM}×${targetTempo.toFixed(2)} = ${targetEffectiveBPM.toFixed(1)} BPM`;
+        } else {
+            syncStatusText.textContent = `Track 2: ${sourceBPM}×${sourceTempo.toFixed(2)} = ${sourceEffectiveBPM.toFixed(1)} BPM ↔ Track 1: ${targetBPM}×${targetTempo.toFixed(2)} = ${targetEffectiveBPM.toFixed(1)} BPM`;
+        }
+        
+        console.log('📊 Sync status updated:', syncStatusText.textContent);
+    } else {
+        syncStatusDisplay.classList.remove('active');
+        syncStatusText.textContent = '--';
+    }
+}
+
+function clearSyncStatus() {
+    syncStatusDisplay.classList.remove('active');
+    syncStatusText.textContent = '--';
+}
+
+function syncTrackBPM(sourceTrack, targetTrack) {
+    const sourceBPMElement = sourceTrack === 1 ? bpm1Display : bpm2Display;
+    const targetBPMElement = targetTrack === 1 ? bpm1Display : bpm2Display;
+    const targetTempoSlider = targetTrack === 1 ? tempoSlider1 : tempoSlider2;
+    
+    const sourceBPM = getBPMValue(sourceBPMElement);
+    const targetBPM = getBPMValue(targetBPMElement);
+    
+    if (!sourceBPM || !targetBPM) {
+        alert('BPM not detected for one or both tracks. Please wait for analysis to complete.');
+        return false;
+    }
+    
+    // Simple: calculate direct BPM ratio
+    const tempoRatio = sourceBPM / targetBPM;
+    
+    console.log(`🎵 Syncing Track ${sourceTrack} (${sourceBPM} BPM) → Track ${targetTrack} (${targetBPM} BPM)`);
+    console.log(`   Required tempo: ${tempoRatio.toFixed(3)}x`);
+    
+    // Check if sync is possible within tempo range (0.25x - 2.0x)
+    if (tempoRatio < 0.25 || tempoRatio > 2.0) {
+        const reason = tempoRatio < 0.25 ? 'too slow (< 0.25x)' : 'too fast (> 2.0x)';
+        alert(`❌ Cannot sync these tracks!\n\n` +
+              `Track ${sourceTrack}: ${sourceBPM} BPM\n` +
+              `Track ${targetTrack}: ${targetBPM} BPM\n\n` +
+              `Required tempo: ${tempoRatio.toFixed(2)}x (${reason})\n` +
+              `Tempo range: 0.25x - 2.0x\n\n` +
+              `Tip: Choose tracks with more similar BPMs.`);
+        return false;
+    }
+    
+    // Apply the tempo (always starts from 1.0x assumption)
+    syncState.isManualChange = false;
+    targetTempoSlider.value = tempoRatio.toFixed(2);
+    
+    // Trigger the input event to update playback
+    const event = new Event('input', { bubbles: true });
+    targetTempoSlider.dispatchEvent(event);
+    
+    syncState.isManualChange = true;
+    
+    // Update sync status display
+    const direction = sourceTrack === 1 ? '1to2' : '2to1';
+    updateSyncStatus(sourceBPM, targetBPM, direction);
+    
+    console.log(`✅ Track ${targetTrack} tempo set to ${tempoRatio.toFixed(2)}x`);
+    console.log(`   Effective BPM: ${(targetBPM * tempoRatio).toFixed(1)} BPM`);
+    
+    return true;
+}
+
+function checkSyncButtonsState() {
+    const bpm1 = getBPMValue(bpm1Display);
+    const bpm2 = getBPMValue(bpm2Display);
+    
+    syncTrack1to2Btn.disabled = !bpm1 || !bpm2;
+    syncTrack2to1Btn.disabled = !bpm1 || !bpm2;
+    autoSyncToggle.disabled = !bpm1 || !bpm2;
+}
+
+// Sync Track 1 -> Track 2
+syncTrack1to2Btn.addEventListener('click', () => {
+    if (syncTrackBPM(1, 2)) {
+        syncState.syncDirection = '1to2';
+        syncTrack1to2Btn.classList.add('active');
+        syncTrack2to1Btn.classList.remove('active');
+    }
+});
+
+// Sync Track 2 -> Track 1
+syncTrack2to1Btn.addEventListener('click', () => {
+    if (syncTrackBPM(2, 1)) {
+        syncState.syncDirection = '2to1';
+        syncTrack2to1Btn.classList.add('active');
+        syncTrack1to2Btn.classList.remove('active');
+    }
+});
+
+// Auto-Sync Toggle
+autoSyncToggle.addEventListener('click', () => {
+    syncState.autoSyncEnabled = !syncState.autoSyncEnabled;
+    
+    if (syncState.autoSyncEnabled) {
+        autoSyncToggle.classList.add('active');
+        // If no direction set, default to 1to2
+        if (!syncState.syncDirection) {
+            if (syncTrackBPM(1, 2)) {
+                syncState.syncDirection = '1to2';
+                syncTrack1to2Btn.classList.add('active');
+            }
+        }
+    } else {
+        autoSyncToggle.classList.remove('active');
+    }
+});
+
 // Crossfader handlers
 crossfader.addEventListener('input', (e) => {
     updateCrossfader(parseInt(e.target.value));
@@ -6062,6 +6226,25 @@ window.addEventListener('loadSequencerRecording', async (event) => {
 tempoSlider1.addEventListener('input', (e) => {
     const tempo = parseFloat(e.target.value);
     
+    // Check if this is a manual change (user interaction)
+    if (syncState.isManualChange) {
+        // If Track 1 is the slaved track and auto-sync is on, disable auto-sync
+        if (syncState.autoSyncEnabled && syncState.syncDirection === '2to1') {
+            syncState.autoSyncEnabled = false;
+            autoSyncToggle.classList.remove('active');
+            syncTrack2to1Btn.classList.remove('active');
+            syncState.syncDirection = null;
+            clearSyncStatus();
+        }
+        // If Track 1 is the source track and auto-sync is on, re-sync Track 2
+        else if (syncState.autoSyncEnabled && syncState.syncDirection === '1to2') {
+            // Will trigger re-sync after this tempo change is applied
+            setTimeout(() => {
+                syncTrackBPM(1, 2);
+            }, 10);
+        }
+    }
+    
     // If we have a pitch shifter, tempo is independent of pitch
     // Otherwise, combine tempo with pitch shift (vinyl-style)
     if (pitchShifter1) {
@@ -6082,6 +6265,25 @@ tempoSlider1.addEventListener('input', (e) => {
 
 tempoSlider2.addEventListener('input', (e) => {
     const tempo = parseFloat(e.target.value);
+    
+    // Check if this is a manual change (user interaction)
+    if (syncState.isManualChange) {
+        // If Track 2 is the slaved track and auto-sync is on, disable auto-sync
+        if (syncState.autoSyncEnabled && syncState.syncDirection === '1to2') {
+            syncState.autoSyncEnabled = false;
+            autoSyncToggle.classList.remove('active');
+            syncTrack1to2Btn.classList.remove('active');
+            syncState.syncDirection = null;
+            clearSyncStatus();
+        }
+        // If Track 2 is the source track and auto-sync is on, re-sync Track 1
+        else if (syncState.autoSyncEnabled && syncState.syncDirection === '2to1') {
+            // Will trigger re-sync after this tempo change is applied
+            setTimeout(() => {
+                syncTrackBPM(2, 1);
+            }, 10);
+        }
+    }
     
     // If we have a pitch shifter, tempo is independent of pitch
     // Otherwise, combine tempo with pitch shift (vinyl-style)
