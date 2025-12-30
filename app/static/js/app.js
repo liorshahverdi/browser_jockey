@@ -896,6 +896,13 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
             if (playbackCtrl) {
                 playbackCtrl.isPlaying = true; // Set BEFORE calling startForwardBufferPlayback
                 playbackCtrl.startForwardBufferPlayback(Math.max(0, currentPosition));
+                
+                // Start progress animation for buffer playback
+                if (trackNum === 1) {
+                    startProgressAnimation1();
+                } else {
+                    startProgressAnimation2();
+                }
             }
         }
         
@@ -4672,6 +4679,56 @@ waveform2.parentElement.addEventListener('mousemove', (e) => {
     }
 });
 
+// Helper functions to start/stop progress animation for Track 1
+function startProgressAnimation1() {
+    if (reverseProgressAnimationId1) {
+        cancelAnimationFrame(reverseProgressAnimationId1);
+    }
+    
+    const updateProgress = () => {
+        // Keep updating as long as buffer source is playing
+        if (playbackController1 && playbackController1.bufferSource && playbackController1.isPlaying) {
+            updateWaveformProgress1();
+            reverseProgressAnimationId1 = requestAnimationFrame(updateProgress);
+        } else {
+            reverseProgressAnimationId1 = null;
+        }
+    };
+    updateProgress();
+}
+
+function stopProgressAnimation1() {
+    if (reverseProgressAnimationId1) {
+        cancelAnimationFrame(reverseProgressAnimationId1);
+        reverseProgressAnimationId1 = null;
+    }
+}
+
+// Helper functions to start/stop progress animation for Track 2
+function startProgressAnimation2() {
+    if (reverseProgressAnimationId2) {
+        cancelAnimationFrame(reverseProgressAnimationId2);
+    }
+    
+    const updateProgress = () => {
+        // Keep updating as long as buffer source is playing
+        if (playbackController2 && playbackController2.bufferSource && playbackController2.isPlaying) {
+            updateWaveformProgress2();
+            reverseProgressAnimationId2 = requestAnimationFrame(updateProgress);
+        } else {
+            reverseProgressAnimationId2 = null;
+        }
+    };
+    updateProgress();
+}
+
+function stopProgressAnimation2() {
+    if (reverseProgressAnimationId2) {
+        cancelAnimationFrame(reverseProgressAnimationId2);
+        reverseProgressAnimationId2 = null;
+    }
+}
+
 // Helper function to update waveform progress for Track 1
 function updateWaveformProgress1() {
     if (audioElement1.duration) {
@@ -4814,6 +4871,7 @@ playBtn1.addEventListener('click', async () => {
             console.log('🎵 Using timestretched forward buffer playback');
             playbackController1.isPlaying = true; // Set BEFORE calling startForwardBufferPlayback
             playbackController1.startForwardBufferPlayback(0);
+            startProgressAnimation1(); // Start progress animation for buffer playback
         } else {
             // Use normal MediaElement playback
             audioElement1.play()
@@ -4862,6 +4920,7 @@ playBtn2.addEventListener('click', async () => {
             console.log('🎵 Using timestretched forward buffer playback');
             playbackController2.isPlaying = true; // Set BEFORE calling startForwardBufferPlayback
             playbackController2.startForwardBufferPlayback(0);
+            startProgressAnimation2(); // Start progress animation for buffer playback
         } else {
             // Use normal MediaElement playback
             audioElement2.play();
@@ -4899,6 +4958,7 @@ pauseBtn1.addEventListener('click', () => {
     if (playbackController1) {
         playbackController1.pause();
     }
+    stopProgressAnimation1(); // Stop progress animation
     vinylAnimation1.style.display = 'none'; // Hide vinyl animation
     
     // Stop reverse playback
@@ -4922,6 +4982,7 @@ pauseBtn2.addEventListener('click', () => {
     if (playbackController2) {
         playbackController2.pause();
     }
+    stopProgressAnimation2(); // Stop progress animation
     vinylAnimation2.style.display = 'none'; // Hide vinyl animation
     
     // Stop reverse playback
@@ -5160,34 +5221,12 @@ reverseLoopBtn1.addEventListener('click', () => {
         }
         
         // Start progress animation for UI updates
-        if (reverseProgressAnimationId1) {
-            cancelAnimationFrame(reverseProgressAnimationId1);
-        }
-        
-        let animFrameCount = 0;
-        const updateProgress = () => {
-            if (loopState1.reverse && playbackController1.mode === 'reverse') {
-                // Debug logging every 10 frames (~6 times per second)
-                animFrameCount++;
-                if (animFrameCount % 10 === 0) {
-                    const currentTime = playbackController1.getCurrentTime();
-                    console.log(`🎬 Animation frame ${animFrameCount}: calling updateWaveformProgress1(), currentTime=${currentTime.toFixed(2)}s`);
-                }
-                updateWaveformProgress1();
-                reverseProgressAnimationId1 = requestAnimationFrame(updateProgress);
-            } else {
-                console.log(`⛔ Animation loop stopped: reverse=${loopState1.reverse}, mode=${playbackController1.mode}`);
-            }
-        };
-        updateProgress();
+        startProgressAnimation1();
         
         console.log('✅ Buffer-based reverse playback active for Track 1');
     } else {
         // Stop reverse animation and switch back to normal
-        if (reverseProgressAnimationId1) {
-            cancelAnimationFrame(reverseProgressAnimationId1);
-            reverseProgressAnimationId1 = null;
-        }
+        stopProgressAnimation1();
         
         playbackController1.switchToNormalMode();
         
@@ -5260,25 +5299,12 @@ reverseLoopBtn2.addEventListener('click', () => {
         }
         
         // Start progress animation for UI updates
-        if (reverseProgressAnimationId2) {
-            cancelAnimationFrame(reverseProgressAnimationId2);
-        }
-        
-        const updateProgress = () => {
-            if (loopState2.reverse && playbackController2.mode === 'reverse') {
-                updateWaveformProgress2();
-                reverseProgressAnimationId2 = requestAnimationFrame(updateProgress);
-            }
-        };
-        updateProgress();
+        startProgressAnimation2();
         
         console.log('✅ Buffer-based reverse playback active for Track 2');
     } else {
         // Stop reverse animation and switch back to normal
-        if (reverseProgressAnimationId2) {
-            cancelAnimationFrame(reverseProgressAnimationId2);
-            reverseProgressAnimationId2 = null;
-        }
+        stopProgressAnimation2();
         
         playbackController2.switchToNormalMode();
         
