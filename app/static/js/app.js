@@ -5229,8 +5229,9 @@ reverseLoopBtn1.addEventListener('click', () => {
         
         playbackController1.switchToReverseMode();
         
-        // If paused, don't start playing automatically
-        if (!audioElement1.paused) {
+        // Start playing if audio was playing before switching to reverse
+        // (switchToReverseMode already set isPlaying flag from audio element state)
+        if (playbackController1.isPlaying) {
             playbackController1.play();
         }
         
@@ -5309,8 +5310,9 @@ reverseLoopBtn2.addEventListener('click', () => {
         
         playbackController2.switchToReverseMode();
         
-        // If paused, don't start playing automatically
-        if (!audioElement2.paused) {
+        // Start playing if audio was playing before switching to reverse
+        // (switchToReverseMode already set isPlaying flag from audio element state)
+        if (playbackController2.isPlaying) {
             playbackController2.play();
         }
         
