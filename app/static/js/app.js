@@ -4666,14 +4666,14 @@ waveform2.parentElement.addEventListener('mousemove', (e) => {
 // Helper function to update waveform progress for Track 1
 function updateWaveformProgress1() {
     if (audioElement1.duration) {
-        // Use PlaybackController if in reverse mode, otherwise use audio element
+        // Use PlaybackController if using buffer source (reverse or timestretched), otherwise use audio element
         let currentTime;
-        if (playbackController1 && playbackController1.mode === 'reverse') {
+        if (playbackController1 && playbackController1.bufferSource && playbackController1.isPlaying) {
             currentTime = playbackController1.getCurrentTime();
             
             // Debug logging (throttled)
             if (!updateWaveformProgress1._lastLog || (Date.now() - updateWaveformProgress1._lastLog) > 500) {
-                console.log(`📊 updateWaveformProgress1: mode=reverse, currentTime=${currentTime.toFixed(2)}s`);
+                console.log(`📊 updateWaveformProgress1: mode=${playbackController1.mode}, currentTime=${currentTime.toFixed(2)}s`);
                 updateWaveformProgress1._lastLog = Date.now();
             }
         } else {
@@ -4712,9 +4712,9 @@ function updateWaveformProgress1() {
 // Helper function to update waveform progress for Track 2
 function updateWaveformProgress2() {
     if (audioElement2.duration) {
-        // Use PlaybackController if in reverse mode, otherwise use audio element
+        // Use PlaybackController if using buffer source (reverse or timestretched), otherwise use audio element
         let currentTime;
-        if (playbackController2 && playbackController2.mode === 'reverse') {
+        if (playbackController2 && playbackController2.bufferSource && playbackController2.isPlaying) {
             currentTime = playbackController2.getCurrentTime();
         } else {
             currentTime = audioElement2.currentTime;
@@ -4885,7 +4885,11 @@ pauseBtn1.addEventListener('click', () => {
         return;
     }
     
+    // Pause both MediaElement and buffer source playback
     audioElement1.pause();
+    if (playbackController1) {
+        playbackController1.pause();
+    }
     vinylAnimation1.style.display = 'none'; // Hide vinyl animation
     
     // Stop reverse playback
@@ -4904,7 +4908,11 @@ pauseBtn2.addEventListener('click', () => {
         return;
     }
     
+    // Pause both MediaElement and buffer source playback
     audioElement2.pause();
+    if (playbackController2) {
+        playbackController2.pause();
+    }
     vinylAnimation2.style.display = 'none'; // Hide vinyl animation
     
     // Stop reverse playback
