@@ -2867,18 +2867,99 @@ function handleEffectChainChange(event) {
     const { trackNumber, effects } = event.detail;
     console.log(`Effect chain changed for track ${trackNumber}:`, effects);
     
-    // When the effect chain changes, we need to reconnect the audio routing
-    // For now, we'll just log it. The actual reconnection would require
-    // disconnecting and reconnecting the audio nodes in the new order.
-    // This is a complex operation that would need careful management of the audio graph.
+    // Reconnect audio graph in the new order
+    if (trackNumber === 1) {
+        reconnectEffectChain(1, effects);
+    } else if (trackNumber === 2) {
+        reconnectEffectChain(2, effects);
+    } else if (trackNumber === 'Master') {
+        reconnectMasterEffectChain(effects);
+    }
+}
+
+// Reconnect track effect chain in new order
+function reconnectEffectChain(trackNumber, effectsConfig) {
+    if (!audioContext) return;
     
-    // TODO: Implement dynamic audio graph reconnection based on effect order
-    // For the current implementation, the effect chain UI shows the order
-    // but the actual audio processing still follows the fixed order.
-    // To make it fully functional, we would need to:
-    // 1. Disconnect all current connections
-    // 2. Reconnect in the new order specified by the effect chain
-    // 3. Ensure proper wet/dry mixing for each effect
+    const isTrack1 = trackNumber === 1;
+    const effectNodes = isTrack1 ? {
+        filter: filter1,
+        adsr: { envelope: adsrEnvelope1 },
+        reverb: reverb1,
+        delay: delay1
+    } : {
+        filter: filter2,
+        adsr: { envelope: adsrEnvelope2 },
+        reverb: reverb2,
+        delay: delay2
+    };
+    
+    const eqHigh = isTrack1 ? eqHigh1 : eqHigh2;
+    
+    console.log(`🔗 Reconnecting Track ${trackNumber} effect chain in new order...`);
+    
+    // Disconnect all effects from their current connections
+    try {
+        if (effectNodes.filter) {
+            effectNodes.filter.disconnect();
+        }
+        if (effectNodes.adsr?.envelope) {
+            effectNodes.adsr.envelope.disconnect();
+        }
+        if (effectNodes.reverb) {
+            effectNodes.reverb.wet.disconnect();
+            effectNodes.reverb.dry.disconnect();
+        }
+        if (effectNodes.delay) {
+            effectNodes.delay.wet.disconnect();
+            effectNodes.delay.dry.disconnect();
+        }
+        // Disconnect EQ output
+        eqHigh.disconnect();
+    } catch (e) {
+        console.warn('Error disconnecting effects:', e.message);
+    }
+    
+    // Reconnect in new order using connectEffectsInOrder
+    connectEffectsInOrder(eqHigh, effectsConfig, effectNodes, merger, audioContext);
+    
+    console.log(`✅ Track ${trackNumber} effect chain reconnected`);
+}
+
+// Reconnect master effect chain in new order
+function reconnectMasterEffectChain(effectsConfig) {
+    if (!audioContext) return;
+    
+    const effectNodes = {
+        filter: masterFilter,
+        adsr: { envelope: masterAdsrEnvelope },
+        reverb: masterReverb,
+        delay: masterDelay
+    };
+    
+    console.log('🔗 Reconnecting Master effect chain in new order...');
+    
+    // Disconnect all master effects
+    try {
+        if (masterFilter) masterFilter.disconnect();
+        if (masterAdsrEnvelope) masterAdsrEnvelope.disconnect();
+        if (masterReverb) {
+            masterReverb.wet.disconnect();
+            masterReverb.dry.disconnect();
+        }
+        if (masterDelay) {
+            masterDelay.wet.disconnect();
+            masterDelay.dry.disconnect();
+        }
+        if (masterMix) masterMix.disconnect();
+    } catch (e) {
+        console.warn('Error disconnecting master effects:', e.message);
+    }
+    
+    // Reconnect in new order
+    connectEffectsInOrder(masterMix, effectsConfig, effectNodes, masterGain, audioContext);
+    
+    console.log('✅ Master effect chain reconnected');
 }
 
 // === Audio Context & Effects Initialization ===

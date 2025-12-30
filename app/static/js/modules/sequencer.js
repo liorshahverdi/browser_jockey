@@ -3276,7 +3276,7 @@ export class Sequencer {
         ctx.fillText('Recorded Sequencer Output', width / 2, height / 2 - 20);
     }
     
-    downloadRecording() {
+    async downloadRecording() {
         if (!this.recordedBlob) {
             alert('No recording available');
             return;
@@ -3285,16 +3285,139 @@ export class Sequencer {
         const formatSelect = document.getElementById('sequencerExportFormat');
         const format = formatSelect ? formatSelect.value : 'webm';
         
-        // For now, just download as-is (WebM)
-        // TODO: Add conversion for WAV/MP3 formats
-        const url = URL.createObjectURL(this.recordedBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `sequencer-recording-${Date.now()}.${format}`;
-        a.click();
-        URL.revokeObjectURL(url);
+        try {
+            let blob, extension, filename;
+            
+            if (format === 'webm') {
+                blob = this.recordedBlob;
+                extension = 'webm';
+            } else if (format === 'wav') {
+                const arrayBuffer = await this.recordedBlob.arrayBuffer();
+                const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+                const wav = this.audioBufferToWav(audioBuffer);
+                blob = new Blob([wav], { type: 'audio/wav' });
+                extension = 'wav';
+            } else if (format === 'mp3') {
+                // Check if lamejs is available
+                if (typeof lamejs === 'undefined') {
+                    alert('MP3 encoder not loaded. Please use WAV or WebM format.');
+                    return;
+                }
+                const arrayBuffer = await this.recordedBlob.arrayBuffer();
+                const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+                blob = this.audioBufferToMp3(audioBuffer);
+                extension = 'mp3';
+            } else {
+                alert(`Unsupported format: ${format}`);
+                return;
+            }
+            
+            filename = `sequencer-recording-${Date.now()}.${extension}`;
+            
+            // Download the file
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            console.log(`💾 Downloaded sequencer recording as ${extension.toUpperCase()}`);
+        } catch (error) {
+            console.error('Error downloading recording:', error);
+            alert('Error downloading recording. Please try again.');
+        }
+    }
+    
+    // Convert AudioBuffer to WAV format
+    audioBufferToWav(audioBuffer) {
+        const numChannels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+        const format = 1; // PCM
+        const bitDepth = 16;
         
-        console.log(`💾 Downloaded sequencer recording as ${format}`);
+        const bytesPerSample = bitDepth / 8;
+        const blockAlign = numChannels * bytesPerSample;
+        
+        const data = [];
+        for (let i = 0; i < numChannels; i++) {
+            data.push(audioBuffer.getChannelData(i));
+        }
+        
+        const length = audioBuffer.length * numChannels * bytesPerSample;
+        const buffer = new ArrayBuffer(44 + length);
+        const view = new DataView(buffer);
+        
+        const writeString = (offset, string) => {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        };
+        
+        let offset = 0;
+        writeString(offset, 'RIFF'); offset += 4;
+        view.setUint32(offset, 36 + length, true); offset += 4;
+        writeString(offset, 'WAVE'); offset += 4;
+        writeString(offset, 'fmt '); offset += 4;
+        view.setUint32(offset, 16, true); offset += 4;
+        view.setUint16(offset, format, true); offset += 2;
+        view.setUint16(offset, numChannels, true); offset += 2;
+        view.setUint32(offset, sampleRate, true); offset += 4;
+        view.setUint32(offset, sampleRate * blockAlign, true); offset += 4;
+        view.setUint16(offset, blockAlign, true); offset += 2;
+        view.setUint16(offset, bitDepth, true); offset += 2;
+        writeString(offset, 'data'); offset += 4;
+        view.setUint32(offset, length, true); offset += 4;
+        
+        const volume = 0.8;
+        for (let i = 0; i < audioBuffer.length; i++) {
+            for (let channel = 0; channel < numChannels; channel++) {
+                let sample = Math.max(-1, Math.min(1, data[channel][i]));
+                sample = sample * volume;
+                view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                offset += 2;
+            }
+        }
+        
+        return buffer;
+    }
+    
+    // Convert AudioBuffer to MP3 format using lamejs
+    audioBufferToMp3(audioBuffer) {
+        const numChannels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+        const kbps = 128;
+        const mp3encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, kbps);
+        
+        const samples = [];
+        for (let i = 0; i < numChannels; i++) {
+            const channelData = audioBuffer.getChannelData(i);
+            const int16 = new Int16Array(channelData.length);
+            for (let j = 0; j < channelData.length; j++) {
+                const s = Math.max(-1, Math.min(1, channelData[j]));
+                int16[j] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            samples.push(int16);
+        }
+        
+        const mp3Data = [];
+        const sampleBlockSize = 1152;
+        
+        for (let i = 0; i < samples[0].length; i += sampleBlockSize) {
+            const left = samples[0].subarray(i, i + sampleBlockSize);
+            const right = numChannels > 1 ? samples[1].subarray(i, i + sampleBlockSize) : left;
+            const mp3buf = mp3encoder.encodeBuffer(left, right);
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+        }
+        
+        const end = mp3encoder.flush();
+        if (end.length > 0) {
+            mp3Data.push(end);
+        }
+        
+        return new Blob(mp3Data, { type: 'audio/mp3' });
     }
     
     async loadToTrack(trackNumber) {
