@@ -5214,6 +5214,10 @@ reverseLoopBtn1.addEventListener('click', () => {
     }
     
     if (loopState1.reverse) {
+        // Capture playing state BEFORE stopping anything
+        // Check buffer playback first, then audio element
+        const wasPlaying = (playbackController1 && playbackController1.isPlaying) || !audioElement1.paused;
+        
         // Stop legacy reverse animation
         stopReversePlayback(loopState1);
         
@@ -5222,6 +5226,9 @@ reverseLoopBtn1.addEventListener('click', () => {
         // Set loop points directly to avoid clearing timestretched buffers
         playbackController1.loopStart = loopState1.start;
         playbackController1.loopEnd = loopState1.end;
+        
+        // Override isPlaying flag with captured state (before switchToReverseMode captures it from paused audioElement)
+        playbackController1.isPlaying = wasPlaying;
         
         // Set current tempo before switching to reverse mode
         const currentTempo = parseFloat(tempoSlider1.value);
@@ -5295,6 +5302,10 @@ reverseLoopBtn2.addEventListener('click', () => {
     }
     
     if (loopState2.reverse) {
+        // Capture playing state BEFORE stopping anything
+        // Check buffer playback first, then audio element
+        const wasPlaying = (playbackController2 && playbackController2.isPlaying) || !audioElement2.paused;
+        
         // Stop legacy reverse animation
         stopReversePlayback(loopState2);
         
@@ -5303,6 +5314,9 @@ reverseLoopBtn2.addEventListener('click', () => {
         // Set loop points directly to avoid clearing timestretched buffers
         playbackController2.loopStart = loopState2.start;
         playbackController2.loopEnd = loopState2.end;
+        
+        // Override isPlaying flag with captured state (before switchToReverseMode captures it from paused audioElement)
+        playbackController2.isPlaying = wasPlaying;
         
         // Set current tempo before switching to reverse mode
         const currentTempo = parseFloat(tempoSlider2.value);

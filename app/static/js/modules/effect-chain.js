@@ -286,9 +286,9 @@ export function connectEffectsInOrder(source, effectsConfig, effectNodes, merger
         }
     }
     
-    // Connect the final node to the output
-    currentNode.connect(merger, 0, 0);
-    currentNode.connect(merger, 0, 1);
+    // Connect the final node to the output (merger is a GainNode, not ChannelMerger)
+    // GainNodes only have 1 input, so just connect normally (stereo is preserved automatically)
+    currentNode.connect(merger);
 }
 
 function connectReverbEffect(input, reverbEffects, audioContext) {
