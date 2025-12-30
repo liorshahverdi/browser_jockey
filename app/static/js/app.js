@@ -796,7 +796,7 @@ async function loadRecordingToTrack2() {
  */
 async function applyStretchToTrack(trackNum, stretchRatio) {
     const loopState = trackNum === 1 ? loopState1 : loopState2;
-    const audioBufferMgr = trackNum === 1 ? audioBufferManager1 : audioBufferManager2;
+    const audioBufferMgr = trackNum === 1 ? bufferManager1 : bufferManager2;
     const playbackCtrl = trackNum === 1 ? playbackController1 : playbackController2;
     const stretchValue = trackNum === 1 ? stretchValue1 : stretchValue2;
     const pitchSlider = trackNum === 1 ? pitchSlider1 : pitchSlider2;
