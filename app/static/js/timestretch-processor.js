@@ -107,20 +107,23 @@ class TimeStretchProcessor extends AudioWorkletProcessor {
         const input = inputs[0];
         const output = outputs[0];
         
-        if (!input || !input[0] || !output || !output[0]) {
+        if (!input || !input.length || !output || !output.length) {
             return true;
         }
         
-        const inputChannel = input[0];
-        const outputChannel = output[0];
-        
-        // TEMPORARY: Simple passthrough for now
-        // Phase vocoder timestretching will be implemented in offline processing
-        outputChannel.set(inputChannel);
+        // Process all channels (stereo support)
+        const numChannels = Math.min(input.length, output.length);
+        for (let channel = 0; channel < numChannels; channel++) {
+            if (input[channel] && output[channel]) {
+                // TEMPORARY: Simple passthrough for now
+                // Phase vocoder timestretching will be implemented in offline processing
+                output[channel].set(input[channel]);
+            }
+        }
         
         // Log stretch ratio changes for debugging
         if (this.stretchRatio !== this._lastLoggedRatio) {
-            console.log(`🎵 Timestretch ratio: ${this.stretchRatio.toFixed(2)}x (passthrough mode)`);
+            console.log(`🎵 Timestretch ratio: ${this.stretchRatio.toFixed(2)}x (passthrough mode) - ${numChannels} channel(s)`);
             this._lastLoggedRatio = this.stretchRatio;
         }
         

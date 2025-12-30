@@ -4635,6 +4635,17 @@ document.addEventListener('mouseup', () => {
         // If playhead is within reasonable distance, let handleLoopPlayback handle it naturally
     }
     
+    // Update PlaybackController loop points after dragging markers
+    if (isDraggingMarker1 && playbackController1 && loopState1.start !== null && loopState1.end !== null) {
+        playbackController1.setLoopPoints(loopState1.start, loopState1.end);
+        console.log('📍 Updated Track 1 loop points in PlaybackController');
+    }
+    
+    if (isDraggingMarker2 && playbackController2 && loopState2.start !== null && loopState2.end !== null) {
+        playbackController2.setLoopPoints(loopState2.start, loopState2.end);
+        console.log('📍 Updated Track 2 loop points in PlaybackController');
+    }
+    
     isDraggingMarker1 = false;
     draggedMarker1 = null;
     isDraggingMarker2 = false;
@@ -5110,6 +5121,19 @@ loopBtn1.addEventListener('click', () => {
     }
     
     if (!loopState1.enabled) {
+        // Disable looping in playback controller if it exists
+        if (playbackController1 && playbackController1.bufferSource) {
+            // Disable loop on buffer source
+            playbackController1.bufferSource.loop = false;
+            
+            // If currently playing, switch back to audio element for non-looping playback
+            if (playbackController1.isPlaying) {
+                const currentPosition = playbackController1.getCurrentPosition();
+                playbackController1.switchToNormalMode();
+                console.log('🔓 Loop disabled, switched to audio element playback');
+            }
+        }
+        
         // Clear loop points when disabling - use clearLoopPoints to properly reset state
         clearLoopPoints(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1);
         // Disable and clear inputs
@@ -5143,6 +5167,19 @@ loopBtn2.addEventListener('click', () => {
     }
     
     if (!loopState2.enabled) {
+        // Disable looping in playback controller if it exists
+        if (playbackController2 && playbackController2.bufferSource) {
+            // Disable loop on buffer source
+            playbackController2.bufferSource.loop = false;
+            
+            // If currently playing, switch back to audio element for non-looping playback
+            if (playbackController2.isPlaying) {
+                const currentPosition = playbackController2.getCurrentPosition();
+                playbackController2.switchToNormalMode();
+                console.log('🔓 Loop disabled, switched to audio element playback');
+            }
+        }
+        
         // Clear loop points when disabling - use clearLoopPoints to properly reset state
         clearLoopPoints(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2);
         // Disable and clear inputs
@@ -5269,7 +5306,9 @@ reverseLoopBtn1.addEventListener('click', () => {
             startProgressAnimation1();
         }
         
-        // Re-enable normal loop button when turning off reverse
+        // Re-enable normal loop when turning off reverse
+        loopState1.enabled = true;
+        loopState1.reverse = false;
         loopBtn1.classList.add('active');
         
         console.log('✅ Switched back to normal playback for Track 1');
@@ -5360,7 +5399,9 @@ reverseLoopBtn2.addEventListener('click', () => {
             startProgressAnimation2();
         }
         
-        // Re-enable normal loop button when turning off reverse
+        // Re-enable normal loop when turning off reverse
+        loopState2.enabled = true;
+        loopState2.reverse = false;
         loopBtn2.classList.add('active');
         
         console.log('✅ Switched back to normal playback for Track 2');

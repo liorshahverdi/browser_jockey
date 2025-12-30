@@ -110,70 +110,16 @@ export async function initAudioEffects(context, trackNumber) {
     const gain = context.createGain();
     gain.gain.value = 1.0;
     
-    // Simple stereo panning using splitter/merger with gain nodes
-    // Route BOTH input channels to BOTH output channels for proper stereo panning
+    // Use native StereoPannerNode - simple and reliable
+    // The StereoPannerNode works perfectly for our use case
+    const panner = context.createStereoPanner();
+    panner.pan.value = 0;
     
-    // First, ensure mono sources are upmixed to stereo
-    const monoToStereo = context.createGain();
-    monoToStereo.channelCount = 2;
-    monoToStereo.channelCountMode = 'explicit';
-    monoToStereo.channelInterpretation = 'speakers';
-    
-    const splitter = context.createChannelSplitter(2);
-    const merger = context.createChannelMerger(2);
-    
-    // Create 4 gain nodes for routing both inputs to both outputs
-    const leftToLeftGain = context.createGain();
-    const leftToRightGain = context.createGain();
-    const rightToLeftGain = context.createGain();
-    const rightToRightGain = context.createGain();
-    
-    leftToLeftGain.gain.value = 1.0;
-    leftToRightGain.gain.value = 1.0;
-    rightToLeftGain.gain.value = 1.0;
-    rightToRightGain.gain.value = 1.0;
-    
-    // Connect upmixer to splitter
-    monoToStereo.connect(splitter);
-    
-    // Route: input → splitter → [4 gain paths] → merger → output
-    // Left input to both outputs
-    splitter.connect(leftToLeftGain, 0);
-    splitter.connect(leftToRightGain, 0);
-    // Right input to both outputs  
-    splitter.connect(rightToLeftGain, 1);
-    splitter.connect(rightToRightGain, 1);
-    
-    // Connect to output channels (multiple sources sum)
-    leftToLeftGain.connect(merger, 0, 0);     // → left output
-    rightToLeftGain.connect(merger, 0, 0);    // → left output
-    leftToRightGain.connect(merger, 0, 1);    // → right output
-    rightToRightGain.connect(merger, 0, 1);   // → right output
-    
-    // Pan control object
-    const panControl = {
-        _value: 0,
-        get value() { return this._value; },
-        set value(val) {
-            this._value = Math.max(-1, Math.min(1, val));
-            // When pan = 1 (right): left output muted, right output full
-            // When pan = -1 (left): left output full, right output muted
-            const leftOut = 1.0 - Math.max(0, this._value);  // 1.0 at center/left, 0.0 at right
-            const rightOut = 1.0 + Math.min(0, this._value); // 1.0 at center/right, 0.0 at left
-            
-            // Apply same gain to both input channels for each output
-            leftToLeftGain.gain.value = leftOut;
-            rightToLeftGain.gain.value = leftOut;
-            leftToRightGain.gain.value = rightOut;
-            rightToRightGain.gain.value = rightOut;
-        }
-    };
-    
-    // Panner wrapper object
+    // Panner wrapper object for compatibility
     const pannerWrapper = {
-        input: monoToStereo,  // Accept mono or stereo, upmix to stereo
-        output: merger,
-        pan: panControl,
+        input: panner,
+        output: panner,
+        pan: panner.pan,
         connect(destination) {
             this.output.connect(destination);
         },
@@ -289,16 +235,19 @@ export function connectEffectsChain(source, effects, merger, audioContext, times
     let currentNode = panner.output || panner;
     if (timestretchNode) {
         try {
-            panner.disconnect();
+            // Disconnect only the OUTPUT of the panner, not the entire node
+            // This preserves the gain -> panner.input connection
             if (panner.output) {
                 panner.output.disconnect();
+            } else {
+                panner.disconnect();
             }
             (panner.output || panner).connect(timestretchNode);
             currentNode = timestretchNode;
             console.log('✅ Timestretch node connected in chain');
         } catch (err) {
             console.warn('⚠️ Timestretch node connection failed:', err.message);
-            currentNode = panner;
+            currentNode = panner.output || panner;
         }
     }
     

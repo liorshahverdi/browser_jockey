@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panning Test - Isolated</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .control {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        .value {
+            text-align: center;
+            font-size: 18px;
+            color: #333;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .info {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔊 Panning Test - Isolated</h1>
+    
+    <div class="info">
+        <strong>Test 1:</strong> Oscillator (simple sine wave)<br>
+        <strong>Test 2:</strong> Audio file (if available)<br>
+        <strong>Expected:</strong> Pan should move sound between left and right speakers
+    </div>
+
+    <div class="control">
+        <label>Pan Position:</label>
+        <input type="range" id="pan" min="-100" max="100" value="0">
+        <div class="value" id="panValue">Center</div>
+    </div>
+
+    <div class="control">
+        <label>Volume:</label>
+        <input type="range" id="volume" min="0" max="100" value="50">
+        <div class="value" id="volumeValue">50%</div>
+    </div>
+
+    <div>
+        <button id="playOsc">Play Oscillator</button>
+        <button id="stopOsc">Stop Oscillator</button>
+    </div>
+
+    <div>
+        <button id="playFile">Play Audio File</button>
+        <button id="stopFile">Stop Audio File</button>
+        <input type="file" id="fileInput" accept="audio/*">
+    </div>
+
+    <div class="info" id="status">Ready</div>
+
+    <script>
+        let audioContext;
+        let oscillator;
+        let gainNode;
+        let pannerNode;
+        let audioSource;
+        let audioBuffer;
+
+        // Initialize audio context
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Create gain node
+                gainNode = audioContext.createGain();
+                gainNode.gain.value = 0.5;
+                
+                // Create panner node (StereoPannerNode - simple approach)
+                pannerNode = audioContext.createStereoPanner();
+                pannerNode.pan.value = 0;
+                
+                // Connect: panner -> gain -> destination
+                pannerNode.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                updateStatus('✅ Audio context initialized');
+                console.log('Audio setup:', {
+                    sampleRate: audioContext.sampleRate,
+                    state: audioContext.state,
+                    pannerChannelCount: pannerNode.channelCount,
+                    pannerChannelCountMode: pannerNode.channelCountMode
+                });
+            }
+        }
+
+        function updateStatus(msg) {
+            document.getElementById('status').textContent = msg;
+            console.log(msg);
+        }
+
+        // Pan slider
+        document.getElementById('pan').addEventListener('input', (e) => {
+            const pan = parseInt(e.target.value);
+            const panValue = pan / 100; // -1.0 to 1.0
+            
+            if (pannerNode) {
+                pannerNode.pan.value = panValue;
+                console.log('Pan set to:', panValue);
+            }
+            
+            // Update label
+            const label = document.getElementById('panValue');
+            if (pan === 0) {
+                label.textContent = 'Center';
+            } else if (pan < 0) {
+                label.textContent = `Left ${Math.abs(pan)}%`;
+            } else {
+                label.textContent = `Right ${pan}%`;
+            }
+        });
+
+        // Volume slider
+        document.getElementById('volume').addEventListener('input', (e) => {
+            const volume = parseInt(e.target.value);
+            if (gainNode) {
+                gainNode.gain.value = volume / 100;
+            }
+            document.getElementById('volumeValue').textContent = volume + '%';
+        });
+
+        // Play oscillator
+        document.getElementById('playOsc').addEventListener('click', () => {
+            initAudio();
+            
+            // Stop existing oscillator
+            if (oscillator) {
+                oscillator.stop();
+            }
+            
+            // Create new oscillator
+            oscillator = audioContext.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 440; // A4 note
+            
+            // Connect: oscillator -> panner -> gain -> destination
+            oscillator.connect(pannerNode);
+            oscillator.start();
+            
+            updateStatus('🎵 Oscillator playing at 440Hz');
+        });
+
+        // Stop oscillator
+        document.getElementById('stopOsc').addEventListener('click', () => {
+            if (oscillator) {
+                oscillator.stop();
+                oscillator = null;
+                updateStatus('⏹️ Oscillator stopped');
+            }
+        });
+
+        // File input handler
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            initAudio();
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                updateStatus(`✅ Loaded: ${file.name} (${audioBuffer.numberOfChannels} channels, ${audioBuffer.duration.toFixed(1)}s)`);
+                console.log('Audio buffer:', {
+                    channels: audioBuffer.numberOfChannels,
+                    duration: audioBuffer.duration,
+                    sampleRate: audioBuffer.sampleRate
+                });
+            } catch (err) {
+                updateStatus('❌ Error loading file: ' + err.message);
+                console.error(err);
+            }
+        });
+
+        // Play audio file
+        document.getElementById('playFile').addEventListener('click', () => {
+            if (!audioBuffer) {
+                updateStatus('❌ Please load an audio file first');
+                return;
+            }
+            
+            // Stop existing source
+            if (audioSource) {
+                audioSource.stop();
+            }
+            
+            // Create new buffer source
+            audioSource = audioContext.createBufferSource();
+            audioSource.buffer = audioBuffer;
+            
+            // Connect: source -> panner -> gain -> destination
+            audioSource.connect(pannerNode);
+            audioSource.start();
+            
+            updateStatus('🎵 Playing audio file');
+        });
+
+        // Stop audio file
+        document.getElementById('stopFile').addEventListener('click', () => {
+            if (audioSource) {
+                audioSource.stop();
+                audioSource = null;
+                updateStatus('⏹️ Audio file stopped');
+            }
+        });
+    </script>
+</body>
+</html>

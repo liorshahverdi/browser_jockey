@@ -431,11 +431,27 @@ export class PlaybackController {
         if (this.mode === 'reverse' && this.isPlaying) {
             console.log('Recreating reverse buffer with new loop points...');
             const wasPlaying = this.isPlaying;
-            this.pause();
-            if (wasPlaying) {
-                this.startReversePlayback(0); // Restart from beginning of new loop
-                this.isPlaying = true;
+            
+            // Stop the current buffer source without switching mode
+            if (this.bufferSource) {
+                try {
+                    this.bufferSource.stop();
+                    this.bufferSource.disconnect();
+                    this.bufferSource = null;
+                } catch (e) {
+                    console.warn('Error stopping buffer source:', e);
+                }
             }
+            
+            // Clear cached buffers so they get regenerated with new loop points
+            this.timestretchedBuffer = null;
+            this.timestretchedBufferReversed = null;
+            
+            // Recreate and start the reverse playback with new loop points
+            // startReversePlayback will check isPlaying and start the buffer if needed
+            this.startReversePlayback(0);
+            
+            console.log('✅ Reverse playback recreated with new loop boundaries');
         }
     }
 
