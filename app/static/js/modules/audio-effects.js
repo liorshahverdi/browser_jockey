@@ -112,6 +112,13 @@ export async function initAudioEffects(context, trackNumber) {
     
     // Simple stereo panning using splitter/merger with gain nodes
     // Route BOTH input channels to BOTH output channels for proper stereo panning
+    
+    // First, ensure mono sources are upmixed to stereo
+    const monoToStereo = context.createGain();
+    monoToStereo.channelCount = 2;
+    monoToStereo.channelCountMode = 'explicit';
+    monoToStereo.channelInterpretation = 'speakers';
+    
     const splitter = context.createChannelSplitter(2);
     const merger = context.createChannelMerger(2);
     
@@ -125,6 +132,9 @@ export async function initAudioEffects(context, trackNumber) {
     leftToRightGain.gain.value = 1.0;
     rightToLeftGain.gain.value = 1.0;
     rightToRightGain.gain.value = 1.0;
+    
+    // Connect upmixer to splitter
+    monoToStereo.connect(splitter);
     
     // Route: input → splitter → [4 gain paths] → merger → output
     // Left input to both outputs
@@ -161,7 +171,7 @@ export async function initAudioEffects(context, trackNumber) {
     
     // Panner wrapper object
     const pannerWrapper = {
-        input: splitter,
+        input: monoToStereo,  // Accept mono or stereo, upmix to stereo
         output: merger,
         pan: panControl,
         connect(destination) {
