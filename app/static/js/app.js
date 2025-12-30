@@ -872,6 +872,9 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
             console.log('🔄 Restarting reverse mode with new timestretched buffer');
             const currentPosition = playbackCtrl.currentPositionInLoop || 0;
             playbackCtrl.pause();
+            // Ensure loop points are set for position tracking
+            playbackCtrl.loopStart = loopState.start;
+            playbackCtrl.loopEnd = loopState.end;
             playbackCtrl.startReversePlayback(currentPosition, reversedStretchedBuffer);
             playbackCtrl.isPlaying = true;
         }
@@ -5216,7 +5219,9 @@ reverseLoopBtn1.addEventListener('click', () => {
         
         // Switch to buffer-based reverse playback
         console.log('Switching to buffer-based reverse playback for Track 1');
-        playbackController1.setLoopPoints(loopState1.start, loopState1.end);
+        // Set loop points directly to avoid clearing timestretched buffers
+        playbackController1.loopStart = loopState1.start;
+        playbackController1.loopEnd = loopState1.end;
         
         // Set current tempo before switching to reverse mode
         const currentTempo = parseFloat(tempoSlider1.value);
@@ -5294,7 +5299,9 @@ reverseLoopBtn2.addEventListener('click', () => {
         
         // Switch to buffer-based reverse playback
         console.log('Switching to buffer-based reverse playback for Track 2');
-        playbackController2.setLoopPoints(loopState2.start, loopState2.end);
+        // Set loop points directly to avoid clearing timestretched buffers
+        playbackController2.loopStart = loopState2.start;
+        playbackController2.loopEnd = loopState2.end;
         
         // Set current tempo before switching to reverse mode
         const currentTempo = parseFloat(tempoSlider2.value);
