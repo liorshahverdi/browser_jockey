@@ -3,6 +3,9 @@
  * Provides drag-and-drop sequencer functionality for arranging audio clips
  */
 
+import { detectBPM } from './audio-utils.js';
+import { IndexedDBManager } from './indexeddb-manager.js';
+
 export class Sequencer {
     constructor(audioContext) {
         this.audioContext = audioContext;
@@ -44,6 +47,22 @@ export class Sequencer {
         // Audio routing
         this.outputGain = null;
         this.routingGain = null;
+        
+        // Background rendering queue
+        this.renderQueue = []; // FIFO queue for clips to process
+        this.isRendering = false;
+        this.currentRenderingClip = null;
+        this.renderedClipsCount = 0;
+        this.totalClipsToRender = 0;
+        
+        // Auto-timestretch settings
+        this.autoTimestretachEnabled = false;
+        this.projectBPM = 120; // Default project tempo
+        
+        // IndexedDB for project persistence
+        this.dbManager = new IndexedDBManager();
+        this.currentProjectId = 'autosave'; // Default project
+        this.dbManager.init().catch(err => console.error('Failed to initialize IndexedDB:', err));
         
         this.initializeElements();
         this.initializeAudioRouting(); // Initialize audio routing BEFORE timeline
@@ -113,6 +132,15 @@ export class Sequencer {
         this.addBarBtn = document.getElementById('addBarBtn');
         this.removeBarBtn = document.getElementById('removeBarBtn');
         this.bpmInput = document.getElementById('sequencerBPM');
+        this.autoTimestretchBtn = document.getElementById('sequencerAutoTimestrechBtn');
+        this.cacheStatus = document.getElementById('cacheStatus');
+        this.cacheSize = document.getElementById('cacheSize');
+        this.clearCacheBtn = document.getElementById('clearCacheBtn');
+        this.saveProjectBtn = document.getElementById('saveProjectBtn');
+        this.loadProjectBtn = document.getElementById('loadProjectBtn');
+        this.exportProjectBtn = document.getElementById('exportProjectBtn');
+        this.importProjectBtn = document.getElementById('importProjectBtn');
+        this.importProjectInput = document.getElementById('importProjectInput');
         this.zoomSlider = document.getElementById('sequencerZoom');
         this.zoomValue = document.getElementById('zoomValue');
         
@@ -222,6 +250,28 @@ export class Sequencer {
         if (toggleEffectsPanelBtn) {
             toggleEffectsPanelBtn.addEventListener('click', () => this.toggleEffectsPanel());
         }
+        
+        // Auto-timestretch toggle
+        this.autoTimestretchBtn?.addEventListener('click', () => this.toggleAutoTimestretch());
+        
+        // Clear cache button
+        this.clearCacheBtn?.addEventListener('click', () => this.clearTimestretchCache());
+        
+        // Save/Load project buttons
+        this.saveProjectBtn?.addEventListener('click', () => this.saveProject());
+        this.loadProjectBtn?.addEventListener('click', () => this.showLoadProjectDialog());
+        this.exportProjectBtn?.addEventListener('click', () => this.exportProject());
+        this.importProjectBtn?.addEventListener('click', () => this.importProjectInput?.click());
+        this.importProjectInput?.addEventListener('change', (e) => this.importProject(e));
+        
+        // Project BPM change
+        this.bpmInput?.addEventListener('change', (e) => {
+            this.projectBPM = parseInt(e.target.value) || 120;
+            console.log(`🎵 Project BPM updated: ${this.projectBPM}`);
+            if (this.autoTimestretachEnabled) {
+                this.applyAutoTimestretchToAllClips();
+            }
+        });
         
         // ESC key to exit fullscreen
         document.addEventListener('keydown', (e) => {
@@ -1597,6 +1647,9 @@ export class Sequencer {
     }
     
     addClip(id, name, audioBuffer, duration, startTime = 0, endTime = null) {
+        // Detect BPM
+        const detectedBPM = detectBPM(audioBuffer);
+        
         const clip = {
             id: id,
             name: name,
@@ -1604,11 +1657,19 @@ export class Sequencer {
             duration: endTime ? (endTime - startTime) : duration,
             startTime: startTime,
             endTime: endTime || duration,
-            fullBuffer: audioBuffer
+            fullBuffer: audioBuffer,
+            detectedBPM: detectedBPM || 0,
+            appliedStretchRatio: 1.0,
+            manualStretch: 1.0,
+            manualPitch: 0,
+            autoTimestretched: false,
+            renderingStatus: 'pending'
         };
         
         this.clips.set(id, clip);
         this.updateClipsList();
+        
+        console.log(`📋 Added clip: ${name}, BPM: ${detectedBPM || 'unknown'}`);
     }
     
     addLoopClip(trackNumber, audioBuffer, loopStart, loopEnd, fileName) {
@@ -3398,5 +3459,690 @@ export class Sequencer {
         }
         
         console.log('❌ Cleared loop markers');
+    }
+
+    /**
+     * Auto-Timestretch System
+     */
+
+    /**
+     * Toggle auto-timestretch mode
+     */
+    toggleAutoTimestretch() {
+        this.autoTimestretachEnabled = !this.autoTimestretachEnabled;
+        
+        if (this.autoTimestretchBtn) {
+            if (this.autoTimestretachEnabled) {
+                this.autoTimestretchBtn.classList.add('active');
+                this.autoTimestretchBtn.title = 'Auto-timestretch enabled - clips will match project BPM';
+            } else {
+                this.autoTimestretchBtn.classList.remove('active');
+                this.autoTimestretchBtn.title = 'Auto-timestretch disabled';
+            }
+        }
+
+        if (this.autoTimestretachEnabled) {
+            console.log(`🎵 Auto-timestretch enabled (Project BPM: ${this.projectBPM})`);
+            this.applyAutoTimestretchToAllClips();
+        } else {
+            console.log('🎵 Auto-timestretch disabled');
+            this.clearAllTimestretchBadges();
+        }
+    }
+
+    /**
+     * Apply auto-timestretch to all clips based on their detected BPM
+     */
+    applyAutoTimestretchToAllClips() {
+        this.clips.forEach((clip) => {
+            if (clip.detectedBPM && clip.detectedBPM > 0) {
+                const stretchRatio = clip.detectedBPM / this.projectBPM;
+                clip.appliedStretchRatio = stretchRatio;
+                clip.autoTimestretched = true;
+
+                // Queue for rendering
+                this.queueClipForRendering({
+                    clip,
+                    name: clip.name,
+                    stretchRatio,
+                    pitchShift: 0,
+                    reverse: false
+                });
+
+                // Update visual badge
+                this.updateClipBadge(clip);
+            }
+        });
+    }
+
+    /**
+     * Update visual badge on clip to show timestretch status
+     * @param {Object} clip - The clip object
+     */
+    updateClipBadge(clip) {
+        if (!this.autoTimestretachEnabled) {
+            return;
+        }
+
+        const clipElement = document.querySelector(`[data-clip-id="${clip.id}"]`);
+        if (!clipElement) {
+            return;
+        }
+
+        let badge = clipElement.querySelector('.timestretch-badge');
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.className = 'timestretch-badge';
+            clipElement.appendChild(badge);
+        }
+
+        if (clip.detectedBPM && clip.detectedBPM > 0) {
+            const targetBPM = this.projectBPM;
+            const change = ((targetBPM - clip.detectedBPM) / clip.detectedBPM * 100).toFixed(1);
+            const sign = change >= 0 ? '+' : '';
+            badge.textContent = `${clip.detectedBPM}→${targetBPM} BPM (${sign}${change}%)`;
+            badge.style.background = 'rgba(76, 175, 80, 0.9)'; // Green for auto-stretched
+        } else {
+            badge.textContent = `⚠️ BPM unknown`;
+            badge.style.background = 'rgba(255, 152, 0, 0.9)'; // Orange warning
+        }
+    }
+
+    /**
+     * Clear all timestretch badges
+     */
+    clearAllTimestretchBadges() {
+        const badges = document.querySelectorAll('.timestretch-badge');
+        badges.forEach(badge => badge.remove());
+    }
+
+    /**
+     * Cache Management System
+     */
+
+    /**
+     * Update cache size display
+     */
+    updateCacheSize() {
+        let totalSize = 0;
+
+        this.clips.forEach((clip) => {
+            if (clip.renderedBuffer) {
+                const samples = clip.renderedBuffer.length * clip.renderedBuffer.numberOfChannels;
+                totalSize += samples * 4; // Float32 = 4 bytes per sample
+            }
+        });
+
+        const sizeMB = (totalSize / (1024 * 1024)).toFixed(1);
+        
+        if (this.cacheSize) {
+            this.cacheSize.textContent = `${sizeMB} MB`;
+        }
+
+        // Warn if cache is getting large
+        const cacheLimit = 200; // 200 MB
+        if (parseFloat(sizeMB) > cacheLimit * 0.9) {
+            if (this.cacheStatus) {
+                this.cacheStatus.style.color = '#ff9800'; // Orange warning
+            }
+        } else {
+            if (this.cacheStatus) {
+                this.cacheStatus.style.color = ''; // Reset to default
+            }
+        }
+
+        // Apply LRU eviction if over limit
+        if (parseFloat(sizeMB) > cacheLimit) {
+            this.applyLRUEviction(cacheLimit);
+        }
+    }
+
+    /**
+     * Apply LRU (Least Recently Used) eviction to keep cache under limit
+     * @param {number} limitMB - Cache size limit in MB
+     */
+    applyLRUEviction(limitMB) {
+        console.log(`⚠️ Cache over limit (${limitMB} MB), applying LRU eviction...`);
+
+        // Create array of clips with rendered buffers and timestamps
+        const renderedClips = [];
+        this.clips.forEach((clip) => {
+            if (clip.renderedBuffer) {
+                renderedClips.push({
+                    clip,
+                    lastUsed: clip.lastUsedTimestamp || 0,
+                    size: (clip.renderedBuffer.length * clip.renderedBuffer.numberOfChannels * 4) / (1024 * 1024)
+                });
+            }
+        });
+
+        // Sort by lastUsed (oldest first)
+        renderedClips.sort((a, b) => a.lastUsed - b.lastUsed);
+
+        // Remove oldest buffers until under limit
+        let currentSize = renderedClips.reduce((sum, item) => sum + item.size, 0);
+        let evicted = 0;
+
+        for (const item of renderedClips) {
+            if (currentSize <= limitMB) {
+                break;
+            }
+
+            delete item.clip.renderedBuffer;
+            item.clip.renderingStatus = 'pending';
+            currentSize -= item.size;
+            evicted++;
+        }
+
+        console.log(`🗑️ Evicted ${evicted} buffers to free space`);
+        this.updateCacheSize();
+    }
+
+    /**
+     * Clear the timestretch cache
+     */
+    clearTimestretchCache() {
+        let cleared = 0;
+
+        this.clips.forEach((clip) => {
+            if (clip.renderedBuffer) {
+                delete clip.renderedBuffer;
+                clip.renderingStatus = 'pending';
+                cleared++;
+            }
+        });
+
+        console.log(`🗑️ Cleared cache: ${cleared} buffers removed`);
+        this.updateCacheSize();
+        this.clearAllTimestretchBadges();
+
+        // Re-render if auto-timestretch is enabled
+        if (this.autoTimestretachEnabled) {
+            this.applyAutoTimestretchToAllClips();
+        }
+    }
+
+    /**
+     * Background Rendering System for Timestretching
+     */
+
+    /**
+     * Queue a clip for timestretched rendering
+     * @param {Object} clipData - Clip data with timestretch parameters
+     */
+    queueClipForRendering(clipData) {
+        this.renderQueue.push(clipData);
+        console.log(`📥 Queued clip for rendering: ${clipData.name} (Queue size: ${this.renderQueue.length})`);
+        
+        // Start processing if not already rendering
+        if (!this.isRendering) {
+            this.processRenderQueue();
+        }
+    }
+
+    /**
+     * Process the render queue (FIFO)
+     */
+    async processRenderQueue() {
+        if (this.isRendering || this.renderQueue.length === 0) {
+            return;
+        }
+
+        this.isRendering = true;
+        this.totalClipsToRender = this.renderQueue.length;
+        this.renderedClipsCount = 0;
+
+        this.updateRenderProgress();
+
+        while (this.renderQueue.length > 0) {
+            const clipData = this.renderQueue.shift(); // FIFO: take first item
+            this.currentRenderingClip = clipData;
+
+            console.log(`🎵 Rendering clip ${this.renderedClipsCount + 1}/${this.totalClipsToRender}: ${clipData.name}`);
+
+            try {
+                await this.renderTimestretchedClip(clipData);
+                this.renderedClipsCount++;
+                this.updateRenderProgress();
+            } catch (error) {
+                console.error(`❌ Error rendering clip ${clipData.name}:`, error);
+                // Continue with next clip even if one fails
+            }
+        }
+
+        this.isRendering = false;
+        this.currentRenderingClip = null;
+        this.hideRenderProgress();
+
+        console.log(`✅ Render queue complete: ${this.renderedClipsCount} clips processed`);
+    }
+
+    /**
+     * Render a timestretched version of a clip using offline processing
+     * @param {Object} clipData - Clip data with buffer, tempo, pitch, etc.
+     */
+    async renderTimestretchedClip(clipData) {
+        const { clip, stretchRatio, pitchShift, reverse } = clipData;
+
+        if (!clip || !clip.audioBuffer) {
+            console.error('Invalid clip data for rendering');
+            return;
+        }
+
+        // Show "rendering" overlay on the clip element if it exists
+        if (clip.element) {
+            this.showClipRenderingState(clip.element, true);
+        }
+
+        const audioBuffer = clip.audioBuffer;
+        const duration = audioBuffer.duration;
+        const outputDuration = duration / (stretchRatio || 1.0);
+
+        try {
+            // Use Tone.Offline for offline rendering
+            const renderedBuffer = await Tone.Offline(async ({ Transport }) => {
+                const player = new Tone.Player(audioBuffer).toDestination();
+                player.playbackRate = stretchRatio || 1.0;
+
+                // Add pitch shifting if needed
+                if (pitchShift && pitchShift !== 0) {
+                    const pitchShifter = new Tone.PitchShift({
+                        pitch: pitchShift
+                    });
+                    player.disconnect();
+                    player.connect(pitchShifter);
+                    pitchShifter.toDestination();
+                }
+
+                player.start(0);
+            }, outputDuration);
+
+            // Store the rendered buffer
+            clip.renderedBuffer = renderedBuffer;
+            clip.renderingStatus = 'complete';
+            clip.lastUsedTimestamp = Date.now(); // Track when buffer was created/used
+
+            // If reverse is needed, apply it
+            if (reverse) {
+                clip.renderedBuffer = this.reverseBuffer(renderedBuffer);
+            }
+
+            console.log(`✅ Clip rendered successfully: ${clip.name} (${outputDuration.toFixed(2)}s)`);
+            
+            // Update cache size display
+            this.updateCacheSize();
+        } catch (error) {
+            clip.renderingStatus = 'error';
+            console.error(`❌ Rendering failed for ${clip.name}:`, error);
+            throw error;
+        } finally {
+            // Hide "rendering" overlay
+            if (clip.element) {
+                this.showClipRenderingState(clip.element, false);
+            }
+        }
+    }
+
+    /**
+     * Reverse an AudioBuffer
+     * @param {AudioBuffer} buffer - Buffer to reverse
+     * @returns {AudioBuffer} Reversed buffer
+     */
+    reverseBuffer(buffer) {
+        const numberOfChannels = buffer.numberOfChannels;
+        const length = buffer.length;
+        const sampleRate = buffer.sampleRate;
+
+        const reversedBuffer = this.audioContext.createBuffer(
+            numberOfChannels,
+            length,
+            sampleRate
+        );
+
+        for (let channel = 0; channel < numberOfChannels; channel++) {
+            const originalData = buffer.getChannelData(channel);
+            const reversedData = reversedBuffer.getChannelData(channel);
+
+            for (let i = 0; i < length; i++) {
+                reversedData[i] = originalData[length - 1 - i];
+            }
+        }
+
+        return reversedBuffer;
+    }
+
+    /**
+     * Show/hide rendering state on a clip element
+     * @param {HTMLElement} clipElement - The clip DOM element
+     * @param {boolean} isRendering - Whether to show or hide rendering state
+     */
+    showClipRenderingState(clipElement, isRendering) {
+        let overlay = clipElement.querySelector('.rendering-overlay');
+        
+        if (isRendering) {
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'rendering-overlay';
+                overlay.innerHTML = '<span>⏳ Rendering...</span>';
+                clipElement.appendChild(overlay);
+            }
+            overlay.style.display = 'flex';
+        } else {
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+    }
+
+    /**
+     * Update the global rendering progress bar
+     */
+    updateRenderProgress() {
+        let progressContainer = document.getElementById('sequencerRenderProgress');
+        
+        if (!progressContainer) {
+            // Create progress bar if it doesn't exist
+            progressContainer = document.createElement('div');
+            progressContainer.id = 'sequencerRenderProgress';
+            progressContainer.className = 'sequencer-render-progress';
+            
+            const progressBar = document.createElement('div');
+            progressBar.className = 'progress-bar';
+            
+            const progressText = document.createElement('div');
+            progressText.className = 'progress-text';
+            
+            progressContainer.appendChild(progressBar);
+            progressContainer.appendChild(progressText);
+            
+            // Add to sequencer controls area
+            const controlsContainer = document.querySelector('.sequencer-controls');
+            if (controlsContainer) {
+                controlsContainer.appendChild(progressContainer);
+            }
+        }
+
+        const progressBar = progressContainer.querySelector('.progress-bar');
+        const progressText = progressContainer.querySelector('.progress-text');
+        
+        const percentage = this.totalClipsToRender > 0 
+            ? (this.renderedClipsCount / this.totalClipsToRender) * 100 
+            : 0;
+
+        if (progressBar) {
+            progressBar.style.width = `${percentage}%`;
+        }
+
+        if (progressText) {
+            progressText.textContent = `Processing ${this.renderedClipsCount}/${this.totalClipsToRender} clips... ${percentage.toFixed(0)}%`;
+        }
+
+        progressContainer.style.display = 'block';
+    }
+
+    /**
+     * Hide the rendering progress bar
+     */
+    hideRenderProgress() {
+        const progressContainer = document.getElementById('sequencerRenderProgress');
+        if (progressContainer) {
+            progressContainer.style.display = 'none';
+        }
+    }
+
+    /**
+     * Project Save/Load System
+     */
+
+    /**
+     * Serialize current sequencer state to JSON
+     * @returns {object} Serialized project data
+     */
+    serializeProject() {
+        const projectData = {
+            version: '1.0',
+            name: this.currentProjectId,
+            bpm: this.currentBPM,
+            numberOfBars: this.numberOfBars,
+            zoomLevel: this.zoomLevel,
+            autoTimestretachEnabled: this.autoTimestretachEnabled,
+            projectBPM: this.projectBPM,
+            clips: [],
+            tracks: []
+        };
+
+        // Serialize clips
+        this.clips.forEach((clip, id) => {
+            projectData.clips.push({
+                id: clip.id,
+                name: clip.name,
+                duration: clip.duration,
+                startTime: clip.startTime,
+                endTime: clip.endTime,
+                detectedBPM: clip.detectedBPM,
+                appliedStretchRatio: clip.appliedStretchRatio,
+                manualStretch: clip.manualStretch,
+                manualPitch: clip.manualPitch,
+                autoTimestretched: clip.autoTimestretched,
+                renderingStatus: clip.renderingStatus
+            });
+        });
+
+        // Serialize tracks with clip placements
+        this.sequencerTracks.forEach((track, index) => {
+            const trackData = {
+                id: track.id,
+                index: index,
+                clips: []
+            };
+
+            track.clips.forEach(placedClip => {
+                trackData.clips.push({
+                    clipId: placedClip.id,
+                    startBar: placedClip.startBar,
+                    duration: placedClip.duration,
+                    trimStart: placedClip.trimStart || 0,
+                    trimEnd: placedClip.trimEnd || placedClip.duration
+                });
+            });
+
+            projectData.tracks.push(trackData);
+        });
+
+        return projectData;
+    }
+
+    /**
+     * Save project to IndexedDB
+     */
+    async saveProject() {
+        try {
+            console.log('💾 Saving project...');
+
+            // Serialize project data
+            const projectData = this.serializeProject();
+
+            // Save all audio buffers to IndexedDB
+            for (const [id, clip] of this.clips) {
+                if (clip.audioBuffer) {
+                    await this.dbManager.saveAudioBuffer(
+                        clip.id,
+                        clip.audioBuffer,
+                        this.currentProjectId,
+                        {
+                            name: clip.name,
+                            detectedBPM: clip.detectedBPM
+                        }
+                    );
+                }
+            }
+
+            // Save project metadata
+            await this.dbManager.saveProject(this.currentProjectId, projectData);
+
+            console.log('✅ Project saved successfully');
+            alert(`✅ Project "${this.currentProjectId}" saved!`);
+
+        } catch (error) {
+            console.error('❌ Failed to save project:', error);
+            alert('Failed to save project: ' + error.message);
+        }
+    }
+
+    /**
+     * Load project from IndexedDB
+     * @param {string} projectId - Project ID to load
+     */
+    async loadProject(projectId) {
+        try {
+            console.log(`📂 Loading project: ${projectId}...`);
+
+            // Load project metadata
+            const projectData = await this.dbManager.loadProject(projectId);
+
+            // Clear current state
+            this.clips.clear();
+            this.sequencerTracks = [];
+            this.updateClipsList();
+
+            // Restore project settings
+            this.currentBPM = projectData.bpm || 120;
+            this.numberOfBars = projectData.numberOfBars || 8;
+            this.zoomLevel = projectData.zoomLevel || 1.0;
+            this.autoTimestretachEnabled = projectData.autoTimestretachEnabled || false;
+            this.projectBPM = projectData.projectBPM || 120;
+
+            if (this.bpmInput) this.bpmInput.value = this.currentBPM;
+            if (this.zoomSlider) this.zoomSlider.value = this.zoomLevel * 100;
+
+            // Load audio buffers and restore clips
+            for (const clipData of projectData.clips) {
+                try {
+                    const audioBuffer = await this.dbManager.loadAudioBuffer(clipData.id, this.audioContext);
+                    
+                    const clip = {
+                        id: clipData.id,
+                        name: clipData.name,
+                        audioBuffer: audioBuffer,
+                        duration: clipData.duration,
+                        startTime: clipData.startTime || 0,
+                        endTime: clipData.endTime || clipData.duration,
+                        fullBuffer: audioBuffer,
+                        detectedBPM: clipData.detectedBPM || 0,
+                        appliedStretchRatio: clipData.appliedStretchRatio || 1.0,
+                        manualStretch: clipData.manualStretch || 1.0,
+                        manualPitch: clipData.manualPitch || 0,
+                        autoTimestretched: clipData.autoTimestretched || false,
+                        renderingStatus: clipData.renderingStatus || 'pending'
+                    };
+
+                    this.clips.set(clip.id, clip);
+                } catch (error) {
+                    console.error(`Failed to load clip ${clipData.id}:`, error);
+                }
+            }
+
+            this.updateClipsList();
+
+            // Restore tracks and clip placements
+            // (Track restoration would require recreating track DOM elements)
+            this.initializeTimeline(); // Reinitialize timeline
+
+            this.currentProjectId = projectId;
+
+            console.log('✅ Project loaded successfully');
+            alert(`✅ Project "${projectId}" loaded!`);
+
+        } catch (error) {
+            console.error('❌ Failed to load project:', error);
+            alert('Failed to load project: ' + error.message);
+        }
+    }
+
+    /**
+     * Show load project dialog
+     */
+    async showLoadProjectDialog() {
+        try {
+            const projects = await this.dbManager.listProjects();
+
+            if (projects.length === 0) {
+                alert('No saved projects found.');
+                return;
+            }
+
+            let message = 'Select a project to load:\n\n';
+            projects.forEach((project, index) => {
+                const date = new Date(project.savedAt).toLocaleString();
+                message += `${index + 1}. ${project.name} (saved: ${date})\n`;
+            });
+
+            const choice = prompt(message + '\nEnter project number:');
+            const index = parseInt(choice) - 1;
+
+            if (index >= 0 && index < projects.length) {
+                await this.loadProject(projects[index].id);
+            }
+        } catch (error) {
+            console.error('Failed to list projects:', error);
+            alert('Failed to load projects list.');
+        }
+    }
+
+    /**
+     * Export project as JSON file
+     */
+    exportProject() {
+        try {
+            const projectData = this.serializeProject();
+            const json = JSON.stringify(projectData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${this.currentProjectId}_${Date.now()}.json`;
+            a.click();
+
+            URL.revokeObjectURL(url);
+            console.log('📥 Project exported');
+        } catch (error) {
+            console.error('Failed to export project:', error);
+            alert('Failed to export project: ' + error.message);
+        }
+    }
+
+    /**
+     * Import project from JSON file
+     * @param {Event} event - File input change event
+     */
+    async importProject(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+            const text = await file.text();
+            const projectData = JSON.parse(text);
+
+            console.log('📤 Importing project:', projectData.name);
+
+            // Note: Audio buffers are NOT included in JSON export
+            // User would need to re-upload audio files or load from IndexedDB
+            alert('⚠️ Note: Audio files are not included in JSON export.\nPlease load the project from browser storage or re-upload audio files.');
+
+            // Could implement partial restore of settings without audio
+            this.currentBPM = projectData.bpm || 120;
+            this.numberOfBars = projectData.numberOfBars || 8;
+            this.projectBPM = projectData.projectBPM || 120;
+
+            if (this.bpmInput) this.bpmInput.value = this.currentBPM;
+
+        } catch (error) {
+            console.error('Failed to import project:', error);
+            alert('Failed to import project: ' + error.message);
+        }
+
+        // Reset file input
+        event.target.value = '';
     }
 }

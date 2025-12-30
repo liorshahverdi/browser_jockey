@@ -23,6 +23,7 @@ export class PlaybackController {
         this.loopStart = null;
         this.loopEnd = null;
         this.currentPositionInLoop = 0; // Track position within loop for seamless switching
+        this.currentPlaybackRate = 1.0; // Store current tempo for reverse mode
         
         // References (set externally)
         this.bufferManager = null;
@@ -203,8 +204,9 @@ export class PlaybackController {
         this.bufferSource.loop = true; // Enable seamless looping!
         this.bufferSource.loopStart = 0;
         this.bufferSource.loopEnd = reversedBuffer.duration;
+        this.bufferSource.playbackRate.value = this.currentPlaybackRate; // Apply current tempo
         
-        console.log(`🔧 Buffer source created with loop: ${this.bufferSource.loop}, loopEnd: ${this.bufferSource.loopEnd.toFixed(2)}s`);
+        console.log(`🔧 Buffer source created with loop: ${this.bufferSource.loop}, loopEnd: ${this.bufferSource.loopEnd.toFixed(2)}s, playbackRate: ${this.currentPlaybackRate.toFixed(2)}x`);
         
         // Connect to gain node, which connects to effects chain
         this.bufferSource.connect(this.gainNode);
@@ -276,7 +278,8 @@ export class PlaybackController {
                     if (this.reverseStartTime) {
                         const elapsedTime = this.audioContext.currentTime - this.reverseStartTime;
                         const loopDuration = this.loopEnd - this.loopStart;
-                        const reversePosition = (this.reverseStartOffset - elapsedTime) % loopDuration;
+                        // Account for playback rate when calculating position
+                        const reversePosition = (this.reverseStartOffset - (elapsedTime * this.currentPlaybackRate)) % loopDuration;
                         this.currentPositionInLoop = reversePosition < 0 ? loopDuration + reversePosition : reversePosition;
                         currentPosition = this.loopEnd - this.currentPositionInLoop;
                     }
@@ -343,6 +346,21 @@ export class PlaybackController {
     }
 
     /**
+     * Set playback rate (tempo) for both normal and reverse modes
+     * @param {number} rate - Playback rate (1.0 = normal speed)
+     */
+    setPlaybackRate(rate) {
+        this.currentPlaybackRate = rate;
+        
+        if (this.mode === 'reverse' && this.bufferSource) {
+            // Apply to current buffer source
+            this.bufferSource.playbackRate.value = rate;
+            console.log(`🎵 ${this.trackId} reverse playback rate set to ${rate.toFixed(2)}x`);
+        }
+        // Note: Normal mode tempo is handled via audioElement.playbackRate in app.js
+    }
+
+    /**
      * Connect the gain node to the effects chain
      * This should be called after initialization to set up the audio routing
      * @param {AudioNode} destination - The first node in the effects chain
@@ -367,8 +385,8 @@ export class PlaybackController {
                 const loopDuration = this.loopEnd - this.loopStart;
                 
                 // As the reversed buffer plays forward, we move through it
-                // reversePosition increases from reverseStartOffset to loopDuration, then wraps
-                let reversePosition = (this.reverseStartOffset + elapsedTime) % loopDuration;
+                // reversePosition increases from reverseStartOffset, accounting for playback rate
+                let reversePosition = (this.reverseStartOffset + (elapsedTime * this.currentPlaybackRate)) % loopDuration;
                 
                 // Convert buffer position to actual track time
                 // In the reversed buffer, position 0 = loopEnd, position loopDuration = loopStart
@@ -377,7 +395,7 @@ export class PlaybackController {
                 
                 // Debug logging every 0.5 seconds
                 if (!this._lastLogTime || (currentTime - this._lastLogTime) > 0.5) {
-                    console.log(`⏱️ ${this.trackId} Reverse Position: elapsed=${elapsedTime.toFixed(2)}s, reversePos=${reversePosition.toFixed(2)}s, actualTime=${actualTime.toFixed(2)}s`);
+                    console.log(`⏱️ ${this.trackId} Reverse Position: elapsed=${elapsedTime.toFixed(2)}s, rate=${this.currentPlaybackRate.toFixed(2)}x, reversePos=${reversePosition.toFixed(2)}s, actualTime=${actualTime.toFixed(2)}s`);
                     this._lastLogTime = currentTime;
                 }
                 

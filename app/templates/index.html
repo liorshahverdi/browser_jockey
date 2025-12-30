@@ -980,6 +980,16 @@
                             <label class="bpm-control">
                                 BPM: <input type="number" id="sequencerBPM" value="120" min="60" max="200" step="1">
                             </label>
+                            <button id="sequencerAutoTimestrechBtn" class="sequencer-btn" title="Auto-timestretch clips to match project BPM">🎵 Auto-Stretch</button>
+                            <label class="cache-status" id="cacheStatus" title="Timestretched buffer cache size">
+                                Cache: <span id="cacheSize">0 MB</span> / 200 MB
+                            </label>
+                            <button id="clearCacheBtn" class="sequencer-btn" title="Clear timestretched buffer cache">🗑️ Clear Cache</button>
+                            <button id="saveProjectBtn" class="sequencer-btn" title="Save project to browser storage">💾 Save</button>
+                            <button id="loadProjectBtn" class="sequencer-btn" title="Load project from browser storage">📂 Load</button>
+                            <button id="exportProjectBtn" class="sequencer-btn" title="Export project as JSON file">📥 Export</button>
+                            <button id="importProjectBtn" class="sequencer-btn" title="Import project from file">📤 Import</button>
+                            <input type="file" id="importProjectInput" accept=".json" style="display: none;">
                             <label class="zoom-control">
                                 Zoom: <input type="range" id="sequencerZoom" value="100" min="50" max="300" step="10" style="width: 100px;">
                                 <span id="zoomValue">100%</span>

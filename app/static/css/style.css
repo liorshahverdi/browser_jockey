@@ -3910,6 +3910,20 @@ body.sequencer-fullscreen .visualization-wrapper {
     text-align: center;
 }
 
+.cache-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.cache-status span {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
 .sequencer-workspace {
     display: grid;
     grid-template-columns: 250px 1fr;
@@ -4412,6 +4426,86 @@ body.sequencer-fullscreen .visualization-wrapper {
     z-index: 2;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     padding: 5px;
+}
+
+/* Timestretch badge for clips */
+.timestretch-badge {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Rendering overlay for clips */
+.rendering-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    border-radius: 4px;
+}
+
+.rendering-overlay span {
+    color: #ffeb3b;
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Sequencer render progress bar */
+.sequencer-render-progress {
+    position: relative;
+    width: 300px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-left: 20px;
+    display: none;
+}
+
+.sequencer-render-progress .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #66BB6A);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.sequencer-render-progress .progress-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 1;
 }
 
 .timeline-bar {

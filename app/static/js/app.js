@@ -4902,6 +4902,11 @@ reverseLoopBtn1.addEventListener('click', () => {
         // Switch to buffer-based reverse playback
         console.log('Switching to buffer-based reverse playback for Track 1');
         playbackController1.setLoopPoints(loopState1.start, loopState1.end);
+        
+        // Set current tempo before switching to reverse mode
+        const currentTempo = parseFloat(tempoSlider1.value);
+        playbackController1.setPlaybackRate(currentTempo);
+        
         playbackController1.switchToReverseMode();
         
         // If paused, don't start playing automatically
@@ -4997,6 +5002,11 @@ reverseLoopBtn2.addEventListener('click', () => {
         // Switch to buffer-based reverse playback
         console.log('Switching to buffer-based reverse playback for Track 2');
         playbackController2.setLoopPoints(loopState2.start, loopState2.end);
+        
+        // Set current tempo before switching to reverse mode
+        const currentTempo = parseFloat(tempoSlider2.value);
+        playbackController2.setPlaybackRate(currentTempo);
+        
         playbackController2.switchToReverseMode();
         
         // If paused, don't start playing automatically
@@ -5697,6 +5707,12 @@ tempoSlider1.addEventListener('input', (e) => {
         const pitchShift = Math.pow(2, pitch / 12);
         audioElement1.playbackRate = tempo * pitchShift;
     }
+    
+    // Update playback controller for reverse mode
+    if (playbackController1) {
+        playbackController1.setPlaybackRate(tempo);
+    }
+    
     tempoValue1.textContent = tempo.toFixed(2) + 'x';
 });
 
@@ -5712,6 +5728,12 @@ tempoSlider2.addEventListener('input', (e) => {
         const pitchShift = Math.pow(2, pitch / 12);
         audioElement2.playbackRate = tempo * pitchShift;
     }
+    
+    // Update playback controller for reverse mode
+    if (playbackController2) {
+        playbackController2.setPlaybackRate(tempo);
+    }
+    
     tempoValue2.textContent = tempo.toFixed(2) + 'x';
 });
 
