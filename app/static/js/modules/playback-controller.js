@@ -27,6 +27,7 @@ export class PlaybackController {
         
         // References (set externally)
         this.bufferManager = null;
+        this.timestretchedBuffer = null; // Store pre-rendered timestretched buffer
         
         // For tracking playback position in reverse mode
         this.reverseStartTime = null;
@@ -153,8 +154,8 @@ export class PlaybackController {
         
         console.log(`📊 Final position in loop: ${positionInLoop.toFixed(2)}s (loop duration: ${loopDuration.toFixed(2)}s)`);
         
-        // Start buffer source with reversed audio
-        this.startReversePlayback(positionInLoop);
+        // Start buffer source with reversed audio (use timestretched buffer if available)
+        this.startReversePlayback(positionInLoop, this.timestretchedBuffer);
         
         this.mode = 'reverse';
         console.log(`✅ Mode set to 'reverse' for ${this.trackId}`);
@@ -163,22 +164,31 @@ export class PlaybackController {
     /**
      * Start reverse playback using AudioBufferSourceNode
      * @param {number} positionInLoop - Current position within the loop (0 = loop start)
+     * @param {AudioBuffer} preRenderedBuffer - Optional pre-rendered buffer (e.g. timestretched)
      */
-    startReversePlayback(positionInLoop = 0) {
+    startReversePlayback(positionInLoop = 0, preRenderedBuffer = null) {
         console.log(`🔧 startReversePlayback called for ${this.trackId}, positionInLoop: ${positionInLoop.toFixed(2)}s`);
         
-        if (!this.bufferManager) {
-            console.error('❌ BufferManager not set');
-            return;
-        }
+        let reversedBuffer;
         
-        // Get reversed loop buffer
-        console.log(`🔧 Creating loop buffer: start=${this.loopStart}, end=${this.loopEnd}`);
-        const reversedBuffer = this.bufferManager.createLoopBuffer(
-            this.trackId,
-            this.loopStart,
-            this.loopEnd
-        );
+        if (preRenderedBuffer) {
+            // Use pre-rendered buffer (e.g. timestretched)
+            console.log(`🎵 Using pre-rendered buffer (timestretched)`);
+            reversedBuffer = preRenderedBuffer;
+        } else {
+            if (!this.bufferManager) {
+                console.error('❌ BufferManager not set and no pre-rendered buffer provided');
+                return;
+            }
+            
+            // Get reversed loop buffer
+            console.log(`🔧 Creating loop buffer: start=${this.loopStart}, end=${this.loopEnd}`);
+            reversedBuffer = this.bufferManager.createLoopBuffer(
+                this.trackId,
+                this.loopStart,
+                this.loopEnd
+            );
+        }
         
         if (!reversedBuffer) {
             console.error('❌ Failed to create reversed buffer');

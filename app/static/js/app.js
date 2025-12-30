@@ -789,6 +789,94 @@ async function loadRecordingToTrack2() {
     }
 }
 
+/**
+ * Apply offline timestretching to a track
+ * @param {number} trackNum - Track number (1 or 2)
+ * @param {number} stretchRatio - Stretch ratio (0.5-2.0)
+ */
+async function applyStretchToTrack(trackNum, stretchRatio) {
+    const loopState = trackNum === 1 ? loopState1 : loopState2;
+    const audioBufferMgr = trackNum === 1 ? audioBufferManager1 : audioBufferManager2;
+    const playbackCtrl = trackNum === 1 ? playbackController1 : playbackController2;
+    const stretchValue = trackNum === 1 ? stretchValue1 : stretchValue2;
+    const pitchSlider = trackNum === 1 ? pitchSlider1 : pitchSlider2;
+    
+    // Check if we have a loop to process
+    if (!loopState.enabled || loopState.start === null || loopState.end === null) {
+        console.log(`Track ${trackNum}: No loop active, stretch will apply on next loop set`);
+        return;
+    }
+    
+    // Check if we have an audio buffer manager
+    if (!audioBufferMgr) {
+        console.warn(`Track ${trackNum}: No audio buffer manager available`);
+        return;
+    }
+    
+    try {
+        // Show processing indicator
+        stretchValue.textContent = '⏳ Processing...';
+        stretchValue.style.color = '#ffeb3b';
+        
+        console.log(`🎵 Track ${trackNum}: Applying ${stretchRatio.toFixed(2)}x stretch to loop ${loopState.start.toFixed(2)}s-${loopState.end.toFixed(2)}s`);
+        
+        // Get pitch shift value (independent of stretch)
+        const pitchShift = pitchSlider ? parseFloat(pitchSlider.value) : 0;
+        
+        // Check if in reverse mode
+        const isReverse = loopState.reverse && playbackCtrl && playbackCtrl.mode === 'reverse';
+        
+        // Use AudioBufferManager to create timestretched buffer
+        const trackId = `track${trackNum}`;
+        const stretchedBuffer = await audioBufferMgr.createTimestretchedBuffer(
+            trackId,
+            loopState.start,
+            loopState.end,
+            stretchRatio,
+            pitchShift,
+            isReverse
+        );
+        
+        if (!stretchedBuffer) {
+            throw new Error('Failed to create timestretched buffer');
+        }
+        
+        // Store the timestretched buffer in the playback controller
+        if (playbackCtrl) {
+            playbackCtrl.timestretchedBuffer = stretchedBuffer;
+        }
+        
+        // If in reverse mode and playing, restart with new timestretched buffer
+        if (isReverse && playbackCtrl && playbackCtrl.isPlaying) {
+            const currentPosition = playbackCtrl.currentPositionInLoop || 0;
+            playbackCtrl.pause();
+            playbackCtrl.startReversePlayback(currentPosition, stretchedBuffer);
+            playbackCtrl.isPlaying = true;
+        }
+        
+        // Update UI
+        stretchValue.textContent = `${stretchRatio.toFixed(2)}x`;
+        stretchValue.style.color = '#4CAF50'; // Green for success
+        
+        // Reset color after 2 seconds
+        setTimeout(() => {
+            stretchValue.style.color = '';
+        }, 2000);
+        
+        console.log(`✅ Track ${trackNum}: Stretch applied successfully`);
+        
+    } catch (error) {
+        console.error(`❌ Track ${trackNum}: Stretch failed:`, error);
+        stretchValue.textContent = `${stretchRatio.toFixed(2)}x ❌`;
+        stretchValue.style.color = '#f44336'; // Red for error
+        
+        setTimeout(() => {
+            stretchValue.textContent = `${stretchRatio.toFixed(2)}x`;
+            stretchValue.style.color = '';
+        }, 3000);
+    }
+}
+
 // Helper function to check if both tracks are loaded
 function checkDualTrackButtonsState() {
     const track1Loaded = !playBtn1.disabled;
@@ -5737,30 +5825,37 @@ tempoSlider2.addEventListener('input', (e) => {
     tempoValue2.textContent = tempo.toFixed(2) + 'x';
 });
 
-// Stretch sliders (independent tempo change without pitch shift)
-// NOTE: Currently in passthrough mode - offline timestretching to be implemented
+// Stretch sliders (offline timestretching with visual feedback)
+let stretchTimeout1 = null;
 stretchSlider1.addEventListener('input', (e) => {
     const stretch = parseFloat(e.target.value);
+    stretchValue1.textContent = stretch.toFixed(2) + 'x';
     
-    if (timestretchNode1) {
-        // Send stretch ratio to AudioWorklet processor
-        timestretchNode1.port.postMessage({ stretchRatio: stretch });
-        console.log(`Track 1 Stretch: ${stretch.toFixed(2)}x (passthrough - offline processing pending)`);
+    // Clear previous timeout to debounce
+    if (stretchTimeout1) {
+        clearTimeout(stretchTimeout1);
     }
     
-    stretchValue1.textContent = stretch.toFixed(2) + 'x';
+    // Wait 500ms after user stops dragging to process
+    stretchTimeout1 = setTimeout(async () => {
+        await applyStretchToTrack(1, stretch);
+    }, 500);
 });
 
+let stretchTimeout2 = null;
 stretchSlider2.addEventListener('input', (e) => {
     const stretch = parseFloat(e.target.value);
+    stretchValue2.textContent = stretch.toFixed(2) + 'x';
     
-    if (timestretchNode2) {
-        // Send stretch ratio to AudioWorklet processor
-        timestretchNode2.port.postMessage({ stretchRatio: stretch });
-        console.log(`Track 2 Stretch: ${stretch.toFixed(2)}x (passthrough - offline processing pending)`);
+    // Clear previous timeout to debounce
+    if (stretchTimeout2) {
+        clearTimeout(stretchTimeout2);
     }
     
-    stretchValue2.textContent = stretch.toFixed(2) + 'x';
+    // Wait 500ms after user stops dragging to process
+    stretchTimeout2 = setTimeout(async () => {
+        await applyStretchToTrack(2, stretch);
+    }, 500);
 });
 
 // Volume sliders
