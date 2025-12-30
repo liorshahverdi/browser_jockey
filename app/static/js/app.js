@@ -862,22 +862,32 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
         
         // Check if currently in reverse mode or normal mode
         const isReverseMode = loopState.reverse && playbackCtrl && playbackCtrl.mode === 'reverse';
-        const isNormalMode = playbackCtrl && playbackCtrl.mode === 'normal';
+        const audioElement = trackNum === 1 ? audioElement1 : audioElement2;
+        const isPlaying = (playbackCtrl && playbackCtrl.isPlaying) || (!audioElement.paused && audioElement.currentTime > 0);
+        
+        console.log(`🔍 Playback state check: isReverseMode=${isReverseMode}, isPlaying=${isPlaying}, mode=${playbackCtrl?.mode}, ctrlPlaying=${playbackCtrl?.isPlaying}, elemPaused=${audioElement.paused}`);
         
         // If in reverse mode and playing, restart with new timestretched buffer
-        if (isReverseMode && playbackCtrl && playbackCtrl.isPlaying) {
+        if (isReverseMode && isPlaying) {
+            console.log('🔄 Restarting reverse mode with new timestretched buffer');
             const currentPosition = playbackCtrl.currentPositionInLoop || 0;
             playbackCtrl.pause();
             playbackCtrl.startReversePlayback(currentPosition, reversedStretchedBuffer);
             playbackCtrl.isPlaying = true;
         }
-        // If in normal mode and playing, switch to forward buffer playback
-        else if (isNormalMode && playbackCtrl && playbackCtrl.isPlaying) {
-            const audioElement = trackNum === 1 ? audioElement1 : audioElement2;
+        // If playing (not in reverse mode), switch to forward buffer playback
+        else if (!isReverseMode && isPlaying) {
+            console.log('🔄 Switching to forward buffer playback with timestretched audio');
             const currentPosition = audioElement.currentTime - loopState.start;
-            playbackCtrl.pause();
-            playbackCtrl.startForwardBufferPlayback(currentPosition);
-            playbackCtrl.isPlaying = true;
+            
+            // Pause MediaElement
+            audioElement.pause();
+            
+            // Start forward buffer playback
+            if (playbackCtrl) {
+                playbackCtrl.startForwardBufferPlayback(currentPosition);
+                playbackCtrl.isPlaying = true;
+            }
         }
         
         // Update UI
