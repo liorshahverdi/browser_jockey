@@ -109,8 +109,9 @@ export class PlaybackController {
 
     /**
      * Switch to reverse playback mode (AudioBufferSourceNode)
+     * @param {boolean} wasPlaying - Optional override for playing state (useful when switching from buffer playback)
      */
-    switchToReverseMode() {
+    switchToReverseMode(wasPlaying = null) {
         console.log(`🔄 switchToReverseMode called for ${this.trackId}, current mode: ${this.mode}`);
         
         if (this.mode === 'reverse') {
@@ -129,8 +130,8 @@ export class PlaybackController {
         
         console.log(`✅ Loop points validated: start=${this.loopStart.toFixed(2)}s, end=${this.loopEnd.toFixed(2)}s`);
         
-        // Store current playback state
-        this.isPlaying = !this.audioElement.paused;
+        // Store current playback state (use override if provided, otherwise detect from audio element)
+        this.isPlaying = wasPlaying !== null ? wasPlaying : !this.audioElement.paused;
         const currentTime = this.audioElement.currentTime;
         
         console.log(`📊 Audio element state: paused=${this.audioElement.paused}, currentTime=${currentTime.toFixed(2)}s`);

@@ -5227,14 +5227,12 @@ reverseLoopBtn1.addEventListener('click', () => {
         playbackController1.loopStart = loopState1.start;
         playbackController1.loopEnd = loopState1.end;
         
-        // Override isPlaying flag with captured state (before switchToReverseMode captures it from paused audioElement)
-        playbackController1.isPlaying = wasPlaying;
-        
         // Set current tempo before switching to reverse mode
         const currentTempo = parseFloat(tempoSlider1.value);
         playbackController1.setPlaybackRate(currentTempo);
         
-        playbackController1.switchToReverseMode();
+        // Pass wasPlaying to switchToReverseMode to preserve playing state
+        playbackController1.switchToReverseMode(wasPlaying);
         
         // Start playing if audio was playing before switching to reverse
         // (switchToReverseMode already set isPlaying flag from audio element state)
@@ -5315,14 +5313,12 @@ reverseLoopBtn2.addEventListener('click', () => {
         playbackController2.loopStart = loopState2.start;
         playbackController2.loopEnd = loopState2.end;
         
-        // Override isPlaying flag with captured state (before switchToReverseMode captures it from paused audioElement)
-        playbackController2.isPlaying = wasPlaying;
-        
         // Set current tempo before switching to reverse mode
         const currentTempo = parseFloat(tempoSlider2.value);
         playbackController2.setPlaybackRate(currentTempo);
         
-        playbackController2.switchToReverseMode();
+        // Pass wasPlaying to switchToReverseMode to preserve playing state
+        playbackController2.switchToReverseMode(wasPlaying);
         
         // Start playing if audio was playing before switching to reverse
         // (switchToReverseMode already set isPlaying flag from audio element state)
