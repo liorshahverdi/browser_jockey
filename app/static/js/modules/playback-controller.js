@@ -445,12 +445,12 @@ export class PlaybackController {
     setPlaybackRate(rate) {
         this.currentPlaybackRate = rate;
         
-        if (this.mode === 'reverse' && this.bufferSource) {
-            // Apply to current buffer source
+        // Apply to buffer source if it exists (both forward and reverse modes)
+        if (this.bufferSource) {
             this.bufferSource.playbackRate.value = rate;
-            console.log(`🎵 ${this.trackId} reverse playback rate set to ${rate.toFixed(2)}x`);
+            console.log(`🎵 ${this.trackId} buffer playback rate set to ${rate.toFixed(2)}x`);
         }
-        // Note: Normal mode tempo is handled via audioElement.playbackRate in app.js
+        // Note: MediaElement tempo is handled via audioElement.playbackRate in app.js
     }
 
     /**
