@@ -880,10 +880,13 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
             console.log('🔄 Switching to forward buffer playback with timestretched audio');
             let currentPosition = audioElement.currentTime - loopState.start;
             
-            // Clamp position to timestretched buffer duration
-            if (stretchedBuffer && currentPosition > stretchedBuffer.duration) {
+            // Ensure position is non-negative and within buffer duration
+            if (currentPosition < 0) {
+                currentPosition = 0;
+                console.log(`⚠️ Position was negative, reset to 0`);
+            } else if (stretchedBuffer && currentPosition >= stretchedBuffer.duration) {
                 currentPosition = currentPosition % stretchedBuffer.duration;
-                console.log(`⚠️ Position clamped to ${currentPosition.toFixed(2)}s (buffer duration: ${stretchedBuffer.duration.toFixed(2)}s)`);
+                console.log(`⚠️ Position wrapped to ${currentPosition.toFixed(2)}s (buffer duration: ${stretchedBuffer.duration.toFixed(2)}s)`);
             }
             
             // Pause MediaElement
@@ -892,7 +895,7 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
             // Start forward buffer playback
             if (playbackCtrl) {
                 playbackCtrl.isPlaying = true; // Set BEFORE calling startForwardBufferPlayback
-                playbackCtrl.startForwardBufferPlayback(currentPosition);
+                playbackCtrl.startForwardBufferPlayback(Math.max(0, currentPosition));
             }
         }
         
