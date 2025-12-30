@@ -468,22 +468,15 @@ export class PlaybackController {
      * @returns {number} Current position in seconds
      */
     getCurrentTime() {
-        if (this.mode === 'normal') {
-            return this.audioElement.currentTime;
-        } else {
-            // Calculate position in reverse mode
-            if (this.reverseStartTime && this.bufferSource && this.loopStart !== null && this.loopEnd !== null) {
-                const currentTime = this.audioContext.currentTime;
-                const elapsedTime = currentTime - this.reverseStartTime;
-                const loopDuration = this.loopEnd - this.loopStart;
-                
-                // As the reversed buffer plays forward, we move through it
-                // reversePosition increases from reverseStartOffset, accounting for playback rate
+        // If using buffer source (timestretched or reverse)
+        if (this.bufferSource && this.reverseStartTime && this.loopStart !== null && this.loopEnd !== null) {
+            const currentTime = this.audioContext.currentTime;
+            const elapsedTime = currentTime - this.reverseStartTime;
+            const loopDuration = this.loopEnd - this.loopStart;
+            
+            if (this.mode === 'reverse') {
+                // Reverse mode: buffer plays forward but time moves backward
                 let reversePosition = (this.reverseStartOffset + (elapsedTime * this.currentPlaybackRate)) % loopDuration;
-                
-                // Convert buffer position to actual track time
-                // In the reversed buffer, position 0 = loopEnd, position loopDuration = loopStart
-                // So as reversePosition increases, actualTime decreases (moving backwards)
                 const actualTime = this.loopEnd - reversePosition;
                 
                 // Debug logging every 0.5 seconds
@@ -493,9 +486,21 @@ export class PlaybackController {
                 }
                 
                 return actualTime;
+            } else {
+                // Forward buffer mode (timestretched): buffer plays forward, time moves forward
+                let positionInLoop = (this.reverseStartOffset + (elapsedTime * this.currentPlaybackRate)) % loopDuration;
+                const actualTime = this.loopStart + positionInLoop;
+                
+                return actualTime;
             }
-            return this.loopStart;
         }
+        
+        // Normal mode: use MediaElement time
+        if (this.mode === 'normal' && this.audioElement) {
+            return this.audioElement.currentTime;
+        }
+        
+        return this.loopStart || 0;
     }
 
     /**
