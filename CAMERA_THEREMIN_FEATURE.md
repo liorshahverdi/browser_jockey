@@ -103,7 +103,7 @@ The theremin now supports three different mapping modes for controlling audio pa
 ### Files Modified
 - `/app/templates/index.html` - Added theremin UI section
 - `/app/static/css/style.css` - Added theremin styling
-- `/app/static/js/visualizer-dual.js` - Integrated theremin controls and event handlers
+- `/app/static/js/app.js` - Integrated theremin controls and event handlers
 
 ### Motion Detection Algorithm
 The theremin uses a simple but effective computer vision approach:

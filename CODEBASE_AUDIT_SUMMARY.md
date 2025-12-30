@@ -62,14 +62,14 @@ Standardized BOTH markers to use 0-based positional values:
 
 **Files Reviewed:**
 - `app/static/js/modules/audio-effects.js` ✅
-- `app/static/js/visualizer-dual.js` ✅
+- `app/static/js/app.js` ✅
 - `app/static/js/modules/sequencer.js` ✅
 - `app/static/js/modules/effect-chain.js` ✅
 
 **Findings:**
 1. **Effect Initialization** - ✅ NO VIOLATION
    - Single source of truth: `initAudioEffects()` in `audio-effects.js`
-   - Used consistently across `visualizer-dual.js`, tab capture, file loading
+   - Used consistently across `app.js`, tab capture, file loading
    - No duplicate initialization logic found
 
 2. **Effect Chain Connection** - ✅ NO VIOLATION
@@ -81,7 +81,7 @@ Standardized BOTH markers to use 0-based positional values:
    - **VERDICT:** Not duplication - complementary functions for different features
 
 3. **Offline Context Effect Recreation** - ✅ JUSTIFIED
-   - Found in: `exportStem()`, `exportLoop()` (lines 5931-6170 in visualizer-dual.js)
+   - Found in: `exportStem()`, `exportLoop()` (lines 5931-6170 in app.js)
    - Pattern: Manually recreate effect nodes in OfflineAudioContext
    - **Reason:** Offline contexts REQUIRE separate node creation (cannot reuse live context nodes)
    - Safety checks added (lines 6090-6110): Fallback values if effects undefined
@@ -181,7 +181,7 @@ app/static/js/
 │   ├── effect-chain.js        ✅ Drag-drop effect ordering
 │   ├── keyboard-sampler.js    ✅ Sampler functionality
 │   └── sequencer.js           ✅ Sequencer (2457 lines)
-└── visualizer-dual.js          ⚠️ Large monolith (6799 lines)
+└── app.js          ⚠️ Large monolith (6799 lines)
 ```
 
 **Strengths:**
@@ -191,7 +191,7 @@ app/static/js/
 - Single responsibility principle (mostly adhered to)
 
 **Potential Improvement:**
-- `visualizer-dual.js` is very large (6799 lines)
+- `app.js` is very large (6799 lines)
 - Could benefit from further modularization:
   * Track management
   * Tab capture
@@ -266,7 +266,7 @@ app/static/js/
    - Consider archiving old backup files
 
 2. **Code Organization**
-   - `visualizer-dual.js` could be split into smaller modules
+   - `app.js` could be split into smaller modules
    - Consider extracting:
      * Tab capture logic → `modules/tab-capture.js`
      * Track management → `modules/track-manager.js`
@@ -280,7 +280,7 @@ app/static/js/
 ### 🎯 Next Steps
 1. ✅ **COMPLETED:** Fix loop marker indexing inconsistency
 2. **OPTIONAL:** Consolidate README documentation
-3. **OPTIONAL:** Refactor visualizer-dual.js into smaller modules
+3. **OPTIONAL:** Refactor app.js into smaller modules
 4. **RECOMMENDED:** Add automated testing framework
 5. **RECOMMENDED:** Add JSDoc comments to public module functions
 

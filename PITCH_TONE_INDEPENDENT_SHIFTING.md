@@ -49,7 +49,7 @@ source → gain → panner → pitchShifter → filter (tone) → reverb → del
    - Integrated Tone.js context with Web Audio API
    - Updated `connectEffectsChain()` to include pitch shifter in signal path
 
-3. **`app/static/js/visualizer-dual.js`**
+3. **`app/static/js/app.js`**
    - Added `pitchShifter1` and `pitchShifter2` variables
    - Updated pitch slider event listeners to use Tone.js
    - Modified tempo sliders to work independently when pitch shifter is available

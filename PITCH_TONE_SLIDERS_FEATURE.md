@@ -126,7 +126,7 @@ Added dedicated **Pitch** and **Tone** sliders to each DJ track (Track 1 and Tra
 }
 ```
 
-### JavaScript Implementation (`app/static/js/visualizer-dual.js`)
+### JavaScript Implementation (`app/static/js/app.js`)
 
 **DOM Element References** (lines ~101-108, ~156-163):
 ```javascript
@@ -280,6 +280,6 @@ Potential additions:
 **Files Modified:**
 - `app/templates/index.html`
 - `app/static/css/style.css`
-- `app/static/js/visualizer-dual.js`
+- `app/static/js/app.js`
 
 **Lines Changed:** ~200 lines added

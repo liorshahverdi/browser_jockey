@@ -3250,7 +3250,7 @@ export class Sequencer {
             const mimeType = this.recordedBlob.type || 'audio/webm;codecs=opus';
             
             // Trigger file load on main visualizer
-            // This needs to call the loadAudioFile method in visualizer-dual.js
+            // This needs to call the loadAudioFile method in app.js
             const event = new CustomEvent('loadSequencerRecording', {
                 detail: {
                     trackNumber: trackNumber,

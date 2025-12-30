@@ -86,7 +86,7 @@ When a loop clip plays in the sequencer:
    - Added `addLoopClip()` method
    - Updated `play()` to handle offset and duration
 
-2. `app/static/js/visualizer-dual.js`
+2. `app/static/js/app.js`
    - Added loop clip creation when both A and B points are set
    - Integrated for both Track 1 and Track 2
 

@@ -100,7 +100,7 @@ setTimeout(monitorAudioLevel, 1000);
 
 ## Code Changes
 
-### File: `app/static/js/visualizer-dual.js`
+### File: `app/static/js/app.js`
 
 #### Track 1 Tab Capture (line ~1520)
 ```javascript

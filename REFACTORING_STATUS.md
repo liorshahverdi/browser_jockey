@@ -17,7 +17,7 @@
 - ✅ `modules/autotune.js` (220 lines) - Pitch correction and auto-tune
 
 ### 2. Updated Main Files
-- ✅ Added ES6 imports to `visualizer-dual.js` (Phase 1 & 2)
+- ✅ Added ES6 imports to `app.js` (Phase 1 & 2)
 - ✅ Updated `index.html` to use `<script type="module">`
 - ✅ Created recording wrapper functions to use module
 - ✅ Imported constants (scales, keyboardMap, noteFrequencies, musicScales)
@@ -29,7 +29,7 @@
 - ✅ Imported microphone module functions (NEW)
 - ✅ Imported vocoder module functions (NEW)
 - ✅ Imported autotune module functions (NEW)
-- ✅ Updated `visualizer.js` to use shared constants and key detection
+- ✅ Updated `simple-player.js` to use shared constants and key detection
 
 ### 3. Removed Duplicate Code
 **Phase 1:**
@@ -47,7 +47,7 @@
 - ✅ Removed: enableMicrophone, disableMicrophone, drawMicWaveform (~200 lines)
 - ✅ Removed: enableVocoder, disableVocoder, vocoder band creation (~220 lines)
 - ✅ Removed: enableAutotune, disableAutotune, pitch correction (~240 lines)
-- ✅ Refactored visualizer.js to use shared modules (~60 lines)
+- ✅ Refactored simple-player.js to use shared modules (~60 lines)
 
 **Combined Total: 1,473 lines removed from main files**
 
@@ -56,7 +56,7 @@
 
 ### 4. File Size Reduction
 **Phase 1:**
-- **Before:** 4,578 lines (visualizer-dual.js)
+- **Before:** 4,578 lines (app.js)
 - **After Phase 1:** 3,825 lines  
 - **Reduction:** 753 lines (16.4%)
 - **Module code:** 773 lines (now reusable!)
@@ -156,7 +156,7 @@
 - ✅ 45% reduction in main file size
 
 ### Reusability
-- ✅ Modules can be used in both visualizer.js and visualizer-dual.js
+- ✅ Modules can be used in both simple-player.js and app.js
 - ✅ Easy to add new visualizer variants
 - ✅ Can be used in other projects
 - ✅ Each module is independently testable
@@ -210,7 +210,7 @@ These features could be extracted but provide limited additional benefit:
 | **Modules Created** | 6 | 3 | **9** |
 | **Lines in Modules** | 773 | 540 | **1,313** |
 | **Lines Removed** | 753 | 225 | **978** |
-| **visualizer-dual.js Size** | 3,825 | 3,600 | **21.4% reduction** |
+| **app.js Size** | 3,825 | 3,600 | **21.4% reduction** |
 | **Functions Refactored** | 25+ | 15+ | **40+** |
 
 ### Module Breakdown
@@ -237,7 +237,7 @@ These features could be extracted but provide limited additional benefit:
 - [x] No TypeScript/JS errors
 - [x] Phase 1 modules created (constants, loops, audio, effects, recording, sampler)
 - [x] Phase 2 modules created (microphone, vocoder, autotune)
-- [x] visualizer.js refactored to use shared modules
+- [x] simple-player.js refactored to use shared modules
 - [x] Documentation complete and up-to-date
 - [ ] All features tested and verified working
 - [ ] Browser console shows no errors in production
@@ -250,7 +250,7 @@ These features could be extracted but provide limited additional benefit:
 **Achievement:** 
 - 9 reusable modules created (1,635 lines of organized, reusable code)
 - 978 lines removed from main files
-- 21.4% reduction in visualizer-dual.js size (4,578 → 3,600 lines)
+- 21.4% reduction in app.js size (4,578 → 3,600 lines)
 - 40+ functions refactored and modularized
 - Clean, maintainable, modular architecture
 - Better code organization and separation of concerns

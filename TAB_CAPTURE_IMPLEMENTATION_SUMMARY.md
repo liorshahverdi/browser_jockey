@@ -26,7 +26,7 @@ Added the ability to capture audio from any browser tab (YouTube, Spotify, Sound
 </button>
 ```
 
-### 2. JavaScript Implementation (`app/static/js/visualizer-dual.js`)
+### 2. JavaScript Implementation (`app/static/js/app.js`)
 
 #### Added DOM References (Lines ~80-88)
 ```javascript
@@ -244,7 +244,7 @@ All core functionality is implemented. Ready for:
 
 ```
 app/templates/index.html                      (2 buttons added)
-app/static/js/visualizer-dual.js             (main implementation)
+app/static/js/app.js             (main implementation)
 TAB_AUDIO_CAPTURE_FEATURE.md                 (new - documentation)
 RELEASE_NOTES_TAB_CAPTURE.md                 (new - release notes)
 TAB_CAPTURE_TESTING_GUIDE.md                 (new - testing guide)

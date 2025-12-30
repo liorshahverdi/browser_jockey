@@ -12,7 +12,7 @@ Implemented comprehensive browser tab audio capture feature allowing users to ca
 
 ### Core Functionality
 
-**Track Capture** (visualizer-dual.js):
+**Track Capture** (app.js):
 ```javascript
 async function captureTabAudio(trackNumber) {
   // Uses getDisplayMedia API for tab/screen sharing
@@ -30,7 +30,7 @@ async function captureTabAudio(trackNumber) {
 }
 ```
 
-**Microphone Tab Capture** (visualizer-dual.js):
+**Microphone Tab Capture** (app.js):
 ```javascript
 async function captureTabAudioAsMic() {
   // Same capture mechanism
@@ -70,7 +70,7 @@ async function captureTabAudioAsMic() {
 1. **app/templates/index.html** (~20 lines added)
    - Added 3 tab capture buttons (Track 1, Track 2, Microphone)
 
-2. **app/static/js/visualizer-dual.js** (~500 lines added/modified)
+2. **app/static/js/app.js** (~500 lines added/modified)
    - `captureTabAudio(trackNumber)` - Main tab capture to tracks
    - `captureTabAudioAsMic()` - Tab capture to microphone
    - Tab capture cleanup in loadRecordingToTrack1/2

@@ -101,14 +101,20 @@ const reverseLoopBtn1 = document.getElementById('reverseLoopBtn1');
 const clearLoopBtn1 = document.getElementById('clearLoopBtn1');
 const tempoSlider1 = document.getElementById('tempoSlider1');
 const tempoValue1 = document.getElementById('tempoValue1');
+const stretchSlider1 = document.getElementById('stretchSlider1');
+const stretchValue1 = document.getElementById('stretchValue1');
 const volumeSlider1 = document.getElementById('volumeSlider1');
 const volumeValue1 = document.getElementById('volumeValue1');
 const panSlider1 = document.getElementById('panSlider1');
 const panValue1 = document.getElementById('panValue1');
 const pitchSlider1 = document.getElementById('pitchSlider1');
 const pitchValue1 = document.getElementById('pitchValue1');
-const toneSlider1 = document.getElementById('toneSlider1');
-const toneValue1 = document.getElementById('toneValue1');
+const lowSlider1 = document.getElementById('lowSlider1');
+const lowValue1 = document.getElementById('lowValue1');
+const midSlider1 = document.getElementById('midSlider1');
+const midValue1 = document.getElementById('midValue1');
+const highSlider1 = document.getElementById('highSlider1');
+const highValue1 = document.getElementById('highValue1');
 const waveform1 = document.getElementById('waveform1');
 const waveformProgress1 = document.getElementById('waveformProgress1');
 const loopMarkerStart1 = document.getElementById('loopMarkerStart1');
@@ -155,14 +161,20 @@ const reverseLoopBtn2 = document.getElementById('reverseLoopBtn2');
 const clearLoopBtn2 = document.getElementById('clearLoopBtn2');
 const tempoSlider2 = document.getElementById('tempoSlider2');
 const tempoValue2 = document.getElementById('tempoValue2');
+const stretchSlider2 = document.getElementById('stretchSlider2');
+const stretchValue2 = document.getElementById('stretchValue2');
 const volumeSlider2 = document.getElementById('volumeSlider2');
 const volumeValue2 = document.getElementById('volumeValue2');
 const panSlider2 = document.getElementById('panSlider2');
 const panValue2 = document.getElementById('panValue2');
 const pitchSlider2 = document.getElementById('pitchSlider2');
 const pitchValue2 = document.getElementById('pitchValue2');
-const toneSlider2 = document.getElementById('toneSlider2');
-const toneValue2 = document.getElementById('toneValue2');
+const lowSlider2 = document.getElementById('lowSlider2');
+const lowValue2 = document.getElementById('lowValue2');
+const midSlider2 = document.getElementById('midSlider2');
+const midValue2 = document.getElementById('midValue2');
+const highSlider2 = document.getElementById('highSlider2');
+const highValue2 = document.getElementById('highValue2');
 const waveform2 = document.getElementById('waveform2');
 const waveformProgress2 = document.getElementById('waveformProgress2');
 const loopMarkerStart2 = document.getElementById('loopMarkerStart2');
@@ -384,11 +396,15 @@ let autotuneState = null;
 
 // Audio effects nodes for Track 1
 let gain1, reverb1, delay1, filter1, panner1, adsr1, pitchShifter1;
+let eqLow1, eqMid1, eqHigh1; // 3-band EQ
+let timestretchNode1; // Timestretch processor
 let reverbWet1, delayWet1;
 let finalMix1; // Final mixer for Track 1 effect chain
 
 // Audio effects nodes for Track 2
 let gain2, reverb2, delay2, filter2, panner2, adsr2, pitchShifter2;
+let eqLow2, eqMid2, eqHigh2; // 3-band EQ
+let timestretchNode2; // Timestretch processor
 let reverbWet2, delayWet2;
 let finalMix2; // Final mixer for Track 2 effect chain
 
@@ -784,8 +800,8 @@ function checkDualTrackButtonsState() {
 }
 
 // Play both tracks simultaneously
-function playBothTracks() {
-    initAudioContext();
+async function playBothTracks() {
+    await initAudioContext();
     audioContext.resume().then(() => {
         // Start both tracks at the same time
         audioElement1.play();
@@ -821,14 +837,14 @@ function playBothTracks() {
 }
 
 // Play both tracks and start recording
-function playBothAndRecord() {
+async function playBothAndRecord() {
     // Check if recording is already in progress
     if (recordingState.isRecording) {
         alert('Recording already in progress!');
         return;
     }
     
-    initAudioContext();
+    await initAudioContext();
     audioContext.resume().then(() => {
         // Start recording first
         startRecording();
@@ -940,7 +956,7 @@ async function enableMicrophone() {
     try {
         // Initialize audio context if not already (this also creates merger)
         if (!audioContext) {
-            initAudioContext();
+            await initAudioContext();
         }
         
         // Check if microphone should be routed to master output
@@ -1087,7 +1103,7 @@ async function captureTabAudioAsMic() {
         
         // Initialize audio context if not already
         if (!audioContext) {
-            initAudioContext();
+            await initAudioContext();
         }
         
         // Store the capture stream
@@ -1507,7 +1523,7 @@ async function captureTabAudio(trackNumber) {
         
         // Initialize audio context if not already
         if (!audioContext) {
-            initAudioContext();
+            await initAudioContext();
         }
         
         // Determine which track we're loading to
@@ -1817,10 +1833,10 @@ async function captureTabAudio(trackNumber) {
 }
 
 // Enable vocoder effect
-function enableVocoder() {
+async function enableVocoder() {
     // Initialize audio context if not already (this also creates merger)
     if (!audioContext) {
-        initAudioContext();
+        await initAudioContext();
     }
     
     if (!merger) {
@@ -2014,10 +2030,10 @@ function updateVocoderBandsCount(value) {
 }
 
 // Enable auto-tune effect
-function enableAutotune() {
+async function enableAutotune() {
     // Initialize audio context if not already (this also creates merger)
     if (!audioContext) {
-        initAudioContext();
+        await initAudioContext();
     }
     
     if (!merger) {
@@ -2775,9 +2791,24 @@ function handleEffectChainChange(event) {
 // === Audio Context & Effects Initialization ===
 
 // Initialize audio context and connect both tracks
-function initAudioContext() {
+async function initAudioContext() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Load timestretch AudioWorklet processor
+        try {
+            await audioContext.audioWorklet.addModule('/static/js/timestretch-processor.js');
+            console.log('✅ Timestretch AudioWorklet processor loaded');
+            
+            // Create timestretch nodes for both tracks
+            timestretchNode1 = new AudioWorkletNode(audioContext, 'timestretch-processor');
+            timestretchNode2 = new AudioWorkletNode(audioContext, 'timestretch-processor');
+            console.log('✅ Timestretch nodes created for both tracks');
+        } catch (err) {
+            console.error('❌ Failed to load timestretch processor:', err);
+            timestretchNode1 = null;
+            timestretchNode2 = null;
+        }
         
         // Initialize or update sequencer
         if (!sequencer) {
@@ -2812,7 +2843,7 @@ function initAudioContext() {
         recordingAnalyser.smoothingTimeConstant = 0.8;
         
         // Initialize master effects
-        const effectsMaster = initAudioEffects(audioContext, 'Master');
+        const effectsMaster = await initAudioEffects(audioContext, 'Master');
         gainMaster = effectsMaster.gain;
         pannerMaster = effectsMaster.panner;
         reverbMaster = effectsMaster.reverb;
@@ -2856,21 +2887,27 @@ function initAudioContext() {
         connectOscilloscopeToMerger();
         
         // Initialize effects for both tracks using module
-        const effects1 = initAudioEffects(audioContext, 1);
+        const effects1 = await initAudioEffects(audioContext, 1);
         gain1 = effects1.gain;
         panner1 = effects1.panner;
         reverb1 = effects1.reverb;
         delay1 = effects1.delay;
         filter1 = effects1.filter;
+        eqLow1 = effects1.eqLow;
+        eqMid1 = effects1.eqMid;
+        eqHigh1 = effects1.eqHigh;
         adsr1 = effects1.adsr;
         pitchShifter1 = effects1.pitchShifter;
         
-        const effects2 = initAudioEffects(audioContext, 2);
+        const effects2 = await initAudioEffects(audioContext, 2);
         gain2 = effects2.gain;
         panner2 = effects2.panner;
         reverb2 = effects2.reverb;
         delay2 = effects2.delay;
         filter2 = effects2.filter;
+        eqLow2 = effects2.eqLow;
+        eqMid2 = effects2.eqMid;
+        eqHigh2 = effects2.eqHigh;
         adsr2 = effects2.adsr;
         pitchShifter2 = effects2.pitchShifter;
         
@@ -2915,12 +2952,23 @@ function initAudioContext() {
         console.log('🔗 Connecting Track 1 effect chain...');
         try {
             // Use the proper connectEffectsChain function
-            const effects1 = { gain: gain1, panner: panner1, filter: filter1, reverb: reverb1, delay: delay1, pitchShifter: pitchShifter1 };
+            const effects1 = { 
+                gain: gain1, 
+                panner: panner1, 
+                filter: filter1, 
+                eqLow: eqLow1,
+                eqMid: eqMid1,
+                eqHigh: eqHigh1,
+                reverb: reverb1, 
+                delay: delay1, 
+                pitchShifter: pitchShifter1 
+            };
             const { reverbMix: reverbMix1, finalMix: fm1 } = connectEffectsChain(
                 source1,
                 effects1,
                 merger,
-                audioContext
+                audioContext,
+                timestretchNode1
             );
             
             // Store finalMix1 globally if needed
@@ -2983,12 +3031,23 @@ function initAudioContext() {
         console.log('🔗 Connecting Track 2 effect chain...');
         try {
             // Use the proper connectEffectsChain function
-            const effects2 = { gain: gain2, panner: panner2, filter: filter2, reverb: reverb2, delay: delay2, pitchShifter: pitchShifter2 };
+            const effects2 = { 
+                gain: gain2, 
+                panner: panner2, 
+                filter: filter2, 
+                eqLow: eqLow2,
+                eqMid: eqMid2,
+                eqHigh: eqHigh2,
+                reverb: reverb2, 
+                delay: delay2, 
+                pitchShifter: pitchShifter2 
+            };
             const { reverbMix: reverbMix2, finalMix: fm2 } = connectEffectsChain(
                 source2,
                 effects2,
                 merger,
-                audioContext
+                audioContext,
+                timestretchNode2
             );
             
             // Store finalMix2 globally if needed
@@ -3647,7 +3706,7 @@ audioFile1.addEventListener('change', async (e) => {
         // Initialize buffer manager and playback controller for reverse playback
         try {
             if (!audioContext) {
-                initAudioContext();
+                await initAudioContext();
             }
             
             console.log('Initializing buffer-based reverse playback for Track 1...');
@@ -3804,7 +3863,7 @@ audioFile2.addEventListener('change', async (e) => {
         // Initialize buffer manager and playback controller for reverse playback
         try {
             if (!audioContext) {
-                initAudioContext();
+                await initAudioContext();
             }
             
             console.log('Initializing buffer-based reverse playback for Track 2...');
@@ -4511,7 +4570,7 @@ audioElement2.addEventListener('timeupdate', () => {
 });
 
 // Play button handlers
-playBtn1.addEventListener('click', () => {
+playBtn1.addEventListener('click', async () => {
     // Check if this is tab capture
     if (window.tabCaptureState1?.isTabCapture) {
         // For tab capture, show reminder to user
@@ -4521,7 +4580,7 @@ playBtn1.addEventListener('click', () => {
     }
     
     console.log('🎬 Play button clicked for Track 1');
-    initAudioContext();
+    await initAudioContext();
     audioContext.resume().then(() => {
         console.log('🔊 Audio context resumed, attempting to play...');
         console.log('Audio element src:', audioElement1.src);
@@ -4559,7 +4618,7 @@ playBtn1.addEventListener('click', () => {
     });
 });
 
-playBtn2.addEventListener('click', () => {
+playBtn2.addEventListener('click', async () => {
     // Check if this is tab capture
     if (window.tabCaptureState2?.isTabCapture) {
         // For tab capture, show reminder to user
@@ -4568,7 +4627,7 @@ playBtn2.addEventListener('click', () => {
         return;
     }
     
-    initAudioContext();
+    await initAudioContext();
     audioContext.resume().then(() => {
         audioElement2.play();
         vinylAnimation2.style.display = 'flex'; // Show vinyl animation
@@ -5344,7 +5403,7 @@ if (enableThereminBtn) {
         // Initialize audio context if not already done
         if (!audioContext) {
             console.log('Initializing audio context for theremin...');
-            initAudioContext();
+            await initAudioContext();
         }
         
         console.log('Elements found:', {
@@ -5656,6 +5715,32 @@ tempoSlider2.addEventListener('input', (e) => {
     tempoValue2.textContent = tempo.toFixed(2) + 'x';
 });
 
+// Stretch sliders (independent tempo change without pitch shift)
+// NOTE: Currently in passthrough mode - offline timestretching to be implemented
+stretchSlider1.addEventListener('input', (e) => {
+    const stretch = parseFloat(e.target.value);
+    
+    if (timestretchNode1) {
+        // Send stretch ratio to AudioWorklet processor
+        timestretchNode1.port.postMessage({ stretchRatio: stretch });
+        console.log(`Track 1 Stretch: ${stretch.toFixed(2)}x (passthrough - offline processing pending)`);
+    }
+    
+    stretchValue1.textContent = stretch.toFixed(2) + 'x';
+});
+
+stretchSlider2.addEventListener('input', (e) => {
+    const stretch = parseFloat(e.target.value);
+    
+    if (timestretchNode2) {
+        // Send stretch ratio to AudioWorklet processor
+        timestretchNode2.port.postMessage({ stretchRatio: stretch });
+        console.log(`Track 2 Stretch: ${stretch.toFixed(2)}x (passthrough - offline processing pending)`);
+    }
+    
+    stretchValue2.textContent = stretch.toFixed(2) + 'x';
+});
+
 // Volume sliders
 volumeSlider1.addEventListener('input', (e) => {
     const volume = parseInt(e.target.value);
@@ -5708,19 +5793,17 @@ panSlider2.addEventListener('input', (e) => {
 pitchSlider1.addEventListener('input', (e) => {
     const pitch = parseFloat(e.target.value);
     
-    // NOTE: Tone.js pitch shifting is currently disabled due to Web Audio API integration issues
-    // Using playbackRate instead (this affects BOTH pitch and tempo)
-    const pitchShift = Math.pow(2, pitch / 12); // Convert semitones to frequency ratio
-    const baseTempo = 1.0; // Base tempo (pitch slider assumes tempo starts at 1.0)
-    const combinedRate = baseTempo * pitchShift;
-    
-    audioElement1.playbackRate = combinedRate;
-    
-    // Update tempo slider to show the actual playback rate
-    tempoSlider1.value = combinedRate;
-    tempoValue1.textContent = `${combinedRate.toFixed(2)}x`;
-    
-    console.log(`Track 1 pitch: ${pitch} semitones, playback rate: ${combinedRate.toFixed(3)}x`);
+    // Use Tone.js pitch shifter if available (doesn't affect tempo)
+    if (pitchShifter1) {
+        pitchShifter1.pitch = pitch; // Set pitch in semitones
+        console.log(`Track 1 pitch: ${pitch} semitones (independent of tempo)`);
+    } else {
+        // Fallback: Use playbackRate (affects BOTH pitch and tempo)
+        const pitchShift = Math.pow(2, pitch / 12);
+        const baseTempo = parseFloat(tempoSlider1.value) || 1.0;
+        audioElement1.playbackRate = baseTempo * pitchShift;
+        console.log(`Track 1 pitch: ${pitch} semitones (vinyl-style, affects tempo)`);
+    }
     
     // Update pitch label
     if (pitch === 0) {
@@ -5735,19 +5818,17 @@ pitchSlider1.addEventListener('input', (e) => {
 pitchSlider2.addEventListener('input', (e) => {
     const pitch = parseFloat(e.target.value);
     
-    // NOTE: Tone.js pitch shifting is currently disabled due to Web Audio API integration issues
-    // Using playbackRate instead (this affects BOTH pitch and tempo)
-    const pitchShift = Math.pow(2, pitch / 12); // Convert semitones to frequency ratio
-    const baseTempo = 1.0; // Base tempo (pitch slider assumes tempo starts at 1.0)
-    const combinedRate = baseTempo * pitchShift;
-    
-    audioElement2.playbackRate = combinedRate;
-    
-    // Update tempo slider to show the actual playback rate
-    tempoSlider2.value = combinedRate;
-    tempoValue2.textContent = `${combinedRate.toFixed(2)}x`;
-    
-    console.log(`Track 2 pitch: ${pitch} semitones, playback rate: ${combinedRate.toFixed(3)}x`);
+    // Use Tone.js pitch shifter if available (doesn't affect tempo)
+    if (pitchShifter2) {
+        pitchShifter2.pitch = pitch; // Set pitch in semitones
+        console.log(`Track 2 pitch: ${pitch} semitones (independent of tempo)`);
+    } else {
+        // Fallback: Use playbackRate (affects BOTH pitch and tempo)
+        const pitchShift = Math.pow(2, pitch / 12);
+        const baseTempo = parseFloat(tempoSlider2.value) || 1.0;
+        audioElement2.playbackRate = baseTempo * pitchShift;
+        console.log(`Track 2 pitch: ${pitch} semitones (vinyl-style, affects tempo)`);
+    }
     
     // Update pitch label
     if (pitch === 0) {
@@ -5759,64 +5840,113 @@ pitchSlider2.addEventListener('input', (e) => {
     }
 });
 
-// Tone sliders (EQ-style control using highshelf filter)
-toneSlider1.addEventListener('input', (e) => {
-    const value = parseInt(e.target.value);
+// 3-Band EQ sliders (Low/Mid/High)
+lowSlider1.addEventListener('input', (e) => {
+    const gainDB = parseFloat(e.target.value);
     
-    if (filter1 && audioContext) {
-        // Map slider value (20-20000) to gain control (-12dB to +12dB)
-        // Center point (10000) = 0dB (no change)
-        // Lower values = cut highs, higher values = boost highs
-        const normalizedValue = (value - 10000) / 10000; // -1 to +1
-        const gainDB = normalizedValue * 12; // -12dB to +12dB
-        
-        // Use highshelf filter for tone control
-        filter1.type = 'highshelf';
-        filter1.frequency.value = 2000; // Shelf frequency at 2kHz
-        filter1.gain.value = gainDB;
-        
-        console.log(`Track 1 tone (highshelf) set to ${gainDB.toFixed(1)}dB at 2kHz`);
+    if (eqLow1) {
+        eqLow1.gain.value = gainDB;
+        console.log(`Track 1 Low EQ (250Hz lowshelf): ${gainDB.toFixed(1)}dB`);
     }
     
     // Update label
-    const normalizedValue = (value - 10000) / 10000;
-    const gainDB = normalizedValue * 12;
-    if (Math.abs(gainDB) < 0.5) {
-        toneValue1.textContent = 'Flat';
+    if (Math.abs(gainDB) < 0.3) {
+        lowValue1.textContent = '0dB';
     } else if (gainDB > 0) {
-        toneValue1.textContent = `+${gainDB.toFixed(1)}dB`;
+        lowValue1.textContent = `+${gainDB.toFixed(1)}dB`;
     } else {
-        toneValue1.textContent = `${gainDB.toFixed(1)}dB`;
+        lowValue1.textContent = `${gainDB.toFixed(1)}dB`;
     }
 });
 
-toneSlider2.addEventListener('input', (e) => {
-    const value = parseInt(e.target.value);
+midSlider1.addEventListener('input', (e) => {
+    const gainDB = parseFloat(e.target.value);
     
-    if (filter2 && audioContext) {
-        // Map slider value (20-20000) to gain control (-12dB to +12dB)
-        // Center point (10000) = 0dB (no change)
-        // Lower values = cut highs, higher values = boost highs
-        const normalizedValue = (value - 10000) / 10000; // -1 to +1
-        const gainDB = normalizedValue * 12; // -12dB to +12dB
-        
-        // Use highshelf filter for tone control
-        filter2.type = 'highshelf';
-        filter2.frequency.value = 2000; // Shelf frequency at 2kHz
-        filter2.gain.value = gainDB;
-        
-        console.log(`Track 2 tone (highshelf) set to ${gainDB.toFixed(1)}dB at 2kHz`);
+    if (eqMid1) {
+        eqMid1.gain.value = gainDB;
+        console.log(`Track 1 Mid EQ (1kHz peaking): ${gainDB.toFixed(1)}dB`);
     }
     
     // Update label
-    const normalizedValue = (value - 10000) / 10000;
-    const gainDB = normalizedValue * 12;
-    if (Math.abs(gainDB) < 0.5) {
-        toneValue2.textContent = 'Flat';
+    if (Math.abs(gainDB) < 0.3) {
+        midValue1.textContent = '0dB';
     } else if (gainDB > 0) {
-        toneValue2.textContent = `+${gainDB.toFixed(1)}dB`;
+        midValue1.textContent = `+${gainDB.toFixed(1)}dB`;
     } else {
-        toneValue2.textContent = `${gainDB.toFixed(1)}dB`;
+        midValue1.textContent = `${gainDB.toFixed(1)}dB`;
+    }
+});
+
+highSlider1.addEventListener('input', (e) => {
+    const gainDB = parseFloat(e.target.value);
+    
+    if (eqHigh1) {
+        eqHigh1.gain.value = gainDB;
+        console.log(`Track 1 High EQ (4kHz highshelf): ${gainDB.toFixed(1)}dB`);
+    }
+    
+    // Update label
+    if (Math.abs(gainDB) < 0.3) {
+        highValue1.textContent = '0dB';
+    } else if (gainDB > 0) {
+        highValue1.textContent = `+${gainDB.toFixed(1)}dB`;
+    } else {
+        highValue1.textContent = `${gainDB.toFixed(1)}dB`;
+    }
+});
+
+// 3-Band EQ sliders (Low/Mid/High)
+lowSlider2.addEventListener('input', (e) => {
+    const gainDB = parseFloat(e.target.value);
+    
+    if (eqLow2) {
+        eqLow2.gain.value = gainDB;
+        console.log(`Track 2 Low EQ (250Hz lowshelf): ${gainDB.toFixed(1)}dB`);
+    }
+    
+    // Update label
+    if (Math.abs(gainDB) < 0.3) {
+        lowValue2.textContent = '0dB';
+    } else if (gainDB > 0) {
+        lowValue2.textContent = `+${gainDB.toFixed(1)}dB`;
+    } else {
+        lowValue2.textContent = `${gainDB.toFixed(1)}dB`;
+    }
+});
+
+midSlider2.addEventListener('input', (e) => {
+    const gainDB = parseFloat(e.target.value);
+    
+    if (eqMid2) {
+        eqMid2.gain.value = gainDB;
+        console.log(`Track 2 Mid EQ (1kHz peaking): ${gainDB.toFixed(1)}dB`);
+    }
+    
+    // Update label
+    if (Math.abs(gainDB) < 0.3) {
+        midValue2.textContent = '0dB';
+    } else if (gainDB > 0) {
+        midValue2.textContent = `+${gainDB.toFixed(1)}dB`;
+    } else {
+        midValue2.textContent = `${gainDB.toFixed(1)}dB`;
+    }
+});
+
+highSlider2.addEventListener('input', (e) => {
+    const gainDB = parseFloat(e.target.value);
+    
+    if (eqHigh2) {
+        eqHigh2.gain.value = gainDB;
+        console.log(`Track 2 High EQ (4kHz highshelf): ${gainDB.toFixed(1)}dB`);
+    }
+    
+    // Update label
+    if (Math.abs(gainDB) < 0.3) {
+        highValue2.textContent = '0dB';
+    } else if (gainDB > 0) {
+        highValue2.textContent = `+${gainDB.toFixed(1)}dB`;
+    } else {
+        highValue2.textContent = `${gainDB.toFixed(1)}dB`;
     }
 });
 
@@ -7152,10 +7282,10 @@ if (!sequencer) {
 }
 
 // Handle sequencer play requests
-document.addEventListener('sequencerPlayRequested', () => {
+document.addEventListener('sequencerPlayRequested', async () => {
     // Initialize main audio context if not already done
     if (!audioContext) {
-        initAudioContext();
+        await initAudioContext();
         console.log('✅ Audio context initialized from sequencer play request');
     }
     

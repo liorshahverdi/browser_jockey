@@ -83,7 +83,7 @@ Output Mixer
 #### Files Modified
 - **`app/templates/index.html`** - Added effect chain containers for both tracks
 - **`app/static/css/style.css`** - Added styling for effect chain UI
-- **`app/static/js/visualizer-dual.js`** - Integrated effect chain managers
+- **`app/static/js/app.js`** - Integrated effect chain managers
 
 #### Key Components
 

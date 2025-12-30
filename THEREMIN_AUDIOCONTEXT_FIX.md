@@ -17,7 +17,7 @@ Added audio context initialization check to the theremin enable button event han
 
 ### Code Change
 
-**File**: `/app/static/js/visualizer-dual.js`
+**File**: `/app/static/js/app.js`
 
 **Before**:
 ```javascript
@@ -104,7 +104,7 @@ After this fix:
 
 ## Related Files
 
-- `/app/static/js/visualizer-dual.js` - Main application (fix applied here)
+- `/app/static/js/app.js` - Main application (fix applied here)
 - `/app/static/js/modules/theremin.js` - Theremin module (expects valid audioContext)
 
 ## Browser Requirements

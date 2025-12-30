@@ -175,7 +175,7 @@ thereminState.externalSource = null;
 
 ### JavaScript - Main Controller
 
-**File**: `/app/static/js/visualizer-dual.js`
+**File**: `/app/static/js/app.js`
 
 #### Import Addition
 
@@ -482,7 +482,7 @@ Potential improvements:
 
 1. `/app/templates/index.html` - Added audio source selector and dynamic labels
 2. `/app/static/js/modules/theremin.js` - Audio source switching logic and dual-mode control
-3. `/app/static/js/visualizer-dual.js` - Event handling and UI updates
+3. `/app/static/js/app.js` - Event handling and UI updates
 
 ## Testing Checklist
 

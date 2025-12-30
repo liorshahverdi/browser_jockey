@@ -22,7 +22,7 @@ Added two new buttons to the Browser Jockey UI that enable simultaneous control 
 - Added `.dual-control-btn` styling with gradient backgrounds and hover effects
 - Added `.dual-icon` styling for the emoji icons
 
-### 3. JavaScript (`app/static/js/visualizer-dual.js`)
+### 3. JavaScript (`app/static/js/app.js`)
 
 #### New DOM Elements
 - `playBothBtn` - Reference to the Play Both Tracks button

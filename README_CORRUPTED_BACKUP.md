@@ -339,8 +339,8 @@ browser_jockey/
 │   │   ├── css/
 │   │   │   └── style.css    # All styling
 │   │   └── js/
-│   │       ├── visualizer.js       # Original single-track (deprecated)
-│   │       └── visualizer-dual.js  # Main dual-track DJ engine
+│   │       ├── simple-player.js       # Original single-track (deprecated)
+│   │       └── app.js  # Main dual-track DJ engine
 │   └── templates/
 │       └── index.html       # Main UI
 ├── config.py               # Configuration
@@ -566,7 +566,7 @@ Each key has its own color, creating a unique visual experience for different so
   - Created 3 additional modules: microphone.js, vocoder.js, autotune.js (540 lines)
   - Total of 9 ES6 modules (1,635 lines of organized, reusable code)
   - Reduced main file from 3,825 to 3,600 lines (21.4% total reduction from original)
-  - Refactored visualizer.js to use shared constants and utilities
+  - Refactored simple-player.js to use shared constants and utilities
   - 40+ functions now modularized with clean separation of concerns
   - Comprehensive documentation: MODULES.md, REFACTORING_STATUS.md, TESTING_GUIDE.md
 - **v3.3** - Code refactoring & seamless loop improvements

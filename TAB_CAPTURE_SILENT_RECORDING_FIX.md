@@ -64,7 +64,7 @@ if (finalMix1) {
 
 ## Code Changes
 
-### File: `app/static/js/visualizer-dual.js`
+### File: `app/static/js/app.js`
 
 #### 1. Added Global Variables (line ~350)
 ```javascript

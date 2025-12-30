@@ -105,7 +105,7 @@ export function createDelay(context) {
 }
 
 // Initialize audio effects for a track
-export function initAudioEffects(context, trackNumber) {
+export async function initAudioEffects(context, trackNumber) {
     // Create gain node (for volume control)
     const gain = context.createGain();
     gain.gain.value = 1.0;
@@ -128,10 +128,27 @@ export function initAudioEffects(context, trackNumber) {
     const delayDry = context.createGain();
     delayDry.gain.value = 1.0;
     
-    // Create filter (low-pass by default)
+    // Create 3-band EQ filters
+    const eqLow = context.createBiquadFilter();
+    eqLow.type = 'lowshelf';
+    eqLow.frequency.value = 250; // Low shelf at 250Hz
+    eqLow.gain.value = 0; // 0dB by default
+    
+    const eqMid = context.createBiquadFilter();
+    eqMid.type = 'peaking';
+    eqMid.frequency.value = 1000; // Mid peak at 1kHz
+    eqMid.Q.value = 1.0; // Moderate Q for smooth curve
+    eqMid.gain.value = 0; // 0dB by default
+    
+    const eqHigh = context.createBiquadFilter();
+    eqHigh.type = 'highshelf';
+    eqHigh.frequency.value = 4000; // High shelf at 4kHz
+    eqHigh.gain.value = 0; // 0dB by default
+    
+    // Create filter (low-pass by default) for existing filter slider functionality
     const filter = context.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = 10000; // Middle position by default (allows brightening and darkening)
+    filter.frequency.value = 20000; // Fully open by default
     filter.Q.value = 1.0;
     
     // Create ADSR envelope
@@ -139,27 +156,34 @@ export function initAudioEffects(context, trackNumber) {
     
     // Create pitch shifter using Tone.js if available
     let pitchShifter = null;
-    // TEMPORARILY DISABLED: Tone.js integration has connection issues with Web Audio API
-    // Will use playbackRate for pitch shifting (affects tempo) until proper integration is fixed
-    /*
     if (typeof Tone !== 'undefined') {
         try {
-            // Set Tone to use our existing AudioContext
-            if (!Tone.context || Tone.context.rawContext !== context) {
-                Tone.setContext(context);
+            // Initialize Tone.js properly before use
+            if (!Tone.context) {
+                // Start Tone.js audio system first
+                await Tone.start();
+                console.log('✅ Tone.js initialized');
             }
+            
+            // Set Tone to use our existing AudioContext
+            if (Tone.context.rawContext !== context) {
+                Tone.setContext(context);
+                console.log('✅ Tone.js context synchronized with Web Audio API');
+            }
+            
+            // Create pitch shifter
             pitchShifter = new Tone.PitchShift({
                 pitch: 0, // No pitch shift by default (in semitones)
                 windowSize: 0.1, // Smaller window for better quality
                 delayTime: 0, // No additional delay
                 feedback: 0 // No feedback
             });
-            console.log(`Pitch shifter created for track ${trackNumber}`);
+            console.log(`✅ Pitch shifter created for track ${trackNumber}`);
         } catch (err) {
-            console.error('Error creating Tone.js pitch shifter:', err);
+            console.error('❌ Error creating Tone.js pitch shifter:', err);
+            pitchShifter = null;
         }
     }
-    */
     
     return { 
         gain, 
@@ -167,69 +191,78 @@ export function initAudioEffects(context, trackNumber) {
         reverb: { convolver: reverb, wet: reverbWet, dry: reverbDry }, 
         delay: { node: delay, feedback, wet: delayWet, dry: delayDry }, 
         filter,
+        eqLow,
+        eqMid,
+        eqHigh,
         adsr,
         pitchShifter
     };
 }
 
 // Connect effects chain for a track
-export function connectEffectsChain(source, effects, merger, audioContext) {
-    const { gain, panner, filter, reverb, delay, pitchShifter } = effects;
+export function connectEffectsChain(source, effects, merger, audioContext, timestretchNode = null) {
+    const { gain, panner, filter, eqLow, eqMid, eqHigh, reverb, delay, pitchShifter } = effects;
     
     // Effects chain:
-    // source -> gain -> panner -> pitchShifter (if available) -> filter -> reverb (wet/dry) -> delay (wet/dry) -> merger
+    // source -> gain -> panner -> timestretch (if available) -> pitchShifter (if available) -> eqLow -> eqMid -> eqHigh -> filter -> reverb (wet/dry) -> delay (wet/dry) -> merger
     
     // Wrap all connections in try-catch to make this function idempotent (safe to call multiple times)
     try { source.connect(gain); } catch (e) { /* Already connected */ }
     try { gain.connect(panner); } catch (e) { /* Already connected */ }
     
-    // Insert pitch shifter if available
-    // Tone.js nodes have internal Web Audio nodes that need special handling
-    let pitchShifterConnected = false;
-    if (pitchShifter) {
-        // Connect Web Audio node (panner) to Tone.js node (pitchShifter)
+    // Insert timestretch node if available
+    let currentNode = panner;
+    if (timestretchNode) {
         try {
-            // Tone.js ToneAudioNode has .input which is a Gain node (Web Audio API)
-            // We need to connect to the internal Web Audio node, not the Tone.js wrapper
-            const pitchShifterInput = pitchShifter.input || pitchShifter._internalChannels?.[0] || pitchShifter;
-            panner.connect(pitchShifterInput);
-            console.log('✅ Panner → Pitch Shifter connected (via internal node)');
-            pitchShifterConnected = true;
+            panner.disconnect();
+            panner.connect(timestretchNode);
+            currentNode = timestretchNode;
+            console.log('✅ Timestretch node connected in chain');
         } catch (err) {
-            console.warn('⚠️ Panner → Pitch Shifter failed:', err.message);
-            // Try direct connection as last resort
-            try {
-                panner.connect(pitchShifter);
-                console.log('✅ Panner → Pitch Shifter connected (direct)');
-                pitchShifterConnected = true;
-            } catch (err2) {
-                console.warn('⚠️ Direct connection also failed:', err2.message);
-                pitchShifterConnected = false;
-            }
-        }
-        
-        // Connect Tone.js node (pitchShifter) to Web Audio node (filter)
-        if (pitchShifterConnected) {
-            try {
-                // Tone.js .connect() method handles connecting to Web Audio nodes
-                pitchShifter.connect(filter);
-                console.log('✅ Pitch Shifter → Filter connected');
-            } catch (err) {
-                console.warn('⚠️ Pitch Shifter → Filter failed:', err.message);
-                pitchShifterConnected = false;
-            }
+            console.warn('⚠️ Timestretch node connection failed:', err.message);
+            currentNode = panner;
         }
     }
     
-    // If pitch shifter didn't connect successfully, use direct connection
-    if (!pitchShifterConnected) {
-        try { 
-            panner.connect(filter);
-            console.log('✅ Panner → Filter direct connection' + (pitchShifter ? ' (pitch shifter failed, using fallback)' : ' (no pitch shifter)'));
-        } catch (e) { 
-            console.log('ℹ️ Panner → Filter: already connected');
+    // Insert pitch shifter if available
+    // Tone.js v15+ nodes need special connection handling
+    let pitchShifterConnected = false;
+    if (pitchShifter) {
+        try {
+            // Disconnect currentNode first to avoid conflicts
+            try { currentNode.disconnect(); } catch (e) { /* not connected yet */ }
+            
+            // Connect using Tone.js's connect method which handles Web Audio bridging
+            // currentNode (Web Audio) → pitchShifter.input (Tone.js wraps Web Audio Gain)
+            currentNode.connect(pitchShifter.input.input || pitchShifter.input);
+            
+            // pitchShifter.output (Tone.js CrossFade) → eqLow (Web Audio)
+            // Use the internal Web Audio node from the Tone output
+            const outputNode = pitchShifter.output.output || pitchShifter.output;
+            outputNode.connect(eqLow);
+            
+            console.log('✅ ' + (timestretchNode ? 'Timestretch → ' : '') + 'Pitch Shifter → 3-Band EQ connected');
+            pitchShifterConnected = true;
+        } catch (err) {
+            console.warn('⚠️ Pitch shifter connection failed:', err.message);
+            pitchShifterConnected = false;
         }
     }
+    
+    // If pitch shifter didn't connect successfully, connect currentNode directly to EQ
+    if (!pitchShifterConnected) {
+        try { 
+            currentNode.connect(eqLow);
+            console.log('✅ ' + (timestretchNode ? 'Timestretch → ' : 'Panner → ') + '3-Band EQ direct connection' + (pitchShifter ? ' (pitch shifter failed, using fallback)' : ' (no pitch shifter)'));
+        } catch (e) { 
+            console.log('ℹ️ ' + (timestretchNode ? 'Timestretch' : 'Panner') + ' → 3-Band EQ: already connected');
+        }
+    }
+    
+    // Connect 3-band EQ chain: eqLow -> eqMid -> eqHigh -> filter
+    try { eqLow.connect(eqMid); } catch (e) { /* Already connected */ }
+    try { eqMid.connect(eqHigh); } catch (e) { /* Already connected */ }
+    try { eqHigh.connect(filter); } catch (e) { /* Already connected */ }
     
     // Reverb path
     try { filter.connect(reverb.convolver); } catch (e) { /* Already connected */ }

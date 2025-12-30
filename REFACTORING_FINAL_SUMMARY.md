@@ -9,19 +9,19 @@ All refactoring work outlined in `REFACTORING_STATUS.md` has been completed. No 
 ### Phase 1 (Previously Completed)
 - Created 6 modules: constants, loop-controls, audio-utils, audio-effects, recording, sampler
 - Removed 753 lines of duplicate code
-- Reduced visualizer-dual.js from 4,578 to 3,825 lines (16.4% reduction)
+- Reduced app.js from 4,578 to 3,825 lines (16.4% reduction)
 
 ### Phase 2 (Just Completed)
 - Created 3 additional modules: microphone, vocoder, autotune
 - Removed 225 additional lines
-- Further reduced visualizer-dual.js from 3,825 to 3,600 lines (6% additional reduction)
-- Refactored visualizer.js to use shared modules
+- Further reduced app.js from 3,825 to 3,600 lines (6% additional reduction)
+- Refactored simple-player.js to use shared modules
 
 ### Final Metrics
 - **Total Modules Created:** 9
 - **Total Module Lines:** 1,635 (organized, reusable code)
 - **Total Lines Removed:** 978
-- **Final visualizer-dual.js:** 3,600 lines (21.4% reduction from original 4,578)
+- **Final app.js:** 3,600 lines (21.4% reduction from original 4,578)
 - **Functions Refactored:** 40+
 
 ## 📦 Module Architecture
@@ -48,7 +48,7 @@ app/static/js/modules/
 
 2. **Reusability** ✅
    - Modules can be used across different visualizer variants
-   - Shared code between visualizer.js and visualizer-dual.js
+   - Shared code between simple-player.js and app.js
    - Can be imported into future projects
 
 3. **Maintainability** ✅

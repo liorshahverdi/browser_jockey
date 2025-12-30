@@ -18,7 +18,7 @@ The carrier and modulator dropdowns were hidden inside the vocoder settings, onl
 
 ### Fix #1: Use Different Nodes for Mic-to-Mic Feedback ✅
 
-**File:** `app/static/js/visualizer-dual.js`
+**File:** `app/static/js/app.js`
 
 Added special handling when both modulator and carrier are set to 'mic':
 - Uses `micState.micSource` for the modulator (the voice input)
@@ -65,7 +65,7 @@ case 'mix':
 
 ### Fix #3: Improved Error Messages ✅
 
-**File:** `app/static/js/visualizer-dual.js`
+**File:** `app/static/js/app.js`
 
 Added clearer error message that shows which carrier type failed:
 ```javascript
@@ -149,7 +149,7 @@ Track 2 Source → ┘
 
 ## Files Modified
 
-1. **app/static/js/visualizer-dual.js**
+1. **app/static/js/app.js**
    - Added mic-to-mic special handling
    - Added audioContext parameter to getVocoderCarrierSource call
    - Improved error messages

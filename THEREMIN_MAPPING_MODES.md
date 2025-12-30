@@ -140,7 +140,7 @@ adsr: {
 
 ### Event Handlers
 
-**visualizer-dual.js:**
+**app.js:**
 ```javascript
 thereminMappingMode.addEventListener('change', (e) => {
     setThereminMappingMode(e.target.value);
@@ -210,7 +210,7 @@ Potential additions:
    - Enhanced `updateDisplayValues()` with dynamic labels
    - Added `setThereminMappingMode()` export
 
-2. **app/static/js/visualizer-dual.js**
+2. **app/static/js/app.js**
    - Imported `setThereminMappingMode`
    - Added event listener for mapping mode selector
    - Added dynamic help text updates

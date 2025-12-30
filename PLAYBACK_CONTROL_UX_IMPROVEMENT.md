@@ -138,7 +138,7 @@ Hover over buttons to see:
 
 ## Files Modified
 
-**JavaScript:** `app/static/js/visualizer-dual.js`
+**JavaScript:** `app/static/js/app.js`
 - Updated `captureTabAudio()` function
 - Added state tracking
 - Enhanced play/pause/stop button handlers

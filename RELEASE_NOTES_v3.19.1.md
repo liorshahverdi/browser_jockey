@@ -93,7 +93,7 @@ source2 = audioContext.createMediaElementSource(audioElement2);
 ## 🔧 Technical Details
 
 ### Files Modified
-- `app/static/js/visualizer-dual.js` - Fixed `loadAudioFile()` function
+- `app/static/js/app.js` - Fixed `loadAudioFile()` function
 
 ### Code Changes
 **Location:** `loadAudioFile()` function (~line 2704)

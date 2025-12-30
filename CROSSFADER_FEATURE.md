@@ -94,7 +94,7 @@ Fixed critical crossfader bug where incorrect variable names (`gainNode1`/`gainN
 
 - `app/templates/index.html` - Added crossfader HTML structure and reorganized layout
 - `app/static/css/style.css` - Added crossfader styling and layout adjustments
-- `app/static/js/visualizer-dual.js` - Implemented crossfader logic and event handlers
+- `app/static/js/app.js` - Implemented crossfader logic and event handlers
 
 ## Related Features
 

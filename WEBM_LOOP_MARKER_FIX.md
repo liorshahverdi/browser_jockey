@@ -74,7 +74,7 @@ To test the fix:
 6. Play the audio to confirm the loop is working correctly
 
 ## Files Modified
-- `/app/static/js/visualizer-dual.js`
+- `/app/static/js/app.js`
   - Modified waveform click handler for Track 1 (added duration validation)
   - Modified waveform click handler for Track 2 (added duration validation)
   - Modified `loadRecordingToTrack1()` function (added metadata wait)

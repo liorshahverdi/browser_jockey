@@ -20,7 +20,7 @@ When users disabled the loop feature by clicking the loop button, then re-enable
 7. **BUG**: Instead, the system sets an End point (B) because `settingPoint` wasn't reset
 
 ### Root Cause
-In `visualizer-dual.js`, when the loop button was toggled off, the code manually cleared loop markers and regions but did NOT reset the `loopState.settingPoint` property:
+In `app.js`, when the loop button was toggled off, the code manually cleared loop markers and regions but did NOT reset the `loopState.settingPoint` property:
 
 ```javascript
 // BEFORE (lines 2383-2389 and 2405-2411)
@@ -43,7 +43,7 @@ This caused the `settingPoint` to remain at `'end'` if the user had previously s
 
 ### Code Changes
 
-**File**: `app/static/js/visualizer-dual.js`
+**File**: `app/static/js/app.js`
 
 Changed both loop button event listeners (for Track 1 and Track 2) to use the existing `clearLoopPoints()` utility function, which properly resets ALL loop state including `settingPoint`:
 
@@ -141,7 +141,7 @@ export function clearLoopPoints(loopState, loopRegion, loopMarkerStart, loopMark
 
 ## 🔗 Related Files
 
-- `app/static/js/visualizer-dual.js` - Main loop button handlers (modified)
+- `app/static/js/app.js` - Main loop button handlers (modified)
 - `app/static/js/modules/loop-controls.js` - Loop utilities (unchanged, already correct)
 
 ---

@@ -56,7 +56,7 @@ Browser Jockey now includes a powerful sequencer feature that allows you to arra
 #### Modified Files
 - `app/templates/index.html` - Added tab navigation and sequencer UI
 - `app/static/css/style.css` - Added 400+ lines of sequencer styling
-- `app/static/js/visualizer-dual.js` - Integrated sequencer module
+- `app/static/js/app.js` - Integrated sequencer module
 
 #### Architecture
 - **ES6 Module**: Sequencer is a clean ES6 class

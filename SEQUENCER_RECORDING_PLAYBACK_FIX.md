@@ -20,7 +20,7 @@ this.mediaRecorder = new MediaRecorder(dest.stream);
 // ...
 this.recordedBlob = new Blob(this.recordedChunks, { type: 'audio/webm' });
 
-// visualizer-dual.js - Hardcoded MIME type
+// app.js - Hardcoded MIME type
 const blob = new Blob([arrayBuffer], { type: 'audio/webm' });
 const file = new File([blob], filename, { type: 'audio/webm' });
 ```
@@ -58,7 +58,7 @@ console.log(`🎙️ Recording with MIME type: ${mimeType}`);
 - ✅ Consistent 128 kbps bitrate (good quality/size ratio)
 - ✅ Clear console logging for debugging
 
-### 2. MIME Type Propagation (sequencer.js → visualizer-dual.js)
+### 2. MIME Type Propagation (sequencer.js → app.js)
 
 ```javascript
 // sequencer.js - Pass MIME type through event
@@ -76,7 +76,7 @@ const event = new CustomEvent('loadSequencerRecording', {
 console.log(`📥 Loading sequencer recording to Track ${trackNumber} (${mimeType})`);
 ```
 
-### 3. Proper File Creation (visualizer-dual.js)
+### 3. Proper File Creation (app.js)
 
 ```javascript
 const { trackNumber, arrayBuffer, filename, mimeType } = event.detail;
@@ -137,7 +137,7 @@ if (!MediaRecorder.isTypeSupported(mimeType)) {
 - Pass MIME type in event detail
 - Enhanced logging with MIME type info
 
-#### 2. `app/static/js/visualizer-dual.js`
+#### 2. `app/static/js/app.js`
 **Lines ~5359-5380:**
 - Extract MIME type from event detail
 - Use provided MIME type or default to Opus

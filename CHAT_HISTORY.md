@@ -46,7 +46,7 @@ if (!audioElement.src || audioElement.src === '') {
 ```
 
 **Files Modified:**
-- `app/static/js/visualizer-dual.js` - Added source check in `loadAudioFile()`
+- `app/static/js/app.js` - Added source check in `loadAudioFile()`
 
 **Impact:**
 - ✅ Track 1 → Record → Load to Track 2 (now works)
@@ -172,7 +172,7 @@ User confirmed: "it works!"
 
 **Files Modified**:
 - `app/static/js/modules/sequencer.js` - Recording implementation
-- `app/static/js/visualizer-dual.js` - Track loading and canvas fixes
+- `app/static/js/app.js` - Track loading and canvas fixes
 - `app/static/css/style.css` - Clip name overflow fixes
 
 **Documentation Created**:
@@ -264,7 +264,7 @@ User confirmed: "it works!"
 **Files Modified**:
 - `app/templates/index.html` - Added inputs, tooltips, hints
 - `app/static/css/style.css` - Styling for new components
-- `app/static/js/visualizer-dual.js` - Loop logic, drag detection, helpers
+- `app/static/js/app.js` - Loop logic, drag detection, helpers
 
 **Documentation**:
 - `PRECISE_LOOP_MARKERS.md` - Complete feature documentation
@@ -321,7 +321,7 @@ User confirmed: "it works!"
 
 **Implementation Details**:
 
-**Tab Capture to Tracks** (`app/static/js/visualizer-dual.js`):
+**Tab Capture to Tracks** (`app/static/js/app.js`):
 ```javascript
 async function captureTabAudio(trackNumber) {
     try {
@@ -353,7 +353,7 @@ async function captureTabAudio(trackNumber) {
 }
 ```
 
-**Tab Capture to Microphone** (`app/static/js/visualizer-dual.js`):
+**Tab Capture to Microphone** (`app/static/js/app.js`):
 ```javascript
 async function captureTabAudioAsMic() {
     // Same capture mechanism
@@ -384,7 +384,7 @@ export function connectEffectsChain(source, effects, merger, audioContext) {
 }
 ```
 
-**Tab Capture Cleanup** (`app/static/js/visualizer-dual.js`):
+**Tab Capture Cleanup** (`app/static/js/app.js`):
 ```javascript
 function loadRecordingToTrack1() {
     // Stop tab capture if active
@@ -530,7 +530,7 @@ function monitorAudioLevels() {
 
 **Files Modified**:
 - `app/templates/index.html` - Added 3 tab capture buttons
-- `app/static/js/visualizer-dual.js` - Main tab capture implementation (~500 lines)
+- `app/static/js/app.js` - Main tab capture implementation (~500 lines)
 - `app/static/js/modules/recording.js` - MIME type detection, audio monitoring
 - `app/static/js/modules/microphone.js` - Enhanced startMicRecording()
 - `app/static/js/modules/audio-effects.js` - connectEffectsChain() utility
@@ -636,7 +636,7 @@ function monitorAudioLevels() {
 - **Theremin Sensitivity**: Slider (0.5x-3.0x, default 1.5x) with value display
 - **Hand Detection Requirement**: Checkbox (default unchecked for wave-only mode)
 
-**Event Listeners** (`app/static/js/visualizer-dual.js`):
+**Event Listeners** (`app/static/js/app.js`):
 - Track 1 ADSR: 8 listeners (4 sliders + trigger)
 - Track 2 ADSR: 8 listeners (4 sliders + trigger)
 - Master ADSR: 8 listeners (4 sliders + trigger)
@@ -707,7 +707,7 @@ Added a professional XY oscilloscope visualization positioned to the right of th
 - Responsive layout (stacks vertically on screens < 1200px)
 - Hover effects and smooth transitions
 
-**3. JavaScript Implementation** (`app/static/js/visualizer-dual.js`)
+**3. JavaScript Implementation** (`app/static/js/app.js`)
 
 **New Variables**:
 ```javascript
@@ -806,7 +806,7 @@ The oscilloscope reveals stereo relationships:
 **Files Modified**:
 - `app/templates/index.html` (added oscilloscope container)
 - `app/static/css/style.css` (grid layout + oscilloscope styling)
-- `app/static/js/visualizer-dual.js` (oscilloscope implementation)
+- `app/static/js/app.js` (oscilloscope implementation)
 
 **Testing Completed**:
 ✅ Oscilloscope displays on page load with grid
@@ -890,7 +890,7 @@ await new Promise((resolve, reject) => {
 6. Play the audio to confirm the loop is working correctly
 
 **Files Modified**:
-- `app/static/js/visualizer-dual.js` (4 changes)
+- `app/static/js/app.js` (4 changes)
   - Modified waveform click handler for Track 1 (added duration validation)
   - Modified waveform click handler for Track 2 (added duration validation)
   - Modified `loadRecordingToTrack1()` function (added metadata wait)
@@ -992,7 +992,7 @@ await new Promise((resolve, reject) => {
 - Updated `.waveform-color-picker` positioning
 - Modified `.upload-section` layout
 
-**JavaScript Changes** (`app/static/js/visualizer-dual.js`):
+**JavaScript Changes** (`app/static/js/app.js`):
 - Added `routeMicrophone` DOM reference
 - Created `toggleMicRouting(enabled)` function
 - Added event listener for mic routing toggle
@@ -1188,7 +1188,7 @@ await new Promise((resolve, reject) => {
    - `.master-volume-pan-section`: Compact layout
    - `.master-effects-wrapper`: Flexible effects area
 
-3. `app/static/js/visualizer-dual.js`
+3. `app/static/js/app.js`
    - Added DOM element references (lines ~179-183):
      - `crossfader`, `crossfaderValue`, `crossfaderMode`
      - `crossfaderLabelLeft`, `crossfaderLabelRight`
@@ -1318,7 +1318,7 @@ await new Promise((resolve, reject) => {
 - `app/static/js/modules/recording.js` - Exported audioBufferToMp3
 - `app/static/js/modules/vocoder.js` - Added mix carrier, renamed parameters
 - `app/static/js/modules/autotune.js` - Renamed parameters for clarity
-- `app/static/js/visualizer-dual.js` - Major routing and bug fixes
+- `app/static/js/app.js` - Major routing and bug fixes
 - `app/templates/index.html` - Added UI controls for all features
 - `app/static/css/style.css` - Styled new controls
 
@@ -1425,7 +1425,7 @@ await new Promise((resolve, reject) => {
   ```
 - Fixed all connection points in:
   - `audio-effects.js`: `connectEffectsChain()` function
-  - `visualizer-dual.js`: All track connection locations (6 places)
+  - `app.js`: All track connection locations (6 places)
 - **Result**: Full stereo panning now functional across all tracks and master
 
 **Technical Implementation**:
@@ -1453,7 +1453,7 @@ await new Promise((resolve, reject) => {
   - Updated `initAudioEffects()` to create `StereoPanner` node
   - Modified `connectEffectsChain()` to include panner in signal flow
   - Fixed merger connections to preserve stereo imaging
-- `app/static/js/visualizer-dual.js`:
+- `app/static/js/app.js`:
   - Added `panner1`, `panner2`, `pannerMaster` variables
   - Added DOM element references for pan sliders and values
   - Updated all audio connection chains to include panners
@@ -1552,7 +1552,7 @@ Master: merger → filter → PANNER → reverb → delay → gain → output
   - `.master-effects-section` - Golden theme for master (#ffd700)
   - `#effectChainMaster` - Gold-themed effect chain overrides
   
-- `app/static/js/visualizer-dual.js`:
+- `app/static/js/app.js`:
   - Added master effect nodes: `gainMaster`, `filterMaster`, `reverbMaster`, `delayMaster`
   - Created effect chain managers: `effectChain1`, `effectChain2`, `effectChainMaster`
   - Rerouted audio: Merger → Master Effects → Output
@@ -1618,7 +1618,7 @@ Master:  Merger → Filter → Reverb → Delay → Master Gain → Speakers/Rec
 
 **Files Modified**:
 - `app/static/js/modules/loop-controls.js` - Enhanced reverse playback animation
-- `app/static/js/visualizer-dual.js` - Added progress helpers and updated all calls
+- `app/static/js/app.js` - Added progress helpers and updated all calls
 
 **Documentation Created**:
 - `REVERSE_LOOP_SMOOTHNESS_FIX.md` - Technical explanation of improvements
@@ -2123,7 +2123,7 @@ Track 1/2: Source → Gain → Filter → Reverb (wet/dry) → Delay (wet/dry) �
 - Easier beatmatching workflow
 
 **Files Modified**:
-- `/app/static/js/visualizer-dual.js`: Key detection, marker click handlers
+- `/app/static/js/app.js`: Key detection, marker click handlers
 - `/app/templates/index.html`: Key display elements added to track info
 - `/app/static/css/style.css`: Side-by-side layout, key display styling
 
@@ -2153,7 +2153,7 @@ Track 1/2: Source → Gain → Filter → Reverb (wet/dry) → Delay (wet/dry) �
   - Waveform and analysis still work (Web Audio API decoding succeeds)
   - User knows why playback failed and what to do
 
-**Code Changes** (`visualizer-dual.js`):
+**Code Changes** (`app.js`):
 ```javascript
 // Track 1 error handling
 audio1.addEventListener('error', (e) => {
@@ -2190,7 +2190,7 @@ audio2.addEventListener('error', (e) => {
 - **OGG**: Works except Safari
 
 **Files Modified**:
-- `/app/static/js/visualizer-dual.js`: Added error event listeners
+- `/app/static/js/app.js`: Added error event listeners
 - `/app/templates/index.html`: Updated placeholder text with format info
 
 **Impact**:
@@ -2279,8 +2279,8 @@ flask-audio-visualizer/
 │   │   ├── css/
 │   │   │   └── style.css        # All styling (736 lines)
 │   │   └── js/
-│   │       ├── visualizer.js    # Original single-track (deprecated)
-│   │       └── visualizer-dual.js  # Main dual-track engine (1856 lines)
+│   │       ├── simple-player.js    # Original single-track (deprecated)
+│   │       └── app.js  # Main dual-track engine (1856 lines)
 │   └── templates/
 │       └── index.html           # Main UI (185 lines)
 ├── config.py                    # Configuration
@@ -2296,7 +2296,7 @@ flask-audio-visualizer/
 
 ## Key Functions Reference
 
-### visualizer-dual.js
+### app.js
 
 #### Audio Loading & Analysis
 - `loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, keyDisplay)` - Load audio, decode, detect BPM/key, draw waveform
@@ -2558,7 +2558,7 @@ const keyColors = {
 **Files Modified**:
 - `/app/templates/index.html`: Added color picker UI for both tracks
 - `/app/static/css/style.css`: Added `.waveform-color-picker` and `.reset-color-btn` styles
-- `/app/static/js/visualizer-dual.js`: 
+- `/app/static/js/app.js`: 
   - Added `waveformColors` state object
   - Updated `drawWaveform()` to accept color parameter
   - Updated `redrawWaveformWithZoom()` to use track-specific colors
@@ -2745,7 +2745,7 @@ Microphone → MicGainNode ────────────┴→ ChannelMer
 **Files Modified**:
 - `/app/templates/index.html`: Added mic section UI
 - `/app/static/css/style.css`: Added mic section styling (purple theme)
-- `/app/static/js/visualizer-dual.js`: Added mic functions and routing
+- `/app/static/js/app.js`: Added mic functions and routing
 
 **Browser Compatibility**:
 - Chrome/Edge: ✅ Full support
@@ -2866,7 +2866,7 @@ Microphone → MicGainNode ────────────┴→ ChannelMer
 **Files Modified**:
 - `/app/templates/index.html`: Added vocoder section UI (lines 228-252)
 - `/app/static/css/style.css`: Added vocoder styling with blue theme (lines 804-894)
-- `/app/static/js/visualizer-dual.js`: Added vocoder functions and event listeners
+- `/app/static/js/app.js`: Added vocoder functions and event listeners
 
 **Use Cases**:
 - **Robot Voice Effect**: Use music tracks as carrier for electronic vocal sound
@@ -2916,7 +2916,7 @@ Microphone → MicGainNode ────────────┴→ ChannelMer
 
 **Files Modified**:
 - `/app/templates/index.html`: Added mic option to carrier dropdown
-- `/app/static/js/visualizer-dual.js`: Updated carrier source logic
+- `/app/static/js/app.js`: Updated carrier source logic
 
 **Browser Compatibility**: Same as vocoder (Chrome/Edge/Firefox/Safari ✅)
 
@@ -3015,7 +3015,7 @@ Microphone → MicGainNode ────────────┴→ ChannelMer
 **Files Modified**:
 - `/app/templates/index.html`: Added auto-tune section UI (lines 273-319)
 - `/app/static/css/style.css`: Added auto-tune styling with purple theme (lines 905-1001)
-- `/app/static/js/visualizer-dual.js`: Added pitch detection, correction algorithms, event listeners
+- `/app/static/js/app.js`: Added pitch detection, correction algorithms, event listeners
 
 **Use Cases**:
 - **Vocal Effects**: Classic "T-Pain" hard auto-tune (0-20ms speed, 100% strength)
@@ -3088,7 +3088,7 @@ bar.material.emissive.copy(bar.material.color).multiplyScalar(0.3);
 - Smooth transitions prevent jarring color changes
 
 **Files Modified**:
-- `/app/static/js/visualizer-dual.js`: Enhanced circle mode animation loop with dynamic color calculation
+- `/app/static/js/app.js`: Enhanced circle mode animation loop with dynamic color calculation
 
 **Browser Compatibility**: All browsers (Chrome/Firefox/Safari/Edge ✅)
 
@@ -3190,7 +3190,7 @@ if (currentTime < loopStart - loopDuration ||
 | Rapid tempo changes | ❌ Audio artifacts | ✅ Stable playback |
 
 **Files Modified**:
-- `/app/static/js/visualizer-dual.js`:
+- `/app/static/js/app.js`:
   - Updated `loopState1` and `loopState2` initialization (line 183-184)
   - Enhanced `handleLoopPlayback()` function (lines 300-357)
   - Improved `mouseup` event handler (lines 2452-2489)
@@ -3291,7 +3291,7 @@ async function loadRecordingToTrack2() {
 - `/app/templates/index.html`:
   - Added `loadToTrack1Btn` button (line ~332)
   - Added `loadToTrack2Btn` button (line ~335)
-- `/app/static/js/visualizer-dual.js`:
+- `/app/static/js/app.js`:
   - Added DOM element references (lines 93-94)
   - Added `recordedBlob` variable (line 200)
   - Updated `mediaRecorder.onstop` to enable load buttons (lines 420-424)
@@ -3413,7 +3413,7 @@ a.download = `Track${trackNumber}_with_effects.${extension}`;
   - Added lamejs CDN script (line 13)
   - Added export format selector for Track 1 (lines 110-116)
   - Added export format selector for Track 2 (lines 217-223)
-- `/app/static/js/visualizer-dual.js`:
+- `/app/static/js/app.js`:
   - Added `exportFormat1` and `exportFormat2` DOM elements (lines 37, 79)
   - Added `audioBufferToMp3()` function (lines 3449-3509)
   - Updated `exportStem()` to support both formats (lines 3226-3250)
@@ -3568,7 +3568,7 @@ recordingExportGroup.style.display = 'flex';
   - Created `recording-export-group` container (lines 340-358)
   - Added `recordingExportFormat` dropdown (lines 341-346)
   - Reorganized export buttons into group
-- `/app/static/js/visualizer-dual.js`:
+- `/app/static/js/app.js`:
   - Added `recordingExportGroup` and `recordingExportFormat` DOM elements (lines 94-95)
   - Updated `downloadRecording()` to async with format support (lines 530-577)
   - Updated `startRecording()` to hide export group (line 387)
@@ -3701,7 +3701,7 @@ source1 = null;       // ✅ JavaScript cleans up
 ```
 
 **Files Modified**:
-- `/app/static/js/visualizer-dual.js`:
+- `/app/static/js/app.js`:
   - Lines 587-636: `loadRecordingToTrack1()` - disconnect logic, pause audio, enhanced logging
   - Lines 639-688: `loadRecordingToTrack2()` - disconnect logic, pause audio, enhanced logging
 
@@ -3826,7 +3826,7 @@ source1 = null;       // ✅ JavaScript cleans up
 
 **HTML Cleanup**:
 - Removed duplicate closing tags (`</div>`, `</body>`, `</html>`)
-- Removed reference to deprecated `visualizer.js` file
+- Removed reference to deprecated `simple-player.js` file
 - Proper HTML structure validation
 
 **Files Modified**:
@@ -3892,7 +3892,7 @@ audioElement1.load();
 - Updated user feedback message
 
 **Files Modified**:
-- `/app/static/js/visualizer-dual.js`:
+- `/app/static/js/app.js`:
   - `loadRecordingToTrack1()` - Added disconnect logic
   - `loadRecordingToTrack2()` - Added disconnect logic
 
@@ -4052,7 +4052,7 @@ audioFile1.addEventListener('change', async (e) => {
 - No polyfills required
 
 **Files Modified**:
-- `/app/static/js/visualizer-dual.js`:
+- `/app/static/js/app.js`:
   - `loadRecordingToTrack1()` - Removed disconnect, added immediate source creation
   - `loadRecordingToTrack2()` - Removed disconnect, added immediate source creation
   - `audioFile1` event listener - Removed `source1 = null`, added immediate creation
@@ -4257,7 +4257,7 @@ audioFile1.addEventListener('change', async (e) => {
    - Volume slider custom styling
    - Hover effects and transitions
 
-3. `/app/static/js/visualizer-dual.js`:
+3. `/app/static/js/app.js`:
    - Sampler state variables
    - DOM element references
    - `loadSamplerSource()` - Extract audio buffers
@@ -4325,7 +4325,7 @@ if (recordingDestination) {
    - Preserves all pitch-shifted notes accurately
 
 **Files Modified**:
-- `/app/static/js/visualizer-dual.js` (lines ~1697-1702)
+- `/app/static/js/app.js` (lines ~1697-1702)
   - Added conditional connection to recordingDestination
   - Updated comment to clarify dual routing
 
@@ -4414,7 +4414,7 @@ if (recordingDestination) {
    - Added `reverseLoopBtn1` and `reverseLoopBtn2` buttons
    - Positioned between loop and clear loop buttons
 
-2. `/app/static/js/visualizer-dual.js`:
+2. `/app/static/js/app.js`:
    - Added `reverseLoopBtn1` and `reverseLoopBtn2` DOM references
    - Updated loop state objects with `reverse` flag
    - Modified `enforceLoop()` to handle both directions
@@ -4497,7 +4497,7 @@ if (recordingDestination) {
 ### 27. Code Refactoring & Seamless Loop Improvements (v3.3)
 
 **User Request**: 
-1. "visualizer-dual.js and visualizer.js are getting pretty long. break out any smaller components so separate modules to keep our code clean and readable."
+1. "app.js and simple-player.js are getting pretty long. break out any smaller components so separate modules to keep our code clean and readable."
 2. "I tried uploading a song i used before but the buttons are greyed out now. diagnose and fix."
 3. "The reverse looping feature isn't working as I expected. Search for bugs and fix."
 4. "both looping and/or reverse looping should be able to work seamlessly for users to play with live. it seems doing so causes cutting effects"
@@ -4505,7 +4505,7 @@ if (recordingDestination) {
 **Problems Identified**:
 
 1. **Codebase Maintainability**:
-   - `visualizer-dual.js` had grown to 4,578 lines
+   - `app.js` had grown to 4,578 lines
    - Duplicate code across files
    - No module separation
    - Hard to navigate and maintain
@@ -4563,7 +4563,7 @@ export { playSamplerNote, handleKeyDown, handleKeyUp,
 
 **Module Architecture**:
 ```
-visualizer-dual.js (3,825 lines - down from 4,578)
+app.js (3,825 lines - down from 4,578)
 ├── imports modules/constants.js
 ├── imports modules/loop-controls.js
 ├── imports modules/audio-utils.js
@@ -4576,7 +4576,7 @@ visualizer-dual.js (3,825 lines - down from 4,578)
 
 1. **Fixed Duplicate Declaration**:
 ```javascript
-// REMOVED from visualizer-dual.js (line 959):
+// REMOVED from app.js (line 959):
 const musicScales = { ... };  // ❌ Already imported!
 ```
 
@@ -4646,7 +4646,7 @@ if (newTime <= loopState.start) {
    - ✅ Easier navigation and maintenance
    - ✅ Better IDE autocomplete
    - ✅ Clear dependency structure
-   - ✅ Reusable across visualizer.js and visualizer-dual.js
+   - ✅ Reusable across simple-player.js and app.js
    - ✅ Easier to test independently
    - ✅ Team-friendly for collaboration
 
@@ -4730,7 +4730,7 @@ if (newTime <= loopState.start) {
 58. **Documentation**: Comprehensive docs help future maintenance and collaboration
 
 **Commits**:
-- "Refactor visualizer-dual.js into modular structure with 6 ES6 modules"
+- "Refactor app.js into modular structure with 6 ES6 modules"
 - "Fix duplicate musicScales declaration causing syntax error"
 - "Fix reverse loop toggle logic and add validation"
 - "Remove playhead jumping for seamless loop transitions"
@@ -4785,7 +4785,7 @@ After completing Phase 1 refactoring (constants, loops, audio utilities, effects
    - Configurable wet/dry mix for natural to robotic effect
    - 12 pitch shifter nodes for smooth correction
 
-4. **Refactored visualizer-dual.js**:
+4. **Refactored app.js**:
    - Changed from individual variables to state objects:
      - `micStream, micSource, micGain, micAnalyser` → `micState`
      - `vocoderBands, vocoderCarrierGain, ...` → `vocoderState`
@@ -4796,7 +4796,7 @@ After completing Phase 1 refactoring (constants, loops, audio utilities, effects
    - Created wrapper functions for event handlers
    - Maintained backward compatibility
 
-5. **Refactored visualizer.js**:
+5. **Refactored simple-player.js**:
    - Added imports for shared constants and audio utilities
    - Removed duplicate `noteFrequencies` constant definition
    - Updated `detectMusicalKey()` to use shared module function
@@ -4816,7 +4816,7 @@ After completing Phase 1 refactoring (constants, loops, audio utilities, effects
 - **Total Modules**: 9 (1,635 lines of organized code)
 - **Lines Removed Phase 2**: 225 lines
 - **Total Lines Removed**: 978 lines
-- **visualizer-dual.js**: 4,578 → 3,600 lines (21.4% reduction)
+- **app.js**: 4,578 → 3,600 lines (21.4% reduction)
 - **Functions Refactored**: 40+ total
 
 **Module Breakdown**:
@@ -4892,8 +4892,8 @@ After completing Phase 1 refactoring (constants, loops, audio utilities, effects
 - "Create microphone.js module for microphone input handling"
 - "Create vocoder.js module for vocoder effect implementation"
 - "Create autotune.js module for pitch correction"
-- "Refactor visualizer-dual.js to use new microphone/vocoder/autotune modules"
-- "Refactor visualizer.js to use shared constants and utilities"
+- "Refactor app.js to use new microphone/vocoder/autotune modules"
+- "Refactor simple-player.js to use shared constants and utilities"
 - "Create comprehensive refactoring documentation and testing guide"
 - "Update REFACTORING_STATUS.md with Phase 2 completion"
 
@@ -4984,7 +4984,7 @@ The customizable waveform color feature was not working due to two critical bugs
 
 **Implementation**:
 
-Fixed in `/Users/lshahverdi/projects/browser_jockey/app/static/js/visualizer-dual.js`:
+Fixed in `/Users/lshahverdi/projects/browser_jockey/app/static/js/app.js`:
 
 1. **Updated Color Picker Event Handlers** (lines ~3258-3290):
    ```javascript
@@ -5018,7 +5018,7 @@ Fixed in `/Users/lshahverdi/projects/browser_jockey/app/static/js/visualizer-dua
 - The bug was in the event handlers and initial loading function not passing these parameters through the call chain
 
 **Files Modified**:
-- `app/static/js/visualizer-dual.js` - Fixed color parameter passing in event handlers and loadAudioFile function
+- `app/static/js/app.js` - Fixed color parameter passing in event handlers and loadAudioFile function
 
 **Testing**:
 - Verified no JavaScript syntax errors
@@ -5061,7 +5061,7 @@ The code didn't guard against starting duplicate `requestAnimationFrame` loops. 
 
 **Implementation**:
 
-Fixed in `/Users/lshahverdi/projects/browser_jockey/app/static/js/visualizer-dual.js`:
+Fixed in `/Users/lshahverdi/projects/browser_jockey/app/static/js/app.js`:
 
 1. **Reverse Loop Button Handlers** (Track 1: ~lines 2430-2447, Track 2: ~lines 2480-2497):
    ```javascript
@@ -5114,7 +5114,7 @@ Fixed in `/Users/lshahverdi/projects/browser_jockey/app/static/js/visualizer-dua
 - The fix maintains seamless transitions without audio cuts
 
 **Files Modified**:
-- `app/static/js/visualizer-dual.js` - Added animation cleanup calls and UI state restoration
+- `app/static/js/app.js` - Added animation cleanup calls and UI state restoration
 
 **Testing**:
 - Verified no JavaScript syntax errors
@@ -5213,7 +5213,7 @@ After adding MP3 export support in v3.5.3, users encountered a "No recording ava
 **Implementation**:
 Modified three functions to use `recordingState.blob` directly (the source of truth) instead of relying solely on the local `recordedBlob` variable:
 
-1. **downloadRecordingWrapper()** (`visualizer-dual.js` ~line 344):
+1. **downloadRecordingWrapper()** (`app.js` ~line 344):
    ```javascript
    async function downloadRecordingWrapper() {
        // Use recordingState.blob directly to ensure we have the latest blob
@@ -5259,7 +5259,7 @@ Modified three functions to use `recordingState.blob` directly (the source of tr
 - Using `||` ensures we always get a blob if one exists in either location
 
 **Files Modified**:
-- `app/static/js/visualizer-dual.js` - Updated blob access in download and load functions
+- `app/static/js/app.js` - Updated blob access in download and load functions
 - `README.md` - Updated to v3.5.4 with fix description
 - `CHAT_HISTORY.md` - Added session documentation
 
@@ -5282,7 +5282,7 @@ Modified three functions to use `recordingState.blob` directly (the source of tr
 When users disabled the loop feature and then re-enabled it, the next click on the waveform would unexpectedly set the End point (B) instead of the Start point (A). This created a confusing user experience.
 
 **Root Cause**:
-In `visualizer-dual.js`, when the loop button was toggled off, the code manually cleared loop markers but did NOT reset the `loopState.settingPoint` property:
+In `app.js`, when the loop button was toggled off, the code manually cleared loop markers but did NOT reset the `loopState.settingPoint` property:
 ```javascript
 // BEFORE - Manual clearing (incomplete)
 if (!loopState1.enabled) {
@@ -5319,7 +5319,7 @@ The `clearLoopPoints()` function properly resets ALL loop state:
 - **Consistency**: Clear Loop button and Loop Toggle now use same function
 
 **Files Modified**:
-- `app/static/js/visualizer-dual.js` - Fixed loop button handlers for both tracks
+- `app/static/js/app.js` - Fixed loop button handlers for both tracks
 - `LOOP_MARKER_UX_FIX.md` - Comprehensive documentation (created)
 - `README.md` - Updated to v3.5.5 with fix description
 - `CHAT_HISTORY.md` - Added session documentation
@@ -5389,7 +5389,7 @@ The `clearLoopPoints()` function properly resets ALL loop state:
 - `.dual-control-btn` - Button styling with gradients and hover effects
 - `.dual-icon` - Icon styling for emojis
 
-**JavaScript** (`app/static/js/visualizer-dual.js`):
+**JavaScript** (`app/static/js/app.js`):
 
 New Functions:
 1. `checkDualTrackButtonsState()` - Helper to enable/disable buttons based on track state
@@ -5451,7 +5451,7 @@ function playBothAndRecord() {
 **Files Modified**:
 - `app/templates/index.html` - Added dual track controls section
 - `app/static/css/style.css` - Added styling for new section
-- `app/static/js/visualizer-dual.js` - Added functions and event handlers
+- `app/static/js/app.js` - Added functions and event handlers
 - `DUAL_TRACK_CONTROLS_FEATURE.md` - Comprehensive documentation (created)
 - `README.md` - Updated to v3.6.0 with feature description
 - `CHAT_HISTORY.md` - Added session documentation

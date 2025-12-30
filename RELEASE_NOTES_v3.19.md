@@ -216,7 +216,7 @@
 
 ### Modified Files
 - `app/static/js/modules/sequencer.js` - Recording implementation
-- `app/static/js/visualizer-dual.js` - Track loading and canvas fixes
+- `app/static/js/app.js` - Track loading and canvas fixes
 - `app/static/css/style.css` - Clip name overflow fixes
 
 ### New Files

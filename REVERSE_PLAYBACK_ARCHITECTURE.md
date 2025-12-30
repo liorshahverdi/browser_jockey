@@ -384,7 +384,7 @@ export class PlaybackController {
 
 ### 3. Integration Changes Required
 
-**File:** `app/static/js/visualizer-dual.js`
+**File:** `app/static/js/app.js`
 
 ```javascript
 // Add at top

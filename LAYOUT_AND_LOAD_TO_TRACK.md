@@ -64,7 +64,7 @@ Two major improvements to the Browser Jockey application:
   - Hover effects with transform and enhanced glow
   - Min-width: 120px, flex: 1 for responsive layout
 
-#### JavaScript Changes (`app/static/js/visualizer-dual.js`)
+#### JavaScript Changes (`app/static/js/app.js`)
 
 **Added DOM References:**
 ```javascript

@@ -59,7 +59,7 @@ The oscilloscope patterns reveal stereo relationships:
    - Cyan-themed header matching app aesthetic
    - Responsive media query for mobile/tablet
 
-3. **app/static/js/visualizer-dual.js**
+3. **app/static/js/app.js**
    - New variables: `oscilloscopeCanvas`, `oscilloscopeCtx`, `oscilloscopeAnalyser`, `oscilloscopeAnimationId`, `recordedAudioSource`
    - `initOscilloscope()`: Sets up canvas and analyser
    - `drawOscilloscope()`: XY plotting with phase offset

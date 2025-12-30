@@ -35,7 +35,7 @@ merger (output)
 
 ### Changed Vocoder Modulator from micSource to micGain
 
-**File:** `app/static/js/visualizer-dual.js` - `enableVocoder()` function
+**File:** `app/static/js/app.js` - `enableVocoder()` function
 
 **Before:**
 ```javascript
@@ -67,7 +67,7 @@ if (modulatorType === 'mic') {
 
 ### Updated Carrier Source Reference
 
-**File:** `app/static/js/visualizer-dual.js` - `enableVocoder()` function
+**File:** `app/static/js/app.js` - `enableVocoder()` function
 
 Changed the carrier source getter to also use `micGain`:
 
@@ -247,7 +247,7 @@ micGain (GainNode) ──→ Auto-Tune Input
 
 ## Files Modified
 
-1. **app/static/js/visualizer-dual.js**
+1. **app/static/js/app.js**
    - Line ~1051: Changed `micSource` → `micGain` for modulator
    - Line ~1051: Added validation for `micGain.connect` function
    - Line ~1103: Changed `micSource` → `micGain` in carrier getter

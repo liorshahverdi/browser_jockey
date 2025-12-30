@@ -16,7 +16,7 @@ Performed comprehensive code review and fixed logical errors and inconsistencies
 - Users couldn't access vocoder/autotune with tracks if microphone wasn't enabled
 
 **Location:**
-- `app/static/js/visualizer-dual.js` - `enableMicrophone()` and `disableMicrophone()` functions
+- `app/static/js/app.js` - `enableMicrophone()` and `disableMicrophone()` functions
 
 **Root Cause:**
 - Hard-coded logic that tied vocoder/autotune visibility to microphone state only
@@ -73,7 +73,7 @@ function updateVocoderAutotuneVisibility() {
 - Could cause type errors or incorrect file downloads
 
 **Location:**
-- `app/static/js/visualizer-dual.js` - `exportMicRecording()` function, line ~965
+- `app/static/js/app.js` - `exportMicRecording()` function, line ~965
 
 **Code Before:**
 ```javascript
@@ -105,10 +105,10 @@ exportBlob = new Blob([wavArrayBuffer], { type: 'audio/wav' });
 ## Non-Issues Verified
 
 ### ✅ Duplicate audioBufferToWav/audioBufferToMp3 Functions
-**Finding:** Duplicate functions found in visualizer-dual.js (lines ~3911)
+**Finding:** Duplicate functions found in app.js (lines ~3911)
 
 **Analysis:**
-- Local functions in visualizer-dual.js are used for stem export
+- Local functions in app.js are used for stem export
 - Module functions in recording.js are used for microphone export and master recording
 - Both implementations are similar but serve different contexts
 - No actual conflict as they're in different scopes
@@ -221,7 +221,7 @@ exportBlob = new Blob([wavArrayBuffer], { type: 'audio/wav' });
 
 ## Files Modified
 
-1. **app/static/js/visualizer-dual.js**
+1. **app/static/js/app.js**
    - Added `updateVocoderAutotuneVisibility()` function
    - Modified `enableMicrophone()` function
    - Modified `disableMicrophone()` function

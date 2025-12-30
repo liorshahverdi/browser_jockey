@@ -25,7 +25,7 @@ Added theremin routing checkbox to the Master Routing section:
 
 ### 2. JavaScript - DOM Element
 
-**File**: `/app/static/js/visualizer-dual.js`
+**File**: `/app/static/js/app.js`
 
 Added DOM element reference:
 ```javascript
@@ -59,7 +59,7 @@ export function getThereminRoutingGain() {
 
 ### 4. Routing Toggle Function
 
-**File**: `/app/static/js/visualizer-dual.js`
+**File**: `/app/static/js/app.js`
 
 Added `toggleThereminRouting` function:
 
@@ -88,7 +88,7 @@ function toggleThereminRouting(enabled) {
 
 ### 5. Event Listener
 
-**File**: `/app/static/js/visualizer-dual.js`
+**File**: `/app/static/js/app.js`
 
 Added event listener for routing checkbox:
 
@@ -179,7 +179,7 @@ Potential improvements:
 ## Files Modified
 
 1. `/app/templates/index.html` - Added routing checkbox
-2. `/app/static/js/visualizer-dual.js` - Added DOM element, function, and event listener
+2. `/app/static/js/app.js` - Added DOM element, function, and event listener
 3. `/app/static/js/modules/theremin.js` - Added routing gain node and export function
 
 ## Credits

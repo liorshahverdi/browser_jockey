@@ -39,7 +39,7 @@ function correctPitch() {
     autotuneState.autotuneAnalyser.getFloatTimeDomainData(dataArray);
 ```
 
-**File:** `app/static/js/visualizer-dual.js` - Line ~1338
+**File:** `app/static/js/app.js` - Line ~1338
 
 ---
 
@@ -62,7 +62,7 @@ if (audioContext.state === 'suspended') {
 }
 ```
 
-**File:** `app/static/js/visualizer-dual.js` - Line ~1149
+**File:** `app/static/js/app.js` - Line ~1149
 
 **Auto-Tune Fix:**
 ```javascript
@@ -75,7 +75,7 @@ if (audioContext.state === 'suspended') {
 }
 ```
 
-**File:** `app/static/js/visualizer-dual.js` - Line ~1294
+**File:** `app/static/js/app.js` - Line ~1294
 
 ---
 
@@ -118,7 +118,7 @@ Modern browsers start AudioContext in 'suspended' state for performance and user
 
 ### 1. Fixed autotuneAnalyser Reference
 
-**File:** `app/static/js/visualizer-dual.js`
+**File:** `app/static/js/app.js`
 **Function:** `correctPitch()`
 **Lines:** ~1338-1343
 
@@ -128,7 +128,7 @@ Modern browsers start AudioContext in 'suspended' state for performance and user
 
 ### 2. Added Audio Context Resume for Vocoder
 
-**File:** `app/static/js/visualizer-dual.js`
+**File:** `app/static/js/app.js`
 **Function:** `enableVocoder()`
 **Lines:** ~1149-1152
 
@@ -141,7 +141,7 @@ if (audioContext.state === 'suspended') {
 
 ### 3. Added Audio Context Resume for Auto-Tune
 
-**File:** `app/static/js/visualizer-dual.js`
+**File:** `app/static/js/app.js`
 **Function:** `enableAutotune()`
 **Lines:** ~1294-1297
 
@@ -243,7 +243,7 @@ This prevents unnecessary calls and potential errors.
 
 ## Files Modified
 
-**app/static/js/visualizer-dual.js**
+**app/static/js/app.js**
 - Line ~1338: Fixed `autotuneAnalyser` → `autotuneState.autotuneAnalyser`
 - Line ~1149: Added audioContext.resume() for vocoder
 - Line ~1294: Added audioContext.resume() for autotune

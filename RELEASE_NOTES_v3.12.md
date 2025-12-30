@@ -380,7 +380,7 @@ Theremin has its own routing toggle in the Master section:
 - `app/static/js/modules/sampler.js`:
   - Modified `playSamplerNote()` for conditional ADSR
   - Added ADSR parameter support
-- `app/static/js/visualizer-dual.js`:
+- `app/static/js/app.js`:
   - Created `adsr1`, `adsr2`, `adsrMaster` variables
   - Added ~29 event listeners for ADSR controls
   - Integrated ADSR with effect chains
@@ -402,7 +402,7 @@ Theremin has its own routing toggle in the Master section:
   - Visual feedback rendering
 
 **Files Modified**:
-- `app/static/js/visualizer-dual.js`:
+- `app/static/js/app.js`:
   - Import theremin functions
   - Event listeners for theremin controls
   - Integration with master mixer

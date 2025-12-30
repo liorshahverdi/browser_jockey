@@ -59,7 +59,7 @@ play() {
 
 ### Solution #2: Handle Sequencer Play Event
 
-**File:** `app/static/js/visualizer-dual.js`  
+**File:** `app/static/js/app.js`  
 **Location:** Bottom of file (before final console.log)
 
 Added event listener to initialize audio system:

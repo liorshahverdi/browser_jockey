@@ -175,7 +175,7 @@ Returns: {
 - Conditional envelope application based on `adsrEnabled` flag
 - Smart release timing (starts before sample ends)
 
-**visualizer-dual.js:**
+**app.js:**
 - Declared ADSR variables for tracks and master
 - Added event listeners for all ADSR controls
 - Integrated ADSR trigger buttons
@@ -357,7 +357,7 @@ Potential improvements:
    - Added conditional envelope vs. exponential decay
    - Smart release timing for sample duration
 
-4. **app/static/js/visualizer-dual.js**
+4. **app/static/js/app.js**
    - Imported ADSR functions
    - Declared ADSR variables (adsr1, adsr2, adsrMaster)
    - Declared sampler ADSR state

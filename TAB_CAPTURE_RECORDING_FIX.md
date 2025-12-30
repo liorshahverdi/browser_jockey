@@ -103,7 +103,7 @@ Use master output recording instead.
 
 **Lines Added:** ~40 lines
 
-### File: `app/static/js/visualizer-dual.js`
+### File: `app/static/js/app.js`
 
 **Function:** `startMicRecordingHandler()`
 

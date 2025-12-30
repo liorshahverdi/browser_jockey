@@ -54,7 +54,7 @@ Successfully completed Phase 2 of the Browser Jockey refactoring, extracting mic
 
 ## 🔧 Refactoring Changes
 
-### visualizer-dual.js Updates
+### app.js Updates
 
 **State Management:**
 - Changed from individual variables to state objects
@@ -80,7 +80,7 @@ Successfully completed Phase 2 of the Browser Jockey refactoring, extracting mic
 - ~240 lines of autotune logic
 - **Total: ~660 lines removed**
 
-### visualizer.js Updates
+### simple-player.js Updates
 
 **Imports Added:**
 ```javascript
@@ -97,14 +97,14 @@ import { detectMusicalKey as detectKey } from './modules/audio-utils.js';
 
 ### Code Reduction
 - **Phase 1:** 753 lines removed (constants, loops, audio-utils, effects, recording, sampler)
-- **Phase 2:** 225 lines removed (microphone, vocoder, autotune, visualizer.js)
+- **Phase 2:** 225 lines removed (microphone, vocoder, autotune, simple-player.js)
 - **Total Removed:** 978 lines
 - **New Module Code:** 1,635 lines (organized, reusable!)
 - **Net Impact:** Better organization and maintainability
 
 ### File Sizes
-- **visualizer-dual.js:** 4,578 lines → 3,600 lines (-21.4%)
-- **visualizer.js:** 905 lines → ~845 lines (-7%)
+- **app.js:** 4,578 lines → 3,600 lines (-21.4%)
+- **simple-player.js:** 905 lines → ~845 lines (-7%)
 - **Modules:** 9 files, ~1,635 total lines
 
 ### Module Breakdown

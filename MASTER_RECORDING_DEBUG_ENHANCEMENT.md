@@ -8,16 +8,16 @@ User reported that when recording master output with tab capture audio on Track 
 ### Original Logs (No Errors, But No Waveform)
 ```
 Theremin button element: <button id=​"enableThereminBtn" ...>
-visualizer-dual.js:1408 Capturing tab audio for Track 1
-visualizer-dual.js:1436 Tab audio captured with 1 audio track(s)
-visualizer-dual.js:2822 Oscilloscope connected to audio merger
+app.js:1408 Capturing tab audio for Track 1
+app.js:1436 Tab audio captured with 1 audio track(s)
+app.js:2822 Oscilloscope connected to audio merger
 recording.js:23 Starting recording with analyser connected: AnalyserNode {...}
-visualizer-dual.js:5988 Created MediaElementSource for recorded audio
-visualizer-dual.js:6010 Recorded audio connected to oscilloscope and output
-visualizer-dual.js:2822 Oscilloscope connected to audio merger
-visualizer-dual.js:6020 Recorded audio paused - oscilloscope reconnected to tracks
-visualizer-dual.js:2822 Oscilloscope connected to audio merger
-visualizer-dual.js:6025 Recorded audio ended - oscilloscope reconnected to tracks
+app.js:5988 Created MediaElementSource for recorded audio
+app.js:6010 Recorded audio connected to oscilloscope and output
+app.js:2822 Oscilloscope connected to audio merger
+app.js:6020 Recorded audio paused - oscilloscope reconnected to tracks
+app.js:2822 Oscilloscope connected to audio merger
+app.js:6025 Recorded audio ended - oscilloscope reconnected to tracks
 ```
 
 ### Possible Causes

@@ -61,7 +61,7 @@ Merger → Master Output
 - Updated `connectEffectsChain()` to insert pitch shifter in signal path
 - Added error handling and fallback
 
-### `/app/static/js/visualizer-dual.js`
+### `/app/static/js/app.js`
 - Added `pitchShifter1` and `pitchShifter2` global variables
 - Retrieved pitch shifters from `initAudioEffects()` return
 - Updated 6 audio connection points to include pitch shifter

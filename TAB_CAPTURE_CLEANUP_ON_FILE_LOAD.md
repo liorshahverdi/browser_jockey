@@ -38,7 +38,7 @@ Added **automatic tab capture cleanup** when loading files to a track that's cur
 
 ## Code Changes
 
-### File: `app/static/js/visualizer-dual.js`
+### File: `app/static/js/app.js`
 
 #### 1. Load Recording to Track 1 (line ~486)
 ```javascript

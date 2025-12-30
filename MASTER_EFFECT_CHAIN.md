@@ -105,7 +105,7 @@ Track 2 Effects → ┘
 - `.master-volume-control` - Volume control styling
 - `#effectChainMaster` - Gold-themed effect chain overrides
 
-**JavaScript** (`app/static/js/visualizer-dual.js`):
+**JavaScript** (`app/static/js/app.js`):
 - Added master effect nodes: `gainMaster`, `filterMaster`, `reverbMaster`, `delayMaster`
 - Created master effect chain manager: `effectChainMaster`
 - Rerouted audio: Merger → Master Effects → Output

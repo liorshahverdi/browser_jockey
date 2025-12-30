@@ -169,7 +169,7 @@ recordingDestination ← (records silence)
 
 ## Code Changes
 
-### File: `app/static/js/visualizer-dual.js`
+### File: `app/static/js/app.js`
 
 **Lines ~1540-1570:** Track 1 effect chain reuse logic
 - Added check for `finalMix1` existence

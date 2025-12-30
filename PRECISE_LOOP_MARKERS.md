@@ -111,7 +111,7 @@ This creates a 333ms loop segment starting at 1.234 seconds.
 ## Files Modified
 - `app/templates/index.html` - Added precise loop input UI
 - `app/static/css/style.css` - Added styling for inputs
-- `app/static/js/visualizer-dual.js` - Added functionality and event handlers
+- `app/static/js/app.js` - Added functionality and event handlers
 
 ## Benefits
 1. **Precision**: Millisecond-accurate loop point placement

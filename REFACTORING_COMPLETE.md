@@ -7,8 +7,8 @@ Successfully refactored the Browser Jockey codebase into a clean, modular struct
 ## 📊 By The Numbers
 
 ### Code Reduction
-- **Before:** 4,578 lines in visualizer-dual.js
-- **After:** 3,825 lines in visualizer-dual.js
+- **Before:** 4,578 lines in app.js
+- **After:** 3,825 lines in app.js
 - **Removed:** 753 duplicate lines (16.4% reduction)
 - **Created:** 773 lines in reusable modules
 
@@ -73,7 +73,7 @@ Examples:
 5. **Easier Testing** - Can test modules independently
 
 ### For the Project
-1. **Reusability** - Modules work in both visualizer.js and visualizer-dual.js
+1. **Reusability** - Modules work in both simple-player.js and app.js
 2. **Maintainability** - Easier to fix bugs and add features
 3. **Scalability** - Can add new features without bloat
 4. **Documentation** - Each module is self-documenting
@@ -89,8 +89,8 @@ Examples:
 
 ```
 app/static/js/
-├── visualizer-dual.js (3,825 lines - main application)
-├── visualizer.js (905 lines - single track version)
+├── app.js (3,825 lines - main application)
+├── simple-player.js (905 lines - single track version)
 └── modules/
     ├── constants.js (47 lines)
     ├── loop-controls.js (167 lines)
@@ -109,7 +109,7 @@ app/static/js/
 - `modules/visualization.js` - Three.js code (~400 lines)
 - `modules/export.js` - Audio export (~150 lines)
 
-### Phase 3 - Refactor visualizer.js
+### Phase 3 - Refactor simple-player.js
 - Apply same modular pattern to single-track visualizer
 - Estimated reduction: ~300-400 lines
 - Reuse all existing modules
@@ -132,12 +132,12 @@ Created comprehensive documentation:
 
 ### Before (Duplicate Code)
 ```javascript
-// In visualizer-dual.js line 1468
+// In app.js line 1468
 function drawWaveform(canvas, audioBuffer, zoomLevel = 1.0, ...) {
     // 45 lines of code
 }
 
-// In visualizer.js line 234
+// In simple-player.js line 234
 function drawWaveform(canvas, audioBuffer) {
     // 30 lines of similar code (slightly different)
 }
@@ -150,11 +150,11 @@ export function drawWaveform(canvas, audioBuffer, zoomLevel = 1.0, ...) {
     // 45 lines of code (single source of truth)
 }
 
-// visualizer-dual.js
+// app.js
 import { drawWaveform } from './modules/audio-utils.js';
 // Use drawWaveform() - no duplicate code!
 
-// visualizer.js  
+// simple-player.js  
 import { drawWaveform } from './modules/audio-utils.js';
 // Reuses same function!
 ```

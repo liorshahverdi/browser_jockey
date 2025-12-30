@@ -43,7 +43,7 @@ Now you can use:
 - Both Tracks (Mix)
 - Microphone (Feedback)
 
-#### JavaScript Changes (`app/static/js/visualizer-dual.js`)
+#### JavaScript Changes (`app/static/js/app.js`)
 
 **Added DOM Reference:**
 ```javascript
@@ -83,7 +83,7 @@ vocoderModulator.addEventListener('change', updateVocoderModulator);
 </div>
 ```
 
-#### JavaScript Changes (`app/static/js/visualizer-dual.js`)
+#### JavaScript Changes (`app/static/js/app.js`)
 
 **Added DOM Reference:**
 ```javascript
@@ -189,7 +189,7 @@ Toggle routing for:
 
 ---
 
-### JavaScript Changes (`app/static/js/visualizer-dual.js`)
+### JavaScript Changes (`app/static/js/app.js`)
 
 **Added DOM References:**
 ```javascript

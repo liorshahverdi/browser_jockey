@@ -43,7 +43,7 @@ Applied consistent improvements to the auto-tune feature to match the vocoder en
 
 ### 2. Improved Validation and Error Handling ✅
 
-**File:** `app/static/js/visualizer-dual.js` - `enableAutotune()` function
+**File:** `app/static/js/app.js` - `enableAutotune()` function
 
 **Enhancement:** Added `micEnabled` check to ensure microphone is actually enabled, not just that `micState` exists.
 
@@ -69,7 +69,7 @@ if (!micEnabled || !micState || !micState.micGain) {
 
 ### 3. Better Console Logging ✅
 
-**File:** `app/static/js/visualizer-dual.js` - `enableAutotune()` function
+**File:** `app/static/js/app.js` - `enableAutotune()` function
 
 **Added:**
 ```javascript
@@ -231,7 +231,7 @@ Auto-Tune Effect
 
 ## Files Modified
 
-1. **app/static/js/visualizer-dual.js**
+1. **app/static/js/app.js**
    - Added `micEnabled` check in validation
    - Added console logging for debugging
    - Improved error messages

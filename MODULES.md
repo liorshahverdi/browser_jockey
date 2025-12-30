@@ -130,7 +130,7 @@ Pitch correction and auto-tune:
 
 ### Main Files
 
-#### **visualizer-dual.js** (~2,500 lines - refactored)
+#### **app.js** (~2,500 lines - refactored)
 Main application file for dual-track DJ mode. Now uses all shared modules.
 
 Contains:
@@ -140,7 +140,7 @@ Contains:
 - Track management
 - Integration of all modules
 
-#### **visualizer.js** (~845 lines - partially refactored)
+#### **simple-player.js** (~845 lines - partially refactored)
 Single-track visualizer (simpler version). Now uses shared modules for constants and key detection.
 
 ---
@@ -148,7 +148,7 @@ Single-track visualizer (simpler version). Now uses shared modules for constants
 ## Benefits of Modularization
 
 1. **Better Organization** - Related functionality grouped together
-2. **Reusability** - Modules can be used in both visualizer.js and visualizer-dual.js
+2. **Reusability** - Modules can be used in both simple-player.js and app.js
 3. **Easier Testing** - Individual modules can be tested independently
 4. **Smaller Files** - Each module focuses on one responsibility
 5. **Clearer Dependencies** - Import statements show what each module needs

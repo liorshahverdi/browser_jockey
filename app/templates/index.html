@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@15.0.4/build/Tone.js"></script>
 </head>
 <body>
     <div class="container">
@@ -134,9 +134,21 @@
                                 <label>Tempo: <span id="tempoValue1">1.0x</span></label>
                                 <input type="range" id="tempoSlider1" min="0.25" max="2.0" step="0.05" value="1.0">
                             </div>
-                            <div class="tone-control-inline">
-                                <label>Tone: <span id="toneValue1">10kHz</span></label>
-                                <input type="range" id="toneSlider1" min="20" max="20000" step="10" value="10000" class="tone-slider">
+                            <div class="stretch-control-inline">
+                                <label>Stretch: <span id="stretchValue1">1.0x</span></label>
+                                <input type="range" id="stretchSlider1" min="0.5" max="2.0" step="0.05" value="1.0" class="stretch-slider">
+                            </div>
+                            <div class="eq-control-inline">
+                                <label>Low: <span id="lowValue1">0dB</span></label>
+                                <input type="range" id="lowSlider1" min="-12" max="12" step="0.5" value="0" class="eq-slider">
+                            </div>
+                            <div class="eq-control-inline">
+                                <label>Mid: <span id="midValue1">0dB</span></label>
+                                <input type="range" id="midSlider1" min="-12" max="12" step="0.5" value="0" class="eq-slider">
+                            </div>
+                            <div class="eq-control-inline">
+                                <label>High: <span id="highValue1">0dB</span></label>
+                                <input type="range" id="highSlider1" min="-12" max="12" step="0.5" value="0" class="eq-slider">
                             </div>
                             <div class="pitch-control-inline">
                                 <label>Pitch: <span id="pitchValue1">0</span></label>
@@ -508,9 +520,21 @@
                                 <label>Tempo: <span id="tempoValue2">1.0x</span></label>
                                 <input type="range" id="tempoSlider2" min="0.25" max="2.0" step="0.05" value="1.0">
                             </div>
-                            <div class="tone-control-inline">
-                                <label>Tone: <span id="toneValue2">10kHz</span></label>
-                                <input type="range" id="toneSlider2" min="20" max="20000" step="10" value="10000" class="tone-slider">
+                            <div class="stretch-control-inline">
+                                <label>Stretch: <span id="stretchValue2">1.0x</span></label>
+                                <input type="range" id="stretchSlider2" min="0.5" max="2.0" step="0.05" value="1.0" class="stretch-slider">
+                            </div>
+                            <div class="eq-control-inline">
+                                <label>Low: <span id="lowValue2">0dB</span></label>
+                                <input type="range" id="lowSlider2" min="-12" max="12" step="0.5" value="0" class="eq-slider">
+                            </div>
+                            <div class="eq-control-inline">
+                                <label>Mid: <span id="midValue2">0dB</span></label>
+                                <input type="range" id="midSlider2" min="-12" max="12" step="0.5" value="0" class="eq-slider">
+                            </div>
+                            <div class="eq-control-inline">
+                                <label>High: <span id="highValue2">0dB</span></label>
+                                <input type="range" id="highSlider2" min="-12" max="12" step="0.5" value="0" class="eq-slider">
                             </div>
                             <div class="pitch-control-inline">
                                 <label>Pitch: <span id="pitchValue2">0</span></label>
@@ -1184,6 +1208,6 @@
     </footer>
     
     <script type="module" src="{{ url_for('static', filename='js/modules/activity-indicators.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/visualizer-dual.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

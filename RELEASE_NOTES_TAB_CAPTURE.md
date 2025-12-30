@@ -76,7 +76,7 @@ You can now capture audio from any browser tab and route it to Track 1 or Track 
 - `app/templates/index.html` - Added capture buttons for both tracks
 
 **JavaScript:**
-- `app/static/js/visualizer-dual.js` - Added tab capture functionality
+- `app/static/js/app.js` - Added tab capture functionality
   - New function: `captureTabAudio(trackNumber)`
   - New state variables for tab capture streams
   - Enhanced stop button to clean up captures

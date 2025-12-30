@@ -71,7 +71,7 @@ Since browsers don't support negative `playbackRate`, the reverse loop uses:
 4. **Automatic loop back** when reaching start point
 
 ### Code Locations
-- **Main handlers:** `visualizer-dual.js` lines 2678-2720 (reverse loop buttons)
+- **Main handlers:** `app.js` lines 2678-2720 (reverse loop buttons)
 - **Animation logic:** `modules/loop-controls.js` lines 82-104 (`animateReversePlayback`)
 - **Stop logic:** `modules/loop-controls.js` lines 107-113 (`stopReversePlayback`)
 

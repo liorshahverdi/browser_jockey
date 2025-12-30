@@ -147,7 +147,7 @@ Tested on:
 ### Files Modified
 - `app/templates/index.html` - Added tab navigation and sequencer UI
 - `app/static/css/style.css` - Added sequencer and tab navigation styles
-- `app/static/js/visualizer-dual.js` - Integrated sequencer into main app
+- `app/static/js/app.js` - Integrated sequencer into main app
 - `app/static/js/modules/sequencer.js` - New sequencer module
 
 ### Key Classes

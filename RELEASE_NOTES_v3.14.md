@@ -210,7 +210,7 @@ Version 3.14 introduces a complete overhaul of the loop marking system, enabling
 ### Modified
 - `app/templates/index.html` - Added precise loop inputs, tooltips, hints
 - `app/static/css/style.css` - New styling for inputs and tooltips
-- `app/static/js/visualizer-dual.js` - Loop marker logic, drag detection, helper functions
+- `app/static/js/app.js` - Loop marker logic, drag detection, helper functions
 
 ### No Breaking Changes
 - All existing functionality preserved

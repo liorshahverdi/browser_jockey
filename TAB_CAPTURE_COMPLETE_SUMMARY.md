@@ -80,7 +80,7 @@
    ```
 
 ### JavaScript Changes
-**File:** `app/static/js/visualizer-dual.js`
+**File:** `app/static/js/app.js`
 
 **Lines Added:** ~400 lines total
 
@@ -248,7 +248,7 @@ Merger → Output
 
 **Files Modified:** 2
 - `app/templates/index.html`
-- `app/static/js/visualizer-dual.js`
+- `app/static/js/app.js`
 
 **Files Created:** 8 documentation files
 

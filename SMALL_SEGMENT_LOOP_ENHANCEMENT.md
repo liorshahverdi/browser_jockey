@@ -97,7 +97,7 @@ B: [2.200] ← End (100ms later)
    - `.loop-hint` - Hint label styling
    - Cyan theme matching existing design
 
-3. **visualizer-dual.js**
+3. **app.js**
    - `formatTimeWithMs()` - Helper for MM:SS.mmm format
    - `updatePreciseLoopInputs()` - Sync inputs with loop state
    - Mousemove handlers for tooltip positioning

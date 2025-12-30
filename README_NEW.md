@@ -286,8 +286,8 @@ browser_jockey/
 │   │   ├── css/
 │   │   │   └── style.css    # All styling
 │   │   └── js/
-│   │       ├── visualizer.js       # Original single-track (deprecated)
-│   │       ├── visualizer-dual.js  # Main dual-track DJ engine
+│   │       ├── simple-player.js       # Original single-track (deprecated)
+│   │       ├── app.js  # Main dual-track DJ engine
 │   │       └── modules/            # ES6 modules
 │   │           ├── constants.js
 │   │           ├── loop-controls.js

@@ -172,7 +172,7 @@ To test the feature:
 ## Files Modified
 
 - ✅ `app/static/js/modules/loop-controls.js` - Added callback parameter
-- ✅ `app/static/js/visualizer-dual.js` - Added helper functions and updated all calls
+- ✅ `app/static/js/app.js` - Added helper functions and updated all calls
 
 ## Future Enhancements
 

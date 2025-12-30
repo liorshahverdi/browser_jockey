@@ -21,7 +21,7 @@ Added code to **enable the master recording button** whenever audio context is i
 
 ## Code Changes
 
-### File: `app/static/js/visualizer-dual.js`
+### File: `app/static/js/app.js`
 
 #### 1. Enable recording button after tab capture to tracks (around line 1670)
 ```javascript

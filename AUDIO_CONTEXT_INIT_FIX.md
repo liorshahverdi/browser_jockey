@@ -202,7 +202,7 @@ Result: Works without errors
 
 ## Files Modified
 
-**app/static/js/visualizer-dual.js**
+**app/static/js/app.js**
 - Line ~679: Changed `new AudioContext()` to `initAudioContext()` in `enableMicrophone()`
 - Line ~1037: Changed alert to `initAudioContext()` call in `enableVocoder()`
 - Line ~1230: Changed alert to `initAudioContext()` call in `enableAutotune()`

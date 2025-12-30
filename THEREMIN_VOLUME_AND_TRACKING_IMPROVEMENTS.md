@@ -292,7 +292,7 @@ Potential improvements:
 ## Files Modified
 
 1. `/app/templates/index.html` - Added volume slider HTML
-2. `/app/static/js/visualizer-dual.js` - Added DOM elements and event listener
+2. `/app/static/js/app.js` - Added DOM elements and event listener
 3. `/app/static/js/modules/theremin.js` - Added volume control and improved tracking
 
 ## Testing Checklist

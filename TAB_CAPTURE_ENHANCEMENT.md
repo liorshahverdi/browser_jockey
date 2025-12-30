@@ -51,7 +51,7 @@ Added tab capture button to microphone section:
 </div>
 ```
 
-### JavaScript (`app/static/js/visualizer-dual.js`)
+### JavaScript (`app/static/js/app.js`)
 
 #### New DOM Reference
 ```javascript

@@ -14,7 +14,7 @@ Users experienced errors when trying to enable vocoder and/or auto-tune effects,
 - Attempting to connect it to vocoder while it's already connected to the effects chain caused errors
 - Vocoder would fail to enable with track sources
 
-**Location:** `app/static/js/visualizer-dual.js` - `enableVocoder()` function, lines ~1053-1063
+**Location:** `app/static/js/app.js` - `enableVocoder()` function, lines ~1053-1063
 
 **Fix:**
 ```javascript
@@ -56,7 +56,7 @@ To use a track as modulator, we need to tap into `gain1` (the GainNode), not `so
 - Could attempt to use mic as modulator when mic was initialized but disabled
 - Caused undefined behavior or errors
 
-**Location:** `app/static/js/visualizer-dual.js` - `enableVocoder()` function, line ~1046
+**Location:** `app/static/js/app.js` - `enableVocoder()` function, line ~1046
 
 **Fix:**
 ```javascript
@@ -237,7 +237,7 @@ Console:
 
 ## Files Modified
 
-### 1. `app/static/js/visualizer-dual.js`
+### 1. `app/static/js/app.js`
 **Changes:**
 - Line ~1046: Added `micEnabled` check for modulator validation
 - Lines ~1053-1063: Changed `source1`/`source2` to `gain1`/`gain2` for track modulators

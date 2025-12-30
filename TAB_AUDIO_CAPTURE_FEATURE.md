@@ -77,7 +77,7 @@ Added capture buttons for both tracks:
 </button>
 ```
 
-### JavaScript Changes (`app/static/js/visualizer-dual.js`)
+### JavaScript Changes (`app/static/js/app.js`)
 
 #### New DOM References
 

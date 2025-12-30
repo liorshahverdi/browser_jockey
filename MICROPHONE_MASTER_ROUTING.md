@@ -21,7 +21,7 @@ Added microphone to the master output routing controls, allowing users to toggle
 
 ---
 
-### 2. JavaScript Updates (`app/static/js/visualizer-dual.js`)
+### 2. JavaScript Updates (`app/static/js/app.js`)
 
 #### Added DOM Reference
 ```javascript

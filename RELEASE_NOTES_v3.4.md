@@ -144,8 +144,8 @@ These provide diminishing returns and are not planned for immediate implementati
 - Testing guide for all features
 
 ### Changed
-- Refactored `visualizer-dual.js` to use new modules
-- Refactored `visualizer.js` to use shared constants
+- Refactored `app.js` to use new modules
+- Refactored `simple-player.js` to use shared constants
 - Simplified state management with state objects
 - Updated all module documentation
 

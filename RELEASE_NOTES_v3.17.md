@@ -157,7 +157,7 @@ The sequencer clip effects panel now includes:
   - Updated showEffectsPanel() to display ADSR values
   - Updated resetClipEffects() and getClipEffects() to include ADSR
 
-- `app/static/js/visualizer-dual.js`:
+- `app/static/js/app.js`:
   - Added event listener for 'loadSequencerRecording' event (~20 lines)
   
 - `app/static/css/style.css`:

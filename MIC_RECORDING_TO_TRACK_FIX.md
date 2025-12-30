@@ -102,7 +102,7 @@ This ensures that each audio element only gets one `MediaElementSource` created 
 
 ## Changes Made
 
-### visualizer-dual.js
+### app.js
 
 1. **File upload handler for Track 1** (around line 3476):
    - Removed code that disconnected `source1` when cleaning up tab capture

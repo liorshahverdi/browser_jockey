@@ -59,13 +59,13 @@
 ## 📊 Impact
 
 ### Before v3.3
-- `visualizer-dual.js`: **4,578 lines**
+- `app.js`: **4,578 lines**
 - Duplicate code across multiple files
 - Hard to maintain and navigate
 - Difficult to add new features
 
 ### After v3.3
-- `visualizer-dual.js`: **3,825 lines** (↓ 16.4%)
+- `app.js`: **3,825 lines** (↓ 16.4%)
 - Reusable modules: **773 lines**
 - Clean separation of concerns
 - Easy to extend and maintain
@@ -132,7 +132,7 @@
 - `modules/visualization.js` - Three.js code (~400 lines)
 - `modules/export.js` - Audio export (~150 lines)
 
-### Phase 3: Refactor visualizer.js
+### Phase 3: Refactor simple-player.js
 - Apply same module pattern to single-track visualizer
 - Reuse all existing modules
 - Estimated reduction: ~300-400 lines

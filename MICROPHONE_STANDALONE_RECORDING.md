@@ -29,7 +29,7 @@ Extended the microphone capabilities to allow standalone recording directly from
 - **Added** `.mic-recording-playback` styling
 - **Added** `.export-btn` styling with hover effects
 
-### 5. Main Visualizer (`app/static/js/visualizer-dual.js`)
+### 5. Main Visualizer (`app/static/js/app.js`)
 - **Imported** `startMicRecording` and `stopMicRecording` from microphone module
 - **Added** DOM element references for microphone recording UI
 - **Added** State variables:
