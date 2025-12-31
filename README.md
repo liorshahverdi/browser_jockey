@@ -2,13 +2,21 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browser-jockey.onrender.com/)
 
-A dual-track DJ mixing web application with 3D audio visualization, BPM detection, precise loop markers, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, advanced sequencer with clip trimming and real-time effects, and authentic DJ controls.
+A dual-track DJ mixing web application with advanced multi-track sequencer, independent pitch and tone controls, seamless timestretching with reverse mode, 3D audio visualization, BPM detection, precise loop markers, professional constant-power stereo panning, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, clip-based arrangement with zoom/pan/fullscreen and real-time effects, and authentic DJ controls.
 
-**Latest Update (v3.20.0)**: Major sequencer enhancements! Added non-destructive clip trimming by dragging edges, real-time effect updates during playback (volume, pitch, filter, delay), toggleable effects panel to maximize workspace, automatic timeline resize based on track count, timeline expansion when effects hidden (+280px width, +5vh height), and auto-zoom to fit long clips. Fixed "Add Track" button visibility and trim accumulation bugs. See [RELEASE_NOTES_v3.20.md](RELEASE_NOTES_v3.20.md) for full details.
+**Latest Update (v3.26.0)**: Professional constant-power stereo panning! Fixed critical signal chain disconnection bug, implemented 4-gain routing matrix with sine/cosine curves for smooth L-R transitions, preserves stereo quality, and works flawlessly with timestretching and all effects. See [PANNING_RESOLUTION_SUMMARY.md](PANNING_RESOLUTION_SUMMARY.md).
 
-**v3.19.1**: Bugfix - Fixed master recording to track playback. Audio element source is now preserved when loading recordings to tracks, fixing silent playback issue. All recording workflows (master, sequencer, microphone, tab capture) now work correctly when loading to Track 1 or Track 2. See [RELEASE_NOTES_v3.19.1.md](RELEASE_NOTES_v3.19.1.md).
+**v3.25.0**: Sequencer fullscreen toggle! Live fullscreen mode with instant switching, keyboard shortcut (ESC), smooth fade-in animation, expanded panels (100vw × 100vh), dark overlay for focus, and all functionality fully operational. See [SEQUENCER_FULLSCREEN_TOGGLE.md](SEQUENCER_FULLSCREEN_TOGGLE.md).
 
-**v3.19.0**: Added Sequencer Recording with Track Integration! Record your sequencer arrangements with one click, preview with waveform, and load directly to DJ tracks. Includes high-quality Opus encoding, auto-stop at timeline end, loop recording mode, and seamless integration with DJ mixer. Also includes double-click loop marker adjustment, clip name overflow fixes, and critical audio capture timing fixes. See [RELEASE_NOTES_v3.19.md](RELEASE_NOTES_v3.19.md) for full details.
+**v3.24.0**: Sequencer zoom & pan with waveform visualization! Zoom 50%-200% for detailed editing, Shift+drag or middle-mouse panning, mini waveforms on clips, high-DPI canvas rendering, intelligent panning that doesn't interfere with clip dragging, and responsive zoom-aware redrawing. See [SEQUENCER_ZOOM_PAN_FEATURE.md](SEQUENCER_ZOOM_PAN_FEATURE.md).
+
+**v3.23.0**: Seamless timestretching + reverse mode integration! Dual buffer storage for forward/reversed timestretched audio, unified rendering strategy, instant mode switching without regeneration, maintains audio quality when toggling reverse button. Perfect for live performance DJ workflows. See [SEAMLESS_TIMESTRETCH_REVERSE.md](SEAMLESS_TIMESTRETCH_REVERSE.md).
+
+**v3.22.0**: Sequencer per-track mixer! Independent volume control per track with gain nodes (0-100%), proper audio routing through track → sequencer output → master, visual volume sliders in track headers, and fixed no-audio-output bug. See [SEQUENCER_TRACK_MIXER.md](SEQUENCER_TRACK_MIXER.md).
+
+**v3.21.0**: Independent pitch & tone controls! Added dedicated Pitch (±12 semitones) and Tone (20Hz-20kHz filter) sliders to both DJ tracks, Tone.js integration for professional pitch shifting without tempo changes, reordered UI for logical workflow (Volume → Tempo → Tone → Pitch), live draggable controls, and fallback to vinyl-style if Tone.js unavailable. See [PITCH_TONE_IMPLEMENTATION_SUMMARY.md](PITCH_TONE_IMPLEMENTATION_SUMMARY.md).
+
+**v3.20.0**: Major sequencer enhancements! Non-destructive clip trimming by dragging edges, real-time effect updates during playback (volume, pitch, filter, delay), toggleable effects panel to maximize workspace, automatic timeline resize based on track count, timeline expansion when effects hidden, and auto-zoom to fit long clips. See [RELEASE_NOTES_v3.20.md](RELEASE_NOTES_v3.20.md).
 
 **v3.14.0**: Added Precise Loop Markers with millisecond accuracy! Set loop points with numeric inputs (0.001s precision), interactive time tooltip on hover, intelligent marker adjustment, and fixed zoom click detection. Perfect for chopping tiny segments from tab-captured audio or any track. Works seamlessly at 16x-20x zoom levels. See [PRECISE_LOOP_MARKERS.md](PRECISE_LOOP_MARKERS.md) for details.
 
@@ -53,34 +61,57 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
   - 🔀 Mix with crossfader and other tracks
   - 💾 Record and load back to tracks for remixing
   - ⚠️ Chrome/Edge only (browser limitation)
-- 🎼 **Sequencer with Recording** - Arrange and record multi-track compositions
-  - 📦 Load clips from DJ tracks or upload new files
-  - 🎚️ 4 independent sequencer tracks with volume, solo, mute
-  - 📊 Visual timeline with bar-based positioning
-  - ✂️ **Clip Trimming** - Non-destructive edge dragging to trim start/end
-  - 🎨 Per-clip effects (volume, pitch, filter, delay, ADSR, reverb)
-  - 🎛️ **Real-Time Effects** - Adjust volume/pitch/filter/delay while playing
-  - 👁️ **Toggleable Effects Panel** - Show/hide to maximize workspace
-  - 📏 **Auto-Resize Timeline** - Grows/shrinks based on track count (80vh-85vh)
-  - 🔍 **Auto-Zoom to Fit** - Automatically zoom out for long clips
-  - ➕ **Always-Visible Add Track** - Green button always accessible
-  - 🔁 Loop playback with adjustable loop markers
-  - 🖱️ **Double-click loop adjustment** - Click ruler to move nearest marker
-  - ⏺️ **One-Click Recording** - Record sequencer output with single button
-  - 🎙️ High-quality Opus encoding (128kbps WebM)
-  - ⏱️ Real-time recording timer and waveform preview
-  - 🔄 Auto-stop at timeline end or continuous loop recording
-  - 📥 **Load to Tracks** - Send recordings directly to Track 1 or Track 2
-  - 🔀 **Seamless Integration** - Recorded tracks work like any other audio
-  - 💾 Export recordings or process further in DJ mixer
-  - 🎛️ Full track controls enabled (play, loop, effects, export)
+- 🎼 **Multi-Track Sequencer with Recording** - Professional timeline-based arrangement and recording
+  - 📦 **Clip Library** - Load clips from DJ tracks or upload new audio files
+  - 🎚️ **Unlimited Tracks** - Create as many sequencer tracks as needed
+  - 🔇 **Track Controls** - Independent mute, solo, delete, and volume (0-100%) per track
+  - 📊 **Visual Timeline** - Grid-based bar positioning with dynamic ruler and mini waveforms
+  - 🎵 **BPM Control** - Set tempo from 60-200 BPM for perfect timing
+  - ➕➖ **Bar Management** - Add/remove bars to adjust composition length
+  - 🎨 **Drag & Drop** - Intuitive clip placement with visual feedback
+  - 🎯 **Playhead Animation** - Real-time playback position indicator
+  - 🔍 **Zoom & Pan** - Zoom 50%-200%, Shift+drag or middle-mouse pan, intelligent non-interference
+  - 🌊 **Waveform Visualization** - High-DPI mini waveforms on every clip, zoom-aware redrawing
+  - ⛶ **Fullscreen Toggle** - Live fullscreen mode (100vw × 100vh), ESC to exit, smooth animations
+  - ✂️ **Clip Trimming** - Non-destructive edge dragging to trim start/end (8px handles)
+  - 🎨 **Per-Clip Effects** - Volume, pitch shift (±12 semitones), multimode filter, reverb, delay, ADSR envelope
+  - 🎛️ **Real-Time Effects** - Adjust volume/pitch/filter/delay during playback (<10ms latency)
+  - 👁️ **Toggleable Effects Panel** - Show/hide to maximize workspace and timeline
+  - 📏 **Auto-Resize Timeline** - Dynamically grows/shrinks based on track count (300px-80vh)
+  - 🔍 **Auto-Zoom to Fit** - Automatically adjusts zoom for long clips with 10% padding
+  - ➕ **Always-Visible Add Track** - Green button always accessible at bottom
+  - 🔁 **Loop Playback** - Adjustable sequencer loop markers for repeated sections
+  - 🖱️ **Double-Click Loop Adjustment** - Click ruler to move nearest marker
+  - 🎚️ **Per-Track Mixer** - Individual gain nodes with proper audio routing to master
+  - ⏺️ **One-Click Recording** - Record entire sequencer mix with single button
+  - 🎙️ **High-Quality Audio** - Opus encoding (128kbps WebM) with live timer
+  - 📊 **Waveform Preview** - Real amplitude data visualization for recordings
+  - ⏱️ **Smart Recording Modes** - Auto-stop at timeline end or continuous loop recording
+  - 🔁 **A-B Loop Markers** - Set loop points on sequencer recordings (click, enable, clear)
+  - 📥 **Load to DJ Tracks** - Send recordings directly to Track 1 or Track 2
+  - 🔀 **Seamless Integration** - Recorded tracks work like any loaded audio
+  - 🎛️ **Full Track Features** - Play, pause, loop (forward/reverse), effects, BPM detection, key detection, export
+  - 💾 **Multi-Format Export** - Save recordings as WebM, WAV, or MP3
+  - 🎹 **Sampler Integration** - Use sequencer recordings as sampler sources
 - ⚡ **Professional Crossfader** - Smooth transitions with equal-power curves
   - 🔀 Three modes: Track1↔Track2, Track1↔Mic, Track2↔Mic
   - 📊 Equal-power crossfade algorithm (constant perceived loudness)
   - 🎨 Visual gradient slider with dynamic labels
   - 🎚️ Respects individual volume slider settings
-- 🎚️ **Stereo Panning** - Full L/R stereo control for each track and master output
+- 🎚️ **Professional Stereo Panning** - Constant-power panning with 4-gain routing matrix
+  - 🔊 **Smooth L-R Transitions**: Sine/cosine curves for equal perceived loudness
+  - 🎛️ **Per-Track Control**: Independent panning for Track 1, Track 2, and Master output
+  - 💎 **Preserves Stereo Quality**: No mono downmixing, works with stereo and mono sources
+  - ⚡ **Effect Chain Compatible**: Flawless integration with timestretching and all effects
+  - 🎨 **Visual Feedback**: Real-time pan position indicators
 - 🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneously
+- 🎚️ **Independent Pitch & Tone Controls** - Professional track manipulation
+  - 🎵 **Pitch Slider**: ±12 semitones (one octave range) with Tone.js integration
+  - 🎛️ **Tone Slider**: 20Hz-20kHz low-pass filter for frequency shaping
+  - ⚡ **Live Control**: Draggable during playback for real-time adjustments
+  - 🔄 **True Independence**: Pitch changes without affecting tempo, tempo changes without affecting pitch
+  - 🎨 **Color-Coded UI**: Green gradient (pitch), orange gradient (tone)
+  - 🎹 **Key Matching**: Perfect for harmonic mixing and creative sound design
 - ▶️▶️ **Dual Track Controls** - Play both tracks at once, or play both and record simultaneously
 - 🎤 **Advanced Microphone System** - Professional microphone input with extensive features
   - 🎙️ Live mic input with volume control and real-time waveform monitoring
@@ -130,6 +161,11 @@ A dual-track DJ mixing web application with 3D audio visualization, BPM detectio
   - 📦 **Perfect for Tab Capture** - Chop tiny segments with precision
 - 🔁 **A-B Loop Markers** - Create precise loops with draggable markers
 - ⏪ **Reverse Loop** - Play loops backwards with seamless toggle (perfect for live performance)
+- 🔄 **Seamless Timestretching + Reverse** - Professional time-stretching with instant mode switching
+  - 📦 **Dual Buffer Storage**: Pre-rendered forward and reversed timestretched audio
+  - ⚡ **Instant Toggle**: Switch between forward/reverse with no regeneration delay
+  - 💎 **Quality Preservation**: Maintains timestretched audio quality in both directions
+  - 🎭 **Live Performance Ready**: Perfect for DJ sets with on-the-fly direction changes
 - ⚡ **Quick Loops** - Auto-create 1, 2, 4, or 8 bar loops based on BPM
 - 🎚️ **Seamless Loop Control** - Toggle between forward/reverse during playback with no audio cuts
 - 🔍 **Waveform Zoom** - Zoom up to 20x with drag-to-pan
@@ -336,6 +372,7 @@ browser_jockey/
 │   │           ├── autotune.js
 │   │           ├── sampler.js
 │   │           ├── theremin.js
+│   │           ├── sequencer.js    # Multi-track sequencer
 │   │           └── effect-chain.js
 │   └── templates/
 │       └── index.html       # Main UI
@@ -558,6 +595,94 @@ See [ADSR_CREATIVE_USE_CASES.md](ADSR_CREATIVE_USE_CASES.md) for 15+ detailed ex
 
 **Use Cases**: Live remixing, beat making, harmonic loops, percussive patterns, creative layering
 
+### Sequencer (🎼)
+**Multi-track timeline arrangement and recording** - Professional DAW-style workflow:
+
+#### Getting Started
+1. **Switch to Sequencer**: Click the "🎼 Sequencer" tab
+2. **Load Clips**: Start in DJ Mixer and load audio files, or upload directly in sequencer
+3. **Add Tracks**: Click "➕ Add New Track" (unlimited tracks supported)
+4. **Drag Clips**: Drag clips from the left panel onto timeline tracks
+5. **Position Clips**: Clips snap to bar boundaries for perfect alignment
+6. **Set Tempo**: Adjust BPM (60-200) to match your music
+7. **Manage Length**: Use Add/Remove Bar buttons to set composition length
+
+#### Clip Editing
+- **Trim Clips**: Hover over clip edges to see resize handles (↔ cursor)
+  - Drag left edge right to trim from start
+  - Drag right edge left to trim from end
+  - Minimum 20px width maintained
+  - Waveform updates in real-time
+- **Move Clips**: Drag clips to different bar positions or tracks
+- **Delete Clips**: Right-click or use delete controls
+- **Visual Feedback**: Selected clips show golden border
+
+#### Per-Clip Effects
+1. **Click Clip**: Select any clip to open effects panel on right
+2. **Adjust Effects**:
+   - **Volume**: 0-150% (boost or reduce)
+   - **Pitch Shift**: ±12 semitones (one octave range)
+   - **Filter**: Low/High/Band Pass, 20Hz-20kHz
+   - **Reverb**: 0-100% wet/dry mix
+   - **Delay**: 0-100% mix, 50-2000ms time
+   - **ADSR Envelope**: Attack/Decay/Sustain/Release shaping
+3. **Real-Time Updates**: Adjust volume, pitch, filter, delay during playback (<10ms latency)
+4. **Toggle Panel**: Click "🎛️ Effects Panel" button to show/hide
+5. **Reset**: Use "Reset All Effects" to return to defaults
+
+#### Track Controls
+- **Mute** (🔇): Silence individual tracks during playback
+- **Solo** (👤): Isolate specific tracks for focused listening
+- **Delete** (🗑️): Remove tracks from arrangement
+- **Volume**: Per-track volume control (0-100%)
+
+#### Playback Controls
+- **Play** (▶️): Start sequencer playback with visual playhead
+- **Pause** (⏸️): Temporarily stop playback
+- **Stop** (⏹️): Stop and reset playhead to start
+- **Loop**: Enable to continuously repeat between loop markers
+- **Double-Click Markers**: Click timeline ruler to adjust nearest loop marker
+
+#### Recording Sequencer Output
+1. **Arrange Your Mix**: Set up clips, effects, and levels
+2. **Click Record** (⏺️): Starts recording with automatic playback
+3. **Watch Progress**: Live timer shows recording duration
+4. **Stop Recording**: Click stop or wait for auto-stop at timeline end
+5. **Review**: Play back with built-in controls
+6. **Export or Load**:
+   - **💾 Download**: Save as WebM, WAV, or MP3
+   - **📥 Load to Track 1/2**: Send to DJ mixer for further processing
+
+#### Sequencer Recording Features
+- **High-Quality Audio**: Opus encoding (128kbps WebM)
+- **Waveform Visualization**: Real amplitude data displayed
+- **A-B Loop Markers**: Set loop points on recordings (click waveform twice)
+- **Loop Controls**: Enable loop, clear markers, adjust playback
+- **Multi-Format Export**: WebM (instant), WAV (lossless), MP3 (compressed)
+- **DJ Integration**: Load recordings to tracks with full functionality
+  - BPM detection, key detection, all effects, export capability
+
+#### Advanced Sequencer Workflow
+```
+1. Arrange clips across multiple tracks
+2. Apply per-clip effects (volume, pitch, filter, etc.)
+3. Shape dynamics with ADSR envelopes
+4. Record sequencer output
+5. Load recording to Track 1 or Track 2
+6. Mix with other tracks using crossfader
+7. Apply master effects
+8. Record final master output
+```
+
+#### UI Optimizations
+- **Auto-Resize Timeline**: Height adjusts based on track count (300px-80vh)
+- **Timeline Expansion**: Gains +280px width and +5vh height when effects panel hidden
+- **Auto-Zoom**: Automatically adjusts zoom to fit long clips
+- **Always-Visible Controls**: Add Track button always accessible
+- **Responsive Layout**: Adapts to different screen sizes
+
+**Use Cases**: Live performance prep, multi-track compositions, mashups, remixing, layering workflows, sampling, beat making
+
 ### Recording
 1. Set up your mix (volume, tempo, loops, effects)
 2. (Optional) Enable microphone for voice/instrument input
@@ -676,7 +801,89 @@ Each key has its own color, creating a unique visual experience for different so
 
 ## Version History
 
-- **v3.13** (Current) - Browser tab audio capture feature
+- **v3.26** (Current) - Professional constant-power stereo panning
+  - Fixed critical signal chain disconnection bug with timestretching
+  - Implemented 4-gain routing matrix (L→L, L→R, R→L, R→R)
+  - Sine/cosine curves for smooth L-R transitions
+  - Preserves stereo quality without mono downmixing
+  - Works flawlessly with all effects and timestretching
+- **v3.25** - Sequencer fullscreen toggle
+  - Live fullscreen mode with instant switching
+  - Button control and keyboard shortcut (ESC)
+  - Full viewport (100vw × 100vh) with dark overlay
+  - Expanded panels and smooth fade-in animation
+  - All sequencer functionality fully operational
+- **v3.24** - Sequencer zoom & pan with waveform visualization
+  - Zoom control (50%-200%) for detailed editing
+  - Shift+drag or middle-mouse timeline panning
+  - Mini waveforms rendered on every clip
+  - High-DPI canvas rendering for crisp display
+  - Intelligent panning that doesn't interfere with clip dragging
+  - Zoom-aware waveform redrawing
+- **v3.23** - Seamless timestretching + reverse mode integration
+  - Dual buffer storage for forward/reversed timestretched audio
+  - Unified rendering strategy
+  - Instant mode switching without regeneration
+  - Maintains audio quality when toggling reverse
+  - Perfect for live DJ performance workflows
+- **v3.22** - Sequencer per-track mixer
+  - Independent volume control per track (0-100%)
+  - Per-track gain nodes with proper audio routing
+  - Visual volume sliders in track headers
+  - Fixed no-audio-output bug from sequencer playback
+  - Clean signal flow: Clip → Track Gain → Sequencer Output → Master
+- **v3.21** - Independent pitch & tone controls
+  - Pitch slider (±12 semitones) with Tone.js integration
+  - Tone slider (20Hz-20kHz low-pass filter)
+  - True independent pitch shifting without tempo changes
+  - Live draggable controls during playback
+  - Reordered UI for logical workflow
+  - Fallback to vinyl-style if Tone.js unavailable
+- **v3.20** - Major sequencer enhancements
+  - Non-destructive clip trimming by dragging edges
+  - Real-time effect updates during playback (volume, pitch, filter, delay)
+  - Toggleable effects panel to maximize workspace
+  - Automatic timeline resize based on track count (300px-80vh)
+  - Timeline expansion when effects hidden (+280px width, +5vh height)
+  - Auto-zoom to fit long clips
+  - Fixed "Add Track" button always visible
+  - Fixed trim accumulation bug
+- **v3.19.1** - Critical bugfix
+  - Fixed master recording to track playback issue
+  - Audio element source preservation when loading recordings
+  - All recording workflows now work correctly
+- **v3.19** - Sequencer recording with track integration
+  - One-click sequencer recording with Opus encoding
+  - Live waveform preview and recording timer
+  - Auto-stop at timeline end or loop recording mode
+  - Load recordings directly to Track 1 or Track 2
+  - Double-click loop marker adjustment
+  - Clip name overflow fixes
+  - Critical audio capture timing fixes
+- **v3.18** - Sequencer recording enhancements
+  - Accurate waveform visualization for recordings
+  - A-B loop markers for sequencer recordings
+  - Full loop controls (set, enable, clear)
+- **v3.17** - Per-clip ADSR envelopes
+  - Attack, Decay, Sustain, Release controls per clip
+  - Manual trigger buttons for envelope preview
+  - Seamless playback integration
+- **v3.16** - Individual clip effects
+  - Click-to-edit effects panel for each clip
+  - Volume, pitch shift, multimode filter, reverb, delay per clip
+  - Smart UI integration with workspace expansion
+- **v3.15** - Multi-track sequencer
+  - Timeline-based arrangement with drag and drop
+  - Unlimited sequencer tracks with mute/solo/delete
+  - Dynamic bar management (60-200 BPM)
+  - Visual playhead animation
+  - Grid-based clip positioning
+- **v3.14** - Precise loop markers with millisecond accuracy
+  - Numeric inputs for exact loop times (0.001s precision)
+  - Interactive time tooltip on hover
+  - Intelligent marker adjustment
+  - Works at 16x-20x zoom levels
+- **v3.13** - Browser tab audio capture feature
   - Capture audio from any browser tab (YouTube, Spotify, etc.)
   - Route to Track 1, Track 2, or Microphone input
   - Full effects support (volume, pan, filter, reverb, delay)
