@@ -190,8 +190,13 @@ export async function initAudioEffects(context, trackNumber) {
                 pitch: 0, // No pitch shift by default (in semitones)
                 windowSize: 0.1, // Smaller window for better quality
                 delayTime: 0, // No additional delay
-                feedback: 0 // No feedback
+                feedback: 0, // No feedback
+                wet: 1.0 // Fully wet - 100% pitch shifted signal
             });
+            
+            // Ensure the pitch shifter is connected and active
+            pitchShifter.wet.value = 1; // Make sure wet is set to 1 (fully processed)
+            
             console.log(`✅ Pitch shifter created for track ${trackNumber}`);
         } catch (err) {
             console.error('❌ Error creating Tone.js pitch shifter:', err);

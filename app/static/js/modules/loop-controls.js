@@ -216,13 +216,16 @@ export function handleLoopPlayback(audioElement, loopState, isDraggingMarker) {
         
         // Normal forward loop
         if (audioElement.currentTime >= loopState.end - tolerance) {
+            console.log(`🔁 Loop end reached! currentTime=${audioElement.currentTime.toFixed(3)}s, loopEnd=${loopState.end.toFixed(3)}s`);
             if (now - loopState.lastSeekTime >= minSeekInterval) {
+                console.log(`✅ Debounce OK, seeking back to loopStart=${loopState.start.toFixed(3)}s`);
                 if (audioElement.readyState >= 2) {
                     const wasPlaying = !audioElement.paused;
                     
                     try {
                         audioElement.currentTime = loopState.start;
                         loopState.lastSeekTime = now;
+                        console.log(`🔄 Looped back to ${loopState.start.toFixed(3)}s, wasPlaying=${wasPlaying}`);
                         
                         if (wasPlaying && audioElement.paused) {
                             audioElement.play().catch(e => console.error('Error resuming playback:', e));
@@ -230,7 +233,11 @@ export function handleLoopPlayback(audioElement, loopState, isDraggingMarker) {
                     } catch (e) {
                         console.error('Error seeking during loop:', e);
                     }
+                } else {
+                    console.warn(`⚠️ Cannot loop: readyState=${audioElement.readyState} (need >= 2)`);
                 }
+            } else {
+                console.log(`⏭️ Skipping loop seek (debounce): ${now - loopState.lastSeekTime}ms since last seek`);
             }
         }
         // Enforce start boundary
@@ -240,6 +247,7 @@ export function handleLoopPlayback(audioElement, loopState, isDraggingMarker) {
                     try {
                         audioElement.currentTime = loopState.start;
                         loopState.lastSeekTime = now;
+                        console.log(`⏩ Before loop start, jumped to ${loopState.start.toFixed(3)}s`);
                     } catch (e) {
                         console.error('Error seeking to loop start:', e);
                     }

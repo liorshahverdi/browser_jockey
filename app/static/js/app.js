@@ -657,6 +657,26 @@ async function loadRecordingToTrack1() {
         console.log('Loading audio file for waveform and analysis');
         await loadAudioFile(file, waveform1, bpm1Display, audioElement1, zoomState1, key1Display);
         
+        // Initialize buffer manager and playback controller for reverse playback
+        try {
+            if (!audioContext) {
+                await initAudioContext();
+            }
+            
+            console.log('Initializing buffer-based reverse playback for Track 1...');
+            bufferManager1 = new AudioBufferManager(audioContext);
+            await bufferManager1.loadAudioBuffer(file, 'track1');
+            
+            // Create playback controller - it will connect to effects chain later in initAudioContext
+            playbackController1 = new PlaybackController(audioContext, audioElement1, null, 'track1');
+            playbackController1.bufferManager = bufferManager1;
+            
+            console.log('✅ Buffer-based reverse playback initialized for Track 1');
+        } catch (error) {
+            console.error('Error initializing reverse playback:', error);
+            // Non-fatal - reverse playback won't work but normal playback will
+        }
+        
         if (!scene) {
             console.log('Initializing 3D visualization');
             initThreeJS();
@@ -784,6 +804,26 @@ async function loadRecordingToTrack2() {
         
         console.log('Loading audio file for waveform and analysis');
         await loadAudioFile(file, waveform2, bpm2Display, audioElement2, zoomState2, key2Display);
+        
+        // Initialize buffer manager and playback controller for reverse playback
+        try {
+            if (!audioContext) {
+                await initAudioContext();
+            }
+            
+            console.log('Initializing buffer-based reverse playback for Track 2...');
+            bufferManager2 = new AudioBufferManager(audioContext);
+            await bufferManager2.loadAudioBuffer(file, 'track2');
+            
+            // Create playback controller - it will connect to effects chain later in initAudioContext
+            playbackController2 = new PlaybackController(audioContext, audioElement2, null, 'track2');
+            playbackController2.bufferManager = bufferManager2;
+            
+            console.log('✅ Buffer-based reverse playback initialized for Track 2');
+        } catch (error) {
+            console.error('Error initializing reverse playback:', error);
+            // Non-fatal - reverse playback won't work but normal playback will
+        }
         
         if (!scene) {
             console.log('Initializing 3D visualization');
@@ -1811,16 +1851,20 @@ async function captureTabAudio(trackNumber) {
                 // If effects exist but finalMix1 doesn't, the chain was initialized but not connected
                 // This happens when initAudioContext() creates effects but no file was loaded yet
                 if (!finalMix1) {
-                    console.warn('⚠️ Effect nodes exist but finalMix1 is missing - completing the chain');
+                    console.log('ℹ️ Effect nodes exist but finalMix1 is missing - completing the chain');
                     
-                    // Build the effects object from existing nodes
-                    // Note: reverb1 and delay1 might be objects or just nodes depending on how they were created
+                    // Build the complete effects object from existing nodes
+                    // CRITICAL: Must include ALL nodes that connectEffectsChain expects
                     const effects = {
                         gain: gain1,
                         panner: panner1,
                         filter: filter1,
+                        eqLow: eqLow1,
+                        eqMid: eqMid1,
+                        eqHigh: eqHigh1,
                         reverb: reverb1.convolver ? reverb1 : { convolver: reverb1, wet: reverbWet1, dry: null },
                         delay: delay1.node ? delay1 : { node: delay1, wet: delayWet1, dry: null },
+                        pitchShifter: pitchShifter1,
                         adsr: adsr1
                     };
                     
@@ -1829,7 +1873,8 @@ async function captureTabAudio(trackNumber) {
                         source1,
                         effects,
                         merger,
-                        audioContext
+                        audioContext,
+                        timestretchNode1
                     );
                     
                     finalMix1 = fm1;
@@ -1873,15 +1918,20 @@ async function captureTabAudio(trackNumber) {
                 
                 // If effects exist but finalMix2 doesn't, the chain was initialized but not connected
                 if (!finalMix2) {
-                    console.warn('⚠️ Effect nodes exist but finalMix2 is missing - completing the chain');
+                    console.log('ℹ️ Effect nodes exist but finalMix2 is missing - completing the chain');
                     
-                    // Build the effects object from existing nodes
+                    // Build the complete effects object from existing nodes
+                    // CRITICAL: Must include ALL nodes that connectEffectsChain expects
                     const effects = {
                         gain: gain2,
                         panner: panner2,
                         filter: filter2,
+                        eqLow: eqLow2,
+                        eqMid: eqMid2,
+                        eqHigh: eqHigh2,
                         reverb: reverb2.convolver ? reverb2 : { convolver: reverb2, wet: reverbWet2, dry: null },
                         delay: delay2.node ? delay2 : { node: delay2, wet: delayWet2, dry: null },
+                        pitchShifter: pitchShifter2,
                         adsr: adsr2
                     };
                     
@@ -1890,7 +1940,8 @@ async function captureTabAudio(trackNumber) {
                         source2,
                         effects,
                         merger,
-                        audioContext
+                        audioContext,
+                        timestretchNode2
                     );
                     
                     finalMix2 = fm2;
@@ -1905,6 +1956,29 @@ async function captureTabAudio(trackNumber) {
         
         // Update UI
         fileName.textContent = '🎵 Tab Audio (Live)';
+        
+        // Clear loop state for tab capture (live streams don't support looping)
+        if (trackNumber === 1) {
+            loopState1.enabled = false;
+            loopState1.start = null;
+            loopState1.end = null;
+            loopState1.reverse = false;
+            // Hide loop markers
+            if (loopRegion1) loopRegion1.style.display = 'none';
+            if (loopMarkerStart1) loopMarkerStart1.style.display = 'none';
+            if (loopMarkerEnd1) loopMarkerEnd1.style.display = 'none';
+            console.log('🔄 Cleared loop state for Track 1 (tab capture)');
+        } else {
+            loopState2.enabled = false;
+            loopState2.start = null;
+            loopState2.end = null;
+            loopState2.reverse = false;
+            // Hide loop markers
+            if (loopRegion2) loopRegion2.style.display = 'none';
+            if (loopMarkerStart2) loopMarkerStart2.style.display = 'none';
+            if (loopMarkerEnd2) loopMarkerEnd2.style.display = 'none';
+            console.log('🔄 Cleared loop state for Track 2 (tab capture)');
+        }
         
         // Enable playback controls for better UX
         // Note: These control the visualization/mixing, user still needs to control source tab manually
@@ -4917,6 +4991,9 @@ playBtn1.addEventListener('click', async () => {
         console.log('🎚️ Merger gain value:', merger ? merger.gain.value : 'not initialized');
         console.log('🔗 Source1 exists:', !!source1);
         console.log('🔗 Source1 connected:', source1Connected);
+        console.log('🔁 Loop enabled:', loopState1.enabled);
+        console.log('🔁 Loop start:', loopState1.start);
+        console.log('🔁 Loop end:', loopState1.end);
         
         // Check if timestretched buffer exists and loop is active
         const hasTimestretchedBuffer = playbackController1 && playbackController1.timestretchedBuffer && loopState1.enabled;
@@ -6387,17 +6464,23 @@ panSlider2.addEventListener('input', (e) => {
 // Pitch sliders
 pitchSlider1.addEventListener('input', (e) => {
     const pitch = parseFloat(e.target.value);
+    console.log(`🎛️ Pitch slider 1 moved to: ${pitch} semitones, pitchShifter1 exists: ${!!pitchShifter1}`);
     
     // Use Tone.js pitch shifter if available (doesn't affect tempo)
     if (pitchShifter1) {
-        pitchShifter1.pitch = pitch; // Set pitch in semitones
-        console.log(`Track 1 pitch: ${pitch} semitones (independent of tempo)`);
+        // Tone.js parameters are Signals, access with .value
+        if (pitchShifter1.pitch && pitchShifter1.pitch.value !== undefined) {
+            pitchShifter1.pitch.value = pitch;
+        } else {
+            pitchShifter1.pitch = pitch;
+        }
+        console.log(`Track 1 pitch set to: ${pitch} semitones, wet=${pitchShifter1.wet?.value}, pitch.value=${pitchShifter1.pitch?.value}`);
     } else {
         // Fallback: Use playbackRate (affects BOTH pitch and tempo)
         const pitchShift = Math.pow(2, pitch / 12);
         const baseTempo = parseFloat(tempoSlider1.value) || 1.0;
         audioElement1.playbackRate = baseTempo * pitchShift;
-        console.log(`Track 1 pitch: ${pitch} semitones (vinyl-style, affects tempo)`);
+        console.log(`Track 1 pitch: ${pitch} semitones (vinyl-style, affects tempo) - playbackRate=${audioElement1.playbackRate.toFixed(3)}`);
     }
     
     // Update pitch label
@@ -6415,8 +6498,13 @@ pitchSlider2.addEventListener('input', (e) => {
     
     // Use Tone.js pitch shifter if available (doesn't affect tempo)
     if (pitchShifter2) {
-        pitchShifter2.pitch = pitch; // Set pitch in semitones
-        console.log(`Track 2 pitch: ${pitch} semitones (independent of tempo)`);
+        // Tone.js parameters are Signals, access with .value
+        if (pitchShifter2.pitch && pitchShifter2.pitch.value !== undefined) {
+            pitchShifter2.pitch.value = pitch;
+        } else {
+            pitchShifter2.pitch = pitch;
+        }
+        console.log(`Track 2 pitch set to: ${pitch} semitones, wet=${pitchShifter2.wet?.value}, pitch.value=${pitchShifter2.pitch?.value}`);
     } else {
         // Fallback: Use playbackRate (affects BOTH pitch and tempo)
         const pitchShift = Math.pow(2, pitch / 12);
@@ -6438,10 +6526,13 @@ pitchSlider2.addEventListener('input', (e) => {
 // 3-Band EQ sliders (Low/Mid/High)
 lowSlider1.addEventListener('input', (e) => {
     const gainDB = parseFloat(e.target.value);
+    console.log(`🎛️ Low EQ slider 1 moved to: ${gainDB}dB, eqLow1 exists: ${!!eqLow1}`);
     
     if (eqLow1) {
         eqLow1.gain.value = gainDB;
         console.log(`Track 1 Low EQ (250Hz lowshelf): ${gainDB.toFixed(1)}dB`);
+    } else {
+        console.warn(`⚠️ eqLow1 not initialized - audio context may not be ready`);
     }
     
     // Update label
@@ -7146,12 +7237,27 @@ async function exportLoop(trackNumber) {
     }
     
     try {
-        const audioBuffer = trackNumber === 1 ? zoomState1.audioBuffer : zoomState2.audioBuffer;
+        // Try to get audio buffer from multiple sources
+        let audioBuffer = trackNumber === 1 ? zoomState1.audioBuffer : zoomState2.audioBuffer;
+        
+        // If not in zoomState, try buffer manager
+        if (!audioBuffer) {
+            const bufferMgr = trackNumber === 1 ? bufferManager1 : bufferManager2;
+            if (bufferMgr && bufferMgr.audioBuffers && bufferMgr.audioBuffers.size > 0) {
+                const trackId = `track${trackNumber}`;
+                audioBuffer = bufferMgr.audioBuffers.get(trackId);
+                console.log(`Using audio buffer from bufferManager for track ${trackNumber}`);
+            }
+        }
         
         if (!audioBuffer) {
             alert('Audio not loaded properly. Please reload the file.');
+            console.error('No audio buffer found in zoomState or bufferManager');
             return;
         }
+        
+        console.log(`Exporting loop from track ${trackNumber}: ${loopState.start.toFixed(2)}s to ${loopState.end.toFixed(2)}s`);
+        console.log(`Audio buffer: ${audioBuffer.duration.toFixed(2)}s, ${audioBuffer.numberOfChannels} channels, ${audioBuffer.sampleRate}Hz`);
         
         // Calculate loop samples
         const sampleRate = audioBuffer.sampleRate;
