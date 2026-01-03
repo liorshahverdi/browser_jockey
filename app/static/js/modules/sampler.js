@@ -2,7 +2,7 @@
 import { scales, keyboardMap } from './constants.js';
 
 // Play a sampler note
-export function playSamplerNote(samplerAudioBuffer, scaleIndex, isUpperOctave, samplerScale, samplerRoot, samplerVolume, audioContext, recordingDestination, noteNames, adsrEnabled = false, adsrParams = null) {
+export function playSamplerNote(samplerAudioBuffer, scaleIndex, isUpperOctave, samplerScale, samplerRoot, samplerVolume, audioContext, recordingDestination, noteNames, merger = null, adsrEnabled = false, adsrParams = null) {
     if (!samplerAudioBuffer) return;
     
     // Get the scale intervals
@@ -60,9 +60,16 @@ export function playSamplerNote(samplerAudioBuffer, scaleIndex, isUpperOctave, s
         noteGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + samplerAudioBuffer.duration);
     }
     
-    // Connect: source -> gain -> destination (speakers)
+    // Connect: source -> gain -> merger (master output)
     source.connect(noteGain);
-    noteGain.connect(audioContext.destination);
+    
+    // Route through merger for master output if available
+    if (merger) {
+        noteGain.connect(merger);
+    } else {
+        // Fallback to direct destination if merger not available
+        noteGain.connect(audioContext.destination);
+    }
     
     // Also connect to recording destination if it exists
     if (recordingDestination) {

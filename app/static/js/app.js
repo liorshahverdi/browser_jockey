@@ -2571,32 +2571,10 @@ function toggleTrackRouting(trackNumber, enabled) {
 }
 
 function toggleSamplerRouting(enabled) {
-    if (!samplerGain || !merger) {
-        console.warn('Sampler or merger not initialized');
-        return;
-    }
-    
-    try {
-        if (enabled) {
-            // Connect sampler to merger
-            samplerGain.connect(merger);
-            console.log('Sampler routed to master');
-        } else {
-            // Disconnect sampler from merger
-            samplerGain.disconnect(merger);
-            console.log('Sampler disconnected from master');
-        }
-    } catch (error) {
-        console.error('Error toggling sampler routing:', error);
-        // Reconnect on error
-        if (enabled) {
-            try {
-                samplerGain.connect(merger);
-            } catch (e) {
-                // Already connected or other error
-            }
-        }
-    }
+    // Note: Sampler routing is now handled automatically through merger parameter
+    // Each sampler note routes through the merger when played
+    // This function is kept for UI compatibility but doesn't need to do anything
+    console.log(`Sampler routing ${enabled ? 'enabled' : 'disabled'} (automatic routing active)`);
 }
 
 function toggleMicRouting(enabled) {
@@ -2869,6 +2847,7 @@ function playSamplerNoteWrapper(scaleIndex, isUpperOctave = false) {
         audioContext,
         recordingDestination,
         noteNames,
+        merger,  // Pass merger for master routing
         samplerADSREnabled,
         samplerADSRParams
     );
@@ -4737,11 +4716,25 @@ document.addEventListener('mouseup', () => {
     if (isDraggingMarker1 && playbackController1 && loopState1.start !== null && loopState1.end !== null) {
         playbackController1.setLoopPoints(loopState1.start, loopState1.end);
         console.log('📍 Updated Track 1 loop points in PlaybackController');
+        
+        // If in buffer-based playback (timestretched), recreate the buffer with new loop boundaries
+        if (playbackController1.isPlaying && playbackController1.timestretchedBuffer) {
+            const stretchRatio = parseFloat(stretchSlider1.value);
+            console.log('🔄 Recreating timestretched buffer for new loop boundaries');
+            applyStretchToTrack(1, stretchRatio);
+        }
     }
     
     if (isDraggingMarker2 && playbackController2 && loopState2.start !== null && loopState2.end !== null) {
         playbackController2.setLoopPoints(loopState2.start, loopState2.end);
         console.log('📍 Updated Track 2 loop points in PlaybackController');
+        
+        // If in buffer-based playback (timestretched), recreate the buffer with new loop boundaries
+        if (playbackController2.isPlaying && playbackController2.timestretchedBuffer) {
+            const stretchRatio = parseFloat(stretchSlider2.value);
+            console.log('🔄 Recreating timestretched buffer for new loop boundaries');
+            applyStretchToTrack(2, stretchRatio);
+        }
     }
     
     isDraggingMarker1 = false;
@@ -5136,6 +5129,23 @@ stopBtn1.addEventListener('click', () => {
     audioElement1.pause();
     audioElement1.currentTime = 0;
     vinylAnimation1.style.display = 'none'; // Hide vinyl animation
+    
+    // Stop buffer playback if active
+    if (playbackController1) {
+        if (playbackController1.bufferSource) {
+            try {
+                playbackController1.bufferSource.stop();
+                playbackController1.bufferSource.disconnect();
+                playbackController1.bufferSource = null;
+                console.log('⏹️ Track 1 buffer source stopped');
+            } catch (e) {
+                console.warn('Error stopping buffer source:', e);
+            }
+        }
+        playbackController1.isPlaying = false;
+        playbackController1.mode = 'normal';
+    }
+    
     // Stop reverse animation
     stopReversePlayback(loopState1);
     
@@ -5171,6 +5181,23 @@ stopBtn2.addEventListener('click', () => {
     audioElement2.pause();
     audioElement2.currentTime = 0;
     vinylAnimation2.style.display = 'none'; // Hide vinyl animation
+    
+    // Stop buffer playback if active
+    if (playbackController2) {
+        if (playbackController2.bufferSource) {
+            try {
+                playbackController2.bufferSource.stop();
+                playbackController2.bufferSource.disconnect();
+                playbackController2.bufferSource = null;
+                console.log('⏹️ Track 2 buffer source stopped');
+            } catch (e) {
+                console.warn('Error stopping buffer source:', e);
+            }
+        }
+        playbackController2.isPlaying = false;
+        playbackController2.mode = 'normal';
+    }
+    
     // Stop reverse animation
     stopReversePlayback(loopState2);
     
@@ -5222,21 +5249,39 @@ loopBtn1.addEventListener('click', () => {
     }
     
     if (!loopState1.enabled) {
+        // Clear loop points FIRST to stop handleLoopPlayback from enforcing bounds
+        clearLoopPoints(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1);
+        
         // Disable looping in playback controller if it exists
-        if (playbackController1 && playbackController1.bufferSource) {
-            // Disable loop on buffer source
-            playbackController1.bufferSource.loop = false;
+        if (playbackController1) {
+            // Stop buffer playback entirely and switch to audio element
+            if (playbackController1.bufferSource) {
+                try {
+                    playbackController1.bufferSource.stop();
+                    playbackController1.bufferSource.disconnect();
+                    playbackController1.bufferSource = null;
+                    console.log('⏹️ Buffer source stopped completely');
+                } catch (e) {
+                    console.warn('Error stopping buffer source:', e);
+                }
+            }
             
-            // If currently playing, switch back to audio element for non-looping playback
-            if (playbackController1.isPlaying) {
-                const currentPosition = playbackController1.getCurrentPosition();
-                playbackController1.switchToNormalMode();
-                console.log('🔓 Loop disabled, switched to audio element playback');
+            // Switch to audio element and continue playing at current position
+            if (playbackController1.isPlaying && audioElement1) {
+                const currentPosition = playbackController1.getCurrentTime();
+                audioElement1.currentTime = currentPosition;
+                audioElement1.volume = 1; // Restore volume
+                playbackController1.mode = 'normal';
+                
+                // Resume playback on audio element
+                audioElement1.play().catch(e => {
+                    console.error('Error resuming audio element:', e);
+                });
+                
+                console.log('🔓 Loop disabled, switched to audio element at ' + currentPosition.toFixed(2) + 's');
             }
         }
         
-        // Clear loop points when disabling - use clearLoopPoints to properly reset state
-        clearLoopPoints(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1);
         // Disable and clear inputs
         if (loopStartInput1) {
             loopStartInput1.disabled = true;
@@ -5268,21 +5313,39 @@ loopBtn2.addEventListener('click', () => {
     }
     
     if (!loopState2.enabled) {
+        // Clear loop points FIRST to stop handleLoopPlayback from enforcing bounds
+        clearLoopPoints(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2);
+        
         // Disable looping in playback controller if it exists
-        if (playbackController2 && playbackController2.bufferSource) {
-            // Disable loop on buffer source
-            playbackController2.bufferSource.loop = false;
+        if (playbackController2) {
+            // Stop buffer playback entirely and switch to audio element
+            if (playbackController2.bufferSource) {
+                try {
+                    playbackController2.bufferSource.stop();
+                    playbackController2.bufferSource.disconnect();
+                    playbackController2.bufferSource = null;
+                    console.log('⏹️ Buffer source stopped completely');
+                } catch (e) {
+                    console.warn('Error stopping buffer source:', e);
+                }
+            }
             
-            // If currently playing, switch back to audio element for non-looping playback
-            if (playbackController2.isPlaying) {
-                const currentPosition = playbackController2.getCurrentPosition();
-                playbackController2.switchToNormalMode();
-                console.log('🔓 Loop disabled, switched to audio element playback');
+            // Switch to audio element and continue playing at current position
+            if (playbackController2.isPlaying && audioElement2) {
+                const currentPosition = playbackController2.getCurrentTime();
+                audioElement2.currentTime = currentPosition;
+                audioElement2.volume = 1; // Restore volume
+                playbackController2.mode = 'normal';
+                
+                // Resume playback on audio element
+                audioElement2.play().catch(e => {
+                    console.error('Error resuming audio element:', e);
+                });
+                
+                console.log('🔓 Loop disabled, switched to audio element at ' + currentPosition.toFixed(2) + 's');
             }
         }
         
-        // Clear loop points when disabling - use clearLoopPoints to properly reset state
-        clearLoopPoints(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2);
         // Disable and clear inputs
         if (loopStartInput2) {
             loopStartInput2.disabled = true;
@@ -6082,23 +6145,67 @@ if (thereminAudioSource) {
         let sourceNode = null;
         
         if (sourceType === 'track1') {
-            if (source1) {
-                sourceNode = source1;
-                console.log('Using Track 1 as theremin source');
+            // Use gain1 (after effects) and provide merger for routing control
+            if (gain1) {
+                sourceNode = gain1;
+                console.log('Using Track 1 output (gain1) as theremin source');
+                // Pass merger and track info so theremin can manage routing
+                setThereminAudioSource(sourceType, sourceNode, merger, 1);
+                
+                // Show/hide waveform selector
+                const waveformSetting = document.getElementById('thereminWaveformSetting');
+                if (waveformSetting) {
+                    waveformSetting.style.display = 'none';
+                }
+                
+                // Update frequency/filter label
+                const freqLabel = document.getElementById('thereminFreqLabel');
+                if (freqLabel) {
+                    freqLabel.textContent = 'Filter';
+                }
+                
+                // Update help text
+                const helpText = document.querySelector('.theremin-help-text');
+                if (helpText) {
+                    helpText.textContent = 'Modulating TRACK 1: Move up/down to control filter brightness, left/right for volume.';
+                }
+                return; // Early return since we called setThereminAudioSource already
             } else {
-                console.warn('Track 1 source not available - load a file on Track 1 first');
+                console.warn('Track 1 not available - load a file on Track 1 first');
                 alert('Please load an audio file on Track 1 first');
-                thereminAudioSource.value = 'oscillator'; // Reset to oscillator
+                thereminAudioSource.value = 'oscillator';
                 return;
             }
         } else if (sourceType === 'track2') {
-            if (source2) {
-                sourceNode = source2;
-                console.log('Using Track 2 as theremin source');
+            // Use gain2 (after effects) and provide merger for routing control
+            if (gain2) {
+                sourceNode = gain2;
+                console.log('Using Track 2 output (gain2) as theremin source');
+                // Pass merger and track info so theremin can manage routing
+                setThereminAudioSource(sourceType, sourceNode, merger, 2);
+                
+                // Show/hide waveform selector
+                const waveformSetting = document.getElementById('thereminWaveformSetting');
+                if (waveformSetting) {
+                    waveformSetting.style.display = 'none';
+                }
+                
+                // Update frequency/filter label
+                const freqLabel = document.getElementById('thereminFreqLabel');
+                if (freqLabel) {
+                    freqLabel.textContent = 'Filter';
+                }
+                
+                // Update help text
+                const helpText = document.querySelector('.theremin-help-text');
+                if (helpText) {
+                    helpText.textContent = 'Modulating TRACK 2: Move up/down to control filter brightness, left/right for volume.';
+                }
+                return; // Early return since we called setThereminAudioSource already
             } else {
-                console.warn('Track 2 source not available - load a file on Track 2 first');
+                console.warn('Track 2 not available - load a file on Track 2 first');
                 alert('Please load an audio file on Track 2 first');
-                thereminAudioSource.value = 'oscillator'; // Reset to oscillator
+                thereminAudioSource.value = 'oscillator';
                 return;
             }
         } else if (sourceType === 'sequencer') {
@@ -7948,10 +8055,15 @@ function setupRecordedAudioConnection() {
                 // Connect to oscilloscope analyser for visualization
                 recordedAudioSource.connect(oscilloscopeAnalyser);
                 
-                // Also connect to destination so we can hear it
-                recordedAudioSource.connect(audioContext.destination);
-                
-                console.log('Recorded audio connected to oscilloscope and output');
+                // Route through merger for master output
+                if (merger) {
+                    recordedAudioSource.connect(merger);
+                    console.log('Recorded audio connected to oscilloscope and master mixer');
+                } else {
+                    // Fallback to direct destination if merger not available
+                    recordedAudioSource.connect(audioContext.destination);
+                    console.log('Recorded audio connected to oscilloscope and output');
+                }
             } catch (err) {
                 console.error('Error connecting recorded audio:', err);
             }

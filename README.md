@@ -4,7 +4,9 @@
 
 A dual-track DJ mixing web application with advanced multi-track sequencer, independent pitch and tone controls, seamless timestretching with reverse mode, 3D audio visualization, BPM detection, precise loop markers, professional constant-power stereo panning, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, clip-based arrangement with zoom/pan/fullscreen and real-time effects, and authentic DJ controls.
 
-**Latest Update (v3.26.0)**: Professional constant-power stereo panning! Fixed critical signal chain disconnection bug, implemented 4-gain routing matrix with sine/cosine curves for smooth L-R transitions, preserves stereo quality, and works flawlessly with timestretching and all effects. See [PANNING_RESOLUTION_SUMMARY.md](PANNING_RESOLUTION_SUMMARY.md).
+**Latest Update (v3.26.2)**: Critical theremin bug fixes! Fixed track modulation (disconnect issue), simplified activation (hand detection only for tracks), and improved playback reliability (stop button cleanup, loop disable, marker dragging). Camera theremin now properly modulates Track 1/Track 2 audio signals. See [RELEASE_NOTES_v3.26.2.md](RELEASE_NOTES_v3.26.2.md).
+
+**v3.26.0**: Professional constant-power stereo panning! Fixed critical signal chain disconnection bug, implemented 4-gain routing matrix with sine/cosine curves for smooth L-R transitions, preserves stereo quality, and works flawlessly with timestretching and all effects. See [PANNING_RESOLUTION_SUMMARY.md](PANNING_RESOLUTION_SUMMARY.md).
 
 **v3.25.0**: Sequencer fullscreen toggle! Live fullscreen mode with instant switching, keyboard shortcut (ESC), smooth fade-in animation, expanded panels (100vw × 100vh), dark overlay for focus, and all functionality fully operational. See [SEQUENCER_FULLSCREEN_TOGGLE.md](SEQUENCER_FULLSCREEN_TOGGLE.md).
 

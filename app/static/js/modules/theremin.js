@@ -27,6 +27,8 @@ let thereminState = {
     audioSource: 'oscillator',  // 'oscillator', 'track1', or 'track2'
     externalSource: null,  // Reference to external audio source node
     sourceGain: null,  // Gain node for external source routing
+    trackMerger: null,  // Reference to master mixer for reconnection
+    previousTrackNumber: null,  // Track number (1 or 2) for reconnection
     handDetected: false,  // Whether a hand is currently detected
     handConfidence: 0,  // Confidence level (0-1) that a hand is present
     detectionThreshold: 0.6,  // Minimum confidence to trigger modulation
@@ -187,12 +189,13 @@ export async function enableTheremin(audioContext, thereminElements, recordingDe
     thereminState.reverbNode.connect(wetGain);
     wetGain.connect(thereminState.routingGain);
     
-    // Connect routing gain to destination and merger (if available)
-    thereminState.routingGain.connect(audioContext.destination);
-    
+    // Connect routing gain to merger (master output)
     if (merger) {
         thereminState.routingGain.connect(merger);
         console.log('Theremin connected to master mixer');
+    } else {
+        console.warn('Theremin: No merger available, connecting to destination directly');
+        thereminState.routingGain.connect(audioContext.destination);
     }
     
     // Connect to recording destination if available
@@ -232,6 +235,21 @@ export async function enableTheremin(audioContext, thereminElements, recordingDe
 // Disable theremin
 export function disableTheremin(thereminElements) {
     if (!thereminState.enabled) return;
+    
+    // Restore external source connection to merger if it was being used
+    if (thereminState.externalSource && thereminState.trackMerger && thereminState.previousTrackNumber) {
+        try {
+            // Disconnect from all outputs to clean up theremin routing
+            thereminState.externalSource.disconnect();
+            console.log(`Disconnected track ${thereminState.previousTrackNumber} from all outputs (including theremin)`);
+            
+            // Then reconnect to merger for normal playback
+            thereminState.externalSource.connect(thereminState.trackMerger);
+            console.log(`✅ Reconnected track ${thereminState.previousTrackNumber} (gain${thereminState.previousTrackNumber}) to merger - normal playback restored`);
+        } catch (e) {
+            console.warn('Error during track reconnection:', e);
+        }
+    }
     
     thereminState.enabled = false;
     
@@ -274,8 +292,10 @@ export function disableTheremin(thereminElements) {
         thereminState.filterNode = null;
     }
     
-    // Clear external source reference
+    // Clear external source references
     thereminState.externalSource = null;
+    thereminState.trackMerger = null;
+    thereminState.previousTrackNumber = null;
     
     // Update UI
     if (thereminElements.enableBtn) {
@@ -489,11 +509,20 @@ function startMotionTracking() {
         thereminState.lastHandPosition.x = currentX;
         thereminState.lastHandPosition.y = currentY;
         
-        // Update theremin parameters based on detection mode
-        // If requireHandDetection is false, only wave detection is needed
-        const shouldPlaySound = thereminState.requireHandDetection 
-            ? (thereminState.handDetected && thereminState.waveActive)
-            : thereminState.waveActive;
+        // Update theremin parameters based on detection mode and source type
+        // For external sources (tracks), activate on hand detection alone
+        // For oscillator, require wave motion to avoid accidental triggering
+        let shouldPlaySound = false;
+        
+        if (thereminState.audioSource === 'track1' || thereminState.audioSource === 'track2' || thereminState.audioSource === 'sequencer') {
+            // External sources: just need hand detection
+            shouldPlaySound = thereminState.handDetected;
+        } else {
+            // Oscillator mode: require wave motion
+            shouldPlaySound = thereminState.requireHandDetection 
+                ? (thereminState.handDetected && thereminState.waveActive)
+                : thereminState.waveActive;
+        }
         
         if (shouldPlaySound) {
             updateThereminSound(thereminState.smoothedPosition, thereminState.handConfidence);
@@ -501,7 +530,9 @@ function startMotionTracking() {
             // Fade out when conditions not met
             // Log why we're fading out (only when we transition from active to inactive)
             if (thereminState.lastSoundUpdateState === true) {
-                if (thereminState.requireHandDetection) {
+                if (thereminState.audioSource === 'track1' || thereminState.audioSource === 'track2' || thereminState.audioSource === 'sequencer') {
+                    console.log(`🔇 Fading out theremin: handDetected=${thereminState.handDetected}`);
+                } else if (thereminState.requireHandDetection) {
                     console.log(`🔇 Fading out theremin: handDetected=${thereminState.handDetected}, waveActive=${thereminState.waveActive}`);
                 } else {
                     console.log(`🔇 Fading out theremin: waveActive=${thereminState.waveActive}`);
@@ -973,8 +1004,8 @@ export function changeThereminVolume(volume) {
 }
 
 // Set theremin audio source
-export function setThereminAudioSource(sourceType, externalSourceNode = null) {
-    console.log('Setting theremin audio source to:', sourceType);
+export function setThereminAudioSource(sourceType, externalSourceNode = null, merger = null, trackNumber = null) {
+    console.log('Setting theremin audio source to:', sourceType, 'merger:', !!merger, 'track:', trackNumber);
     
     if (!thereminState.enabled || !thereminState.audioContext) {
         console.log('Theremin not enabled, just updating source type');
@@ -983,6 +1014,21 @@ export function setThereminAudioSource(sourceType, externalSourceNode = null) {
     }
     
     const audioContext = thereminState.audioContext;
+    
+    // Restore previous external source connection to merger if switching away from it
+    if (thereminState.externalSource && thereminState.trackMerger && thereminState.previousTrackNumber) {
+        try {
+            // Disconnect from all outputs first
+            thereminState.externalSource.disconnect();
+            console.log(`Disconnected track ${thereminState.previousTrackNumber} from all outputs`);
+            
+            // Then reconnect to merger for normal playback
+            thereminState.externalSource.connect(thereminState.trackMerger);
+            console.log(`✅ Reconnected track ${thereminState.previousTrackNumber} (gain${thereminState.previousTrackNumber}) to merger - normal playback restored`);
+        } catch (e) {
+            console.warn('Error during source reconnection:', e);
+        }
+    }
     
     // Disconnect existing connections
     if (thereminState.oscillator && thereminState.audioSource === 'oscillator') {
@@ -995,6 +1041,8 @@ export function setThereminAudioSource(sourceType, externalSourceNode = null) {
     
     // Update source type
     thereminState.audioSource = sourceType;
+    thereminState.trackMerger = merger;
+    thereminState.previousTrackNumber = trackNumber;
     
     if (sourceType === 'oscillator') {
         // Reconnect oscillator path
@@ -1029,17 +1077,29 @@ export function setThereminAudioSource(sourceType, externalSourceNode = null) {
         
         thereminState.externalSource = externalSourceNode;
         
+        // Disconnect the track from ALL outputs so we only hear the theremin-modulated version
+        try {
+            externalSourceNode.disconnect();
+            console.log(`✅ Disconnected track ${trackNumber} (gain${trackNumber}) from all outputs for theremin routing`);
+        } catch (e) {
+            console.warn('Error disconnecting track:', e);
+        }
+        
         // Disconnect vibrato from oscillator (not used with external sources)
         if (thereminState.vibratoGain) {
             thereminState.vibratoGain.disconnect();
         }
         
         // Connect external source through theremin effects
-        // externalSource -> sourceGain -> filter -> gainNode
+        // externalSource -> sourceGain -> filter -> gainNode -> (reverb) -> routingGain -> merger
         try {
             externalSourceNode.connect(thereminState.sourceGain);
             thereminState.sourceGain.connect(thereminState.filterNode);
-            console.log('External source connected through theremin effects');
+            console.log(`✅ External source connected: gain${trackNumber} -> theremin effects -> merger`);
+            console.log(`   Routing: gain${trackNumber} -> sourceGain -> filter -> gainNode -> routingGain -> merger`);
+            console.log(`   Filter initial freq: ${thereminState.filterNode.frequency.value}Hz, Q: ${thereminState.filterNode.Q.value}`);
+            console.log(`   GainNode initial value: ${thereminState.gainNode.gain.value}`);
+            console.log(`   RoutingGain initial value: ${thereminState.routingGain.gain.value}`);
         } catch (error) {
             console.error('Error connecting external source:', error);
         }
