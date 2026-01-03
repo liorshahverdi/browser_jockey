@@ -4,47 +4,36 @@
 
 A dual-track DJ mixing web application with advanced multi-track sequencer, independent pitch and tone controls, seamless timestretching with reverse mode, 3D audio visualization, BPM detection, precise loop markers, professional constant-power stereo panning, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, drag-and-drop track loading, clip-based arrangement with zoom/pan/fullscreen and real-time effects, and authentic DJ controls.
 
-**Latest Update (v3.27.7)**: Position continuity when disabling reverse mode! Fixed playback jump when toggling from reverse to forward mode. Both enabling and disabling reverse mode now continue from current position for seamless DJ performance. See [RELEASE_NOTES_v3.27.7.md](RELEASE_NOTES_v3.27.7.md).
+## Quick Links
 
-**v3.27.6**: Buffer source stop() error fix! Eliminated `InvalidStateError` exceptions when stopping playback after switching to reverse mode while paused. Added lifecycle tracking to prevent invalid API calls. See [RELEASE_NOTES_v3.27.6.md](RELEASE_NOTES_v3.27.6.md).
+📖 **[Full Changelog](CHANGELOG.md)** | 🎯 **[Features](docs/features/)** | 📚 **[User Guides](docs/guides/)** | 🧪 **[Testing Guide](docs/guides/TESTING_GUIDE.md)** | 🏗️ **[Module Architecture](MODULES.md)**
 
-**v3.27.5**: Reverse mode position tracking with timestretch! Fixed critical bug where switching to reverse mode with timestretching would use stale audio element position instead of actual buffer position, causing reverse mode to always start from wrong position. See [RELEASE_NOTES_v3.27.5.md](RELEASE_NOTES_v3.27.5.md).
+## Quick Links
 
-**v3.27.4**: Reverse playback double-call bugfix! Fixed issue where switching to reverse mode would start buffer playback twice, causing position jumps and incorrect behavior. Reverse mode now starts correctly once from current position. See [RELEASE_NOTES_v3.27.4.md](RELEASE_NOTES_v3.27.4.md).
+📖 **[Full Changelog](CHANGELOG.md)** | 🎯 **[Features](docs/features/)** | 📚 **[User Guides](docs/guides/)** | 🧪 **[Testing Guide](docs/guides/TESTING_GUIDE.md)** | 🏗️ **[Module Architecture](MODULES.md)**
 
-**v3.27.3**: Reverse playback start position bugfix! Fixed issue where clicking the reverse loop button would jump to the end of loop before starting, instead of starting from current position. See [RELEASE_NOTES_v3.27.3.md](RELEASE_NOTES_v3.27.3.md).
+**Latest Update (v3.27.7)**: Position continuity when disabling reverse mode! Fixed playback jump when toggling from reverse to forward mode. Both enabling and disabling reverse mode now continue from current position for seamless DJ performance. See [current-release/RELEASE_NOTES_v3.27.7.md](current-release/RELEASE_NOTES_v3.27.7.md).
 
-**v3.27.2**: Loop boundary enforcement bugfix! Fixed issue where loop boundaries wouldn't update immediately when dragging the end marker backward during playback. Loop enforcement is now instant and precise. See [RELEASE_NOTES_v3.27.2.md](RELEASE_NOTES_v3.27.2.md).
+## Recent Updates
 
-**v3.27.1**: Loop state persistence bugfix! Fixed critical issue where loop markers would be lost when toggling the loop button off and on, causing silent playback. Loop points now persist across toggle cycles. See [RELEASE_NOTES_v3.27.1.md](RELEASE_NOTES_v3.27.1.md).
+- **v3.27.7**: Position continuity when disabling reverse mode - [Release Notes](current-release/RELEASE_NOTES_v3.27.7.md)
+- **v3.27.6**: Buffer source stop() error fix - [Release Notes](current-release/RELEASE_NOTES_v3.27.6.md)
+- **v3.27.5**: Reverse mode position tracking with timestretch - [Release Notes](current-release/RELEASE_NOTES_v3.27.5.md)
+- **v3.27.4**: Reverse playback double-call bugfix - [Release Notes](current-release/RELEASE_NOTES_v3.27.4.md)
+- **v3.27.3**: Reverse playback start position bugfix - [Release Notes](current-release/RELEASE_NOTES_v3.27.3.md)
+- **v3.27.2**: Loop boundary enforcement bugfix - [Release Notes](current-release/RELEASE_NOTES_v3.27.2.md)
+- **v3.27.1**: Loop state persistence bugfix - [Release Notes](current-release/RELEASE_NOTES_v3.27.1.md)
+- **v3.27.0**: Drag & drop track loading - [Feature Doc](docs/features/DRAG_DROP_TRACK_LOADING.md)
+- **v3.26.0**: Professional constant-power stereo panning - [Feature Doc](docs/features/PANNING_RESOLUTION_SUMMARY.md)
+- **v3.25.0**: Sequencer fullscreen toggle - [Feature Doc](docs/features/SEQUENCER_FULLSCREEN_TOGGLE.md)
+- **v3.24.0**: Sequencer zoom & pan with waveform visualization - [Feature Doc](docs/features/SEQUENCER_ZOOM_PAN_FEATURE.md)
+- **v3.23.0**: Seamless timestretching + reverse mode integration - [Feature Doc](docs/features/SEAMLESS_TIMESTRETCH_REVERSE.md)
+- **v3.21.0**: Independent pitch & tone controls - [Feature Doc](docs/features/PITCH_TONE_IMPLEMENTATION_SUMMARY.md)
+- **v3.13.0**: Browser tab audio capture - [Feature Doc](docs/features/TAB_AUDIO_CAPTURE_FEATURE.md)
+- **v3.11.0**: Camera Theremin - [Feature Doc](docs/features/CAMERA_THEREMIN_FEATURE.md)
+- **v3.10.0**: Professional DJ crossfader - [Feature Doc](docs/features/CROSSFADER_FEATURE.md)
 
-**v3.27.0**: Drag & drop track loading! Drag audio files from your file system directly onto Track 1 or Track 2 containers. Features visual glow feedback, seamless loading during playback/recording, works with all file formats, and provides a professional DJ workflow. See [DRAG_DROP_TRACK_LOADING.md](DRAG_DROP_TRACK_LOADING.md).
-
-**v3.26.2**: Critical theremin bug fixes! Fixed track modulation (disconnect issue), simplified activation (hand detection only for tracks), and improved playback reliability (stop button cleanup, loop disable, marker dragging). Camera theremin now properly modulates Track 1/Track 2 audio signals. See [RELEASE_NOTES_v3.26.2.md](RELEASE_NOTES_v3.26.2.md).
-
-**v3.26.0**: Professional constant-power stereo panning! Fixed critical signal chain disconnection bug, implemented 4-gain routing matrix with sine/cosine curves for smooth L-R transitions, preserves stereo quality, and works flawlessly with timestretching and all effects. See [PANNING_RESOLUTION_SUMMARY.md](PANNING_RESOLUTION_SUMMARY.md).
-
-**v3.25.0**: Sequencer fullscreen toggle! Live fullscreen mode with instant switching, keyboard shortcut (ESC), smooth fade-in animation, expanded panels (100vw × 100vh), dark overlay for focus, and all functionality fully operational. See [SEQUENCER_FULLSCREEN_TOGGLE.md](SEQUENCER_FULLSCREEN_TOGGLE.md).
-
-**v3.24.0**: Sequencer zoom & pan with waveform visualization! Zoom 50%-200% for detailed editing, Shift+drag or middle-mouse panning, mini waveforms on clips, high-DPI canvas rendering, intelligent panning that doesn't interfere with clip dragging, and responsive zoom-aware redrawing. See [SEQUENCER_ZOOM_PAN_FEATURE.md](SEQUENCER_ZOOM_PAN_FEATURE.md).
-
-**v3.23.0**: Seamless timestretching + reverse mode integration! Dual buffer storage for forward/reversed timestretched audio, unified rendering strategy, instant mode switching without regeneration, maintains audio quality when toggling reverse button. Perfect for live performance DJ workflows. See [SEAMLESS_TIMESTRETCH_REVERSE.md](SEAMLESS_TIMESTRETCH_REVERSE.md).
-
-**v3.22.0**: Sequencer per-track mixer! Independent volume control per track with gain nodes (0-100%), proper audio routing through track → sequencer output → master, visual volume sliders in track headers, and fixed no-audio-output bug. See [SEQUENCER_TRACK_MIXER.md](SEQUENCER_TRACK_MIXER.md).
-
-**v3.21.0**: Independent pitch & tone controls! Added dedicated Pitch (±12 semitones) and Tone (20Hz-20kHz filter) sliders to both DJ tracks, Tone.js integration for professional pitch shifting without tempo changes, reordered UI for logical workflow (Volume → Tempo → Tone → Pitch), live draggable controls, and fallback to vinyl-style if Tone.js unavailable. See [PITCH_TONE_IMPLEMENTATION_SUMMARY.md](PITCH_TONE_IMPLEMENTATION_SUMMARY.md).
-
-**v3.20.0**: Major sequencer enhancements! Non-destructive clip trimming by dragging edges, real-time effect updates during playback (volume, pitch, filter, delay), toggleable effects panel to maximize workspace, automatic timeline resize based on track count, timeline expansion when effects hidden, and auto-zoom to fit long clips. See [RELEASE_NOTES_v3.20.md](RELEASE_NOTES_v3.20.md).
-
-**v3.14.0**: Added Precise Loop Markers with millisecond accuracy! Set loop points with numeric inputs (0.001s precision), interactive time tooltip on hover, intelligent marker adjustment, and fixed zoom click detection. Perfect for chopping tiny segments from tab-captured audio or any track. Works seamlessly at 16x-20x zoom levels. See [PRECISE_LOOP_MARKERS.md](PRECISE_LOOP_MARKERS.md) for details.
-
-**v3.13.0**: Added browser tab audio capture! Capture audio from any browser tab (YouTube, Spotify, etc.) and route it through Track 1, Track 2, or Microphone input with full effects support. Record tab capture to master output, mix with other tracks, apply vocoder/auto-tune, and use the crossfader. Perfect for DJing with streaming services or remixing online content! See [TAB_CAPTURE_FEATURE.md](TAB_CAPTURE_FEATURE.md) for details.
-
-**v3.11.0**: Added Camera Theremin! Motion-controlled instrument using webcam with wave detection, adjustable sensitivity, three control modes (Pitch & Volume, Filter & Resonance, ADSR Envelope), audio sources (oscillator, Track 1, Track 2), adaptive motion detection, wave-only mode, visual feedback, and master volume/vibrato controls. See [CAMERA_THEREMIN_FEATURE.md](CAMERA_THEREMIN_FEATURE.md).
-
-**v3.10.0**: Added professional DJ crossfader with three modes (Track1↔Track2, Track1↔Mic, Track2↔Mic)! Features equal-power crossfade curves for smooth transitions, dynamic mode switching, and full three-column DJ layout (Track 1 | Mixer | Track 2). Master section reorganized with compact volume/pan controls.
-
-**v3.9.0**: Major microphone and effects routing enhancements! Added standalone microphone recording (record directly from mic without tracks), flexible vocoder/auto-tune routing (use mic OR tracks as sources), load microphone recordings to tracks, side-by-side tempo/volume controls for compact layout, and master output routing toggles for precise mixing control.
+See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 ## Features
 
