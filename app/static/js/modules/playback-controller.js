@@ -93,7 +93,9 @@ export class PlaybackController {
         // Otherwise use media element
         if (this.timestretchedBuffer && this.isPlaying) {
             console.log('🎵 Using timestretched buffer for forward playback');
-            this.startForwardBufferPlayback(currentPosition);
+            // Convert absolute position to position within loop (relative to loop start)
+            const positionInLoop = currentPosition - this.loopStart;
+            this.startForwardBufferPlayback(positionInLoop);
         } else {
             // Resume media element at the calculated position
             if (this.audioElement) {
