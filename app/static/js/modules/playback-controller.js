@@ -171,8 +171,9 @@ export class PlaybackController {
         }
         
         console.log(`📊 Final position in loop: ${positionInLoop.toFixed(2)}s (loop duration: ${loopDuration.toFixed(2)}s)`);
-        
-        // Start buffer source with reversed audio
+                // Store position for later reference
+        this.currentPositionInLoop = positionInLoop;
+                // Start buffer source with reversed audio
         // Use reversed timestretched buffer if available, otherwise generate standard reversed buffer
         const bufferToUse = this.timestretchedBufferReversed || null;
         this.startReversePlayback(positionInLoop, bufferToUse);
@@ -345,18 +346,13 @@ export class PlaybackController {
                 console.error('Error playing audio element:', e);
             });
         } else {
-            // In reverse mode, we need to start a new buffer source if not already playing
+            // In reverse mode - buffer source should already be created and started by switchToReverseMode
+            // If for some reason it's not, create it now
             if (!this.bufferSource || !this.bufferSource.buffer) {
-                const loopDuration = this.loopEnd - this.loopStart;
-                this.startReversePlayback(loopDuration * 0.5); // Start from middle if no current position
+                console.warn('⚠️ Buffer source not found in reverse mode, creating now');
+                this.startReversePlayback(this.currentPositionInLoop || 0);
             } else {
-                // Already have a source, just ensure it's started
-                try {
-                    this.bufferSource.start(0, this.reverseStartOffset);
-                } catch (e) {
-                    // If already started, create a new one
-                    this.startReversePlayback(this.currentPositionInLoop);
-                }
+                console.log('✅ Reverse playback buffer already started, no action needed');
             }
         }
     }
