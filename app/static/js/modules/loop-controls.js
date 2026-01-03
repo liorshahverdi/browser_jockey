@@ -227,7 +227,8 @@ export function handleLoopPlayback(audioElement, loopState, isDraggingMarker) {
                         loopState.lastSeekTime = now;
                         console.log(`🔄 Looped back to ${loopState.start.toFixed(3)}s, wasPlaying=${wasPlaying}`);
                         
-                        if (wasPlaying && audioElement.paused) {
+                        // Always resume playback if audio was playing or if it got paused during seek
+                        if (wasPlaying || audioElement.paused) {
                             audioElement.play().catch(e => console.error('Error resuming playback:', e));
                         }
                     } catch (e) {

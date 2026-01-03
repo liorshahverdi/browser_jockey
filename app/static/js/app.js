@@ -2912,35 +2912,9 @@ async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, 
     // Check if sync buttons should be enabled
     checkSyncButtonsState();
     
-    // Set audio element source for playback (only if not already set)
-    if (!audioElement.src || audioElement.src === '') {
-        console.log('Setting audio element source from file');
-        const url = URL.createObjectURL(file);
-        audioElement.src = url;
-        
-        // Wait for metadata to load
-        await new Promise((resolve, reject) => {
-            const timeoutId = setTimeout(() => {
-                console.warn('Timeout waiting for audio metadata, continuing anyway');
-                resolve(); // Don't reject, just continue
-            }, 5000);
-            
-            audioElement.addEventListener('loadedmetadata', () => {
-                clearTimeout(timeoutId);
-                console.log(`Track ${trackNumber} metadata loaded. Duration:`, audioElement.duration);
-                resolve();
-            }, { once: true });
-            
-            audioElement.addEventListener('error', (e) => {
-                clearTimeout(timeoutId);
-                console.error(`Track ${trackNumber} audio element error:`, e);
-                reject(e);
-            }, { once: true });
-        });
-    } else {
-        console.log('Audio element source already set, skipping...');
-        console.log('Existing src:', audioElement.src.substring(0, 50) + '...');
-    }
+    // Note: Audio element source should already be set by the file upload handler
+    // This ensures the source is updated for each new file load
+    console.log('Audio element source:', audioElement.src.substring(0, 80) + '...');
     
     // Update file name display
     const fileDisplayElement = trackNumber === 1 ? 
@@ -3917,6 +3891,11 @@ audioFile1.addEventListener('change', async (e) => {
     if (file) {
         console.log('Track 1 file selected:', file.name, file.type, file.size);
         
+        // Check if recording is in progress
+        if (recordingState && recordingState.mediaRecorder && recordingState.mediaRecorder.state === 'recording') {
+            console.log('✅ Recording in progress - Track 1 file upload will not interrupt recording');
+        }
+        
         // Clean up tab capture if Track 1 is currently capturing
         if (window.tabCaptureState1 && window.tabCaptureState1.isTabCapture) {
             console.log('Cleaning up tab capture on Track 1 before loading new file');
@@ -4070,6 +4049,11 @@ audioFile2.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
         console.log('Track 2 file selected:', file.name);
+        
+        // Check if recording is in progress
+        if (recordingState && recordingState.mediaRecorder && recordingState.mediaRecorder.state === 'recording') {
+            console.log('✅ Recording in progress - Track 2 file upload will not interrupt recording');
+        }
         
         // Clean up tab capture if Track 2 is currently capturing
         if (window.tabCaptureState2 && window.tabCaptureState2.isTabCapture) {
@@ -8126,3 +8110,131 @@ document.addEventListener('sequencerPlayRequested', async () => {
 // Final initialization complete
 console.log('🎵 Browser Jockey initialized successfully');
 console.log('Theremin button element:', enableThereminBtn);
+
+// ============================================================================
+// DRAG AND DROP FILE LOADING FOR TRACKS
+// ============================================================================
+
+// Setup drag-and-drop for Track 1
+const trackUpload1 = document.querySelector('.track-upload:first-of-type');
+if (trackUpload1) {
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        trackUpload1.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+
+    // Add visual feedback when dragging over
+    ['dragenter', 'dragover'].forEach(eventName => {
+        trackUpload1.addEventListener(eventName, () => {
+            trackUpload1.classList.add('drag-over');
+        }, false);
+    });
+
+    // Remove visual feedback when leaving or dropping
+    ['dragleave', 'drop'].forEach(eventName => {
+        trackUpload1.addEventListener(eventName, () => {
+            trackUpload1.classList.remove('drag-over');
+        }, false);
+    });
+
+    // Handle file drop
+    trackUpload1.addEventListener('drop', async (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            
+            // Check if it's an audio or video file
+            const isAudioVideo = file.type.startsWith('audio/') || file.type.startsWith('video/');
+            const audioExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'wma', 'aiff', 'aif', 'opus', 'webm', 'oga', 'mp4', 'avi', 'mov'];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            const hasAudioExtension = audioExtensions.includes(fileExtension);
+            
+            if (isAudioVideo || hasAudioExtension) {
+                console.log('📁 File dropped on Track 1:', file.name);
+                
+                // Check if recording is in progress
+                if (recordingState && recordingState.mediaRecorder && recordingState.mediaRecorder.state === 'recording') {
+                    console.log('✅ Recording in progress - Drag & drop to Track 1 will not interrupt recording');
+                }
+                
+                // Create a DataTransfer object to programmatically set the file
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                audioFile1.files = dataTransfer.files;
+                
+                // Trigger the change event to load the file
+                const event = new Event('change', { bubbles: true });
+                audioFile1.dispatchEvent(event);
+            } else {
+                alert('❌ Please drop an audio or video file');
+            }
+        }
+    }, false);
+    
+    console.log('✅ Drag-and-drop enabled for Track 1');
+}
+
+// Setup drag-and-drop for Track 2
+const trackUpload2 = document.querySelectorAll('.track-upload')[1];
+if (trackUpload2) {
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        trackUpload2.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+
+    // Add visual feedback when dragging over
+    ['dragenter', 'dragover'].forEach(eventName => {
+        trackUpload2.addEventListener(eventName, () => {
+            trackUpload2.classList.add('drag-over');
+        }, false);
+    });
+
+    // Remove visual feedback when leaving or dropping
+    ['dragleave', 'drop'].forEach(eventName => {
+        trackUpload2.addEventListener(eventName, () => {
+            trackUpload2.classList.remove('drag-over');
+        }, false);
+    });
+
+    // Handle file drop
+    trackUpload2.addEventListener('drop', async (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            
+            // Check if it's an audio or video file
+            const isAudioVideo = file.type.startsWith('audio/') || file.type.startsWith('video/');
+            const audioExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'wma', 'aiff', 'aif', 'opus', 'webm', 'oga', 'mp4', 'avi', 'mov'];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            const hasAudioExtension = audioExtensions.includes(fileExtension);
+            
+            if (isAudioVideo || hasAudioExtension) {
+                console.log('📁 File dropped on Track 2:', file.name);
+                
+                // Check if recording is in progress
+                if (recordingState && recordingState.mediaRecorder && recordingState.mediaRecorder.state === 'recording') {
+                    console.log('✅ Recording in progress - Drag & drop to Track 2 will not interrupt recording');
+                }
+                
+                // Create a DataTransfer object to programmatically set the file
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                audioFile2.files = dataTransfer.files;
+                
+                // Trigger the change event to load the file
+                const event = new Event('change', { bubbles: true });
+                audioFile2.dispatchEvent(event);
+            } else {
+                alert('❌ Please drop an audio or video file');
+            }
+        }
+    }, false);
+    
+    console.log('✅ Drag-and-drop enabled for Track 2');
+}

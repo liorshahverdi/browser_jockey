@@ -2,9 +2,11 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browser-jockey.onrender.com/)
 
-A dual-track DJ mixing web application with advanced multi-track sequencer, independent pitch and tone controls, seamless timestretching with reverse mode, 3D audio visualization, BPM detection, precise loop markers, professional constant-power stereo panning, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, clip-based arrangement with zoom/pan/fullscreen and real-time effects, and authentic DJ controls.
+A dual-track DJ mixing web application with advanced multi-track sequencer, independent pitch and tone controls, seamless timestretching with reverse mode, 3D audio visualization, BPM detection, precise loop markers, professional constant-power stereo panning, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, drag-and-drop track loading, clip-based arrangement with zoom/pan/fullscreen and real-time effects, and authentic DJ controls.
 
-**Latest Update (v3.26.2)**: Critical theremin bug fixes! Fixed track modulation (disconnect issue), simplified activation (hand detection only for tracks), and improved playback reliability (stop button cleanup, loop disable, marker dragging). Camera theremin now properly modulates Track 1/Track 2 audio signals. See [RELEASE_NOTES_v3.26.2.md](RELEASE_NOTES_v3.26.2.md).
+**Latest Update (v3.27.0)**: Drag & drop track loading! Drag audio files from your file system directly onto Track 1 or Track 2 containers. Features visual glow feedback, seamless loading during playback/recording, works with all file formats, and provides a professional DJ workflow. See [DRAG_DROP_TRACK_LOADING.md](DRAG_DROP_TRACK_LOADING.md).
+
+**v3.26.2**: Critical theremin bug fixes! Fixed track modulation (disconnect issue), simplified activation (hand detection only for tracks), and improved playback reliability (stop button cleanup, loop disable, marker dragging). Camera theremin now properly modulates Track 1/Track 2 audio signals. See [RELEASE_NOTES_v3.26.2.md](RELEASE_NOTES_v3.26.2.md).
 
 **v3.26.0**: Professional constant-power stereo panning! Fixed critical signal chain disconnection bug, implemented 4-gain routing matrix with sine/cosine curves for smooth L-R transitions, preserves stereo quality, and works flawlessly with timestretching and all effects. See [PANNING_RESOLUTION_SUMMARY.md](PANNING_RESOLUTION_SUMMARY.md).
 
@@ -107,6 +109,12 @@ A dual-track DJ mixing web application with advanced multi-track sequencer, inde
   - ⚡ **Effect Chain Compatible**: Flawless integration with timestretching and all effects
   - 🎨 **Visual Feedback**: Real-time pan position indicators
 - 🎛️ **Dual Track DJ System** - Load and mix two audio tracks simultaneously
+  - 📁 **Drag & Drop Loading** - Drag audio files directly onto Track 1 or Track 2
+  - ✨ **Visual Feedback** - Containers glow (cyan/magenta) when files are dragged over
+  - 🎵 **Live Loading** - Load files while other track is playing without interruption
+  - ⏺️ **Recording Compatible** - Load files during master recording seamlessly
+  - 🎨 **All Formats Supported** - MP3, WAV, OGG, FLAC, M4A, AAC, WEBM, MP4, etc.
+  - 🖱️ **Click to Upload** - Traditional file picker still available
 - 🎚️ **Independent Pitch & Tone Controls** - Professional track manipulation
   - 🎵 **Pitch Slider**: ±12 semitones (one octave range) with Tone.js integration
   - 🎛️ **Tone Slider**: 20Hz-20kHz low-pass filter for frequency shaping
