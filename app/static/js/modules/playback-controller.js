@@ -472,12 +472,14 @@ export class PlaybackController {
             // Stop the current buffer source without switching mode
             if (this.bufferSource) {
                 try {
-                if (this.bufferSourceStarted) {
-                    this.bufferSource.stop();
-                }
-                this.bufferSource.disconnect();
-                this.bufferSource = null;
-                this.bufferSourceStarted = false;
+                    if (this.bufferSourceStarted) {
+                        this.bufferSource.stop();
+                    }
+                    this.bufferSource.disconnect();
+                    this.bufferSource = null;
+                    this.bufferSourceStarted = false;
+                } catch (e) {
+                    // Ignore errors from already-stopped sources
                 }
             }
             
