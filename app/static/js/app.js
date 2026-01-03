@@ -4654,46 +4654,42 @@ waveform1.parentElement.addEventListener('mousemove', (e) => {
 });
 
 document.addEventListener('mouseup', () => {
-    // When finishing dragging Track 1 markers, only adjust playhead if it's way outside the loop
-    // This prevents glitches from unnecessary seeking
+    // When finishing dragging Track 1 markers, enforce loop boundaries immediately
+    // This ensures playhead is within the new loop range after marker adjustment
     if (isDraggingMarker1 && loopState1.enabled && !audioElement1.paused) {
         const currentTime = audioElement1.currentTime;
-        const loopDuration = loopState1.end - loopState1.start;
         
-        // Only adjust if playhead is significantly outside the loop (more than loop duration away)
-        // This gives a buffer zone to prevent jarring seeks
-        if (currentTime < loopState1.start - loopDuration || currentTime > loopState1.end + loopDuration) {
+        // Immediately enforce loop boundaries - if playhead is outside, seek it back
+        // This handles the case where user dragged the end marker backward past the playhead
+        if (currentTime < loopState1.start || currentTime > loopState1.end) {
             if (audioElement1.readyState >= 2) {
                 try {
                     audioElement1.currentTime = loopState1.start;
                     loopState1.lastSeekTime = Date.now();
-                    console.log('Adjusted playhead to loop start after marker drag (was far outside)');
+                    console.log(`🔄 Playhead adjusted to loop start after marker drag: ${currentTime.toFixed(2)}s → ${loopState1.start.toFixed(2)}s`);
                 } catch (e) {
                     console.error('Error adjusting playhead after marker drag:', e);
                 }
             }
         }
-        // If playhead is within reasonable distance, let handleLoopPlayback handle it naturally
     }
     
-    // When finishing dragging Track 2 markers, only adjust playhead if it's way outside the loop
+    // When finishing dragging Track 2 markers, enforce loop boundaries immediately
     if (isDraggingMarker2 && loopState2.enabled && !audioElement2.paused) {
         const currentTime = audioElement2.currentTime;
-        const loopDuration = loopState2.end - loopState2.start;
         
-        // Only adjust if playhead is significantly outside the loop (more than loop duration away)
-        if (currentTime < loopState2.start - loopDuration || currentTime > loopState2.end + loopDuration) {
+        // Immediately enforce loop boundaries - if playhead is outside, seek it back
+        if (currentTime < loopState2.start || currentTime > loopState2.end) {
             if (audioElement2.readyState >= 2) {
                 try {
                     audioElement2.currentTime = loopState2.start;
                     loopState2.lastSeekTime = Date.now();
-                    console.log('Adjusted playhead to loop start after marker drag (was far outside)');
+                    console.log(`🔄 Playhead adjusted to loop start after marker drag: ${currentTime.toFixed(2)}s → ${loopState2.start.toFixed(2)}s`);
                 } catch (e) {
                     console.error('Error adjusting playhead after marker drag:', e);
                 }
             }
         }
-        // If playhead is within reasonable distance, let handleLoopPlayback handle it naturally
     }
     
     // Update PlaybackController loop points after dragging markers
