@@ -4,7 +4,9 @@
 
 A dual-track DJ mixing web application with advanced multi-track sequencer, independent pitch and tone controls, seamless timestretching with reverse mode, 3D audio visualization, BPM detection, precise loop markers, professional constant-power stereo panning, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, drag-and-drop track loading, clip-based arrangement with zoom/pan/fullscreen and real-time effects, and authentic DJ controls.
 
-**Latest Update (v3.27.0)**: Drag & drop track loading! Drag audio files from your file system directly onto Track 1 or Track 2 containers. Features visual glow feedback, seamless loading during playback/recording, works with all file formats, and provides a professional DJ workflow. See [DRAG_DROP_TRACK_LOADING.md](DRAG_DROP_TRACK_LOADING.md).
+**Latest Update (v3.27.1)**: Loop state persistence bugfix! Fixed critical issue where loop markers would be lost when toggling the loop button off and on, causing silent playback. Loop points now persist across toggle cycles. See [RELEASE_NOTES_v3.27.1.md](RELEASE_NOTES_v3.27.1.md).
+
+**v3.27.0**: Drag & drop track loading! Drag audio files from your file system directly onto Track 1 or Track 2 containers. Features visual glow feedback, seamless loading during playback/recording, works with all file formats, and provides a professional DJ workflow. See [DRAG_DROP_TRACK_LOADING.md](DRAG_DROP_TRACK_LOADING.md).
 
 **v3.26.2**: Critical theremin bug fixes! Fixed track modulation (disconnect issue), simplified activation (hand detection only for tracks), and improved playback reliability (stop button cleanup, loop disable, marker dragging). Camera theremin now properly modulates Track 1/Track 2 audio signals. See [RELEASE_NOTES_v3.26.2.md](RELEASE_NOTES_v3.26.2.md).
 

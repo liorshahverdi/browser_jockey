@@ -5233,8 +5233,11 @@ loopBtn1.addEventListener('click', () => {
     }
     
     if (!loopState1.enabled) {
-        // Clear loop points FIRST to stop handleLoopPlayback from enforcing bounds
-        clearLoopPoints(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1);
+        // Hide loop markers but preserve loop points (don't clear them)
+        // This allows re-enabling loop without losing the markers
+        if (loopRegion1) loopRegion1.style.display = 'none';
+        if (loopMarkerStart1) loopMarkerStart1.style.display = 'none';
+        if (loopMarkerEnd1) loopMarkerEnd1.style.display = 'none';
         
         // Disable looping in playback controller if it exists
         if (playbackController1) {
@@ -5266,14 +5269,26 @@ loopBtn1.addEventListener('click', () => {
             }
         }
         
-        // Disable and clear inputs
+        // Disable but don't clear inputs - they should show the current loop points
         if (loopStartInput1) {
             loopStartInput1.disabled = true;
-            loopStartInput1.value = '';
         }
         if (loopEndInput1) {
             loopEndInput1.disabled = true;
-            loopEndInput1.value = '';
+        }
+    } else {
+        // Loop enabled - show markers if loop points are set
+        if (loopState1.start !== null && loopState1.end !== null) {
+            updateLoopRegion(loopState1, loopRegion1, loopMarkerStart1, loopMarkerEnd1, audioElement1.duration, zoomState1);
+            updatePreciseLoopInputs(1);
+        }
+        
+        // Enable inputs
+        if (loopStartInput1) {
+            loopStartInput1.disabled = false;
+        }
+        if (loopEndInput1) {
+            loopEndInput1.disabled = false;
         }
     }
 });
@@ -5297,8 +5312,11 @@ loopBtn2.addEventListener('click', () => {
     }
     
     if (!loopState2.enabled) {
-        // Clear loop points FIRST to stop handleLoopPlayback from enforcing bounds
-        clearLoopPoints(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2);
+        // Hide loop markers but preserve loop points (don't clear them)
+        // This allows re-enabling loop without losing the markers
+        if (loopRegion2) loopRegion2.style.display = 'none';
+        if (loopMarkerStart2) loopMarkerStart2.style.display = 'none';
+        if (loopMarkerEnd2) loopMarkerEnd2.style.display = 'none';
         
         // Disable looping in playback controller if it exists
         if (playbackController2) {
@@ -5330,14 +5348,26 @@ loopBtn2.addEventListener('click', () => {
             }
         }
         
-        // Disable and clear inputs
+        // Disable but don't clear inputs - they should show the current loop points
         if (loopStartInput2) {
             loopStartInput2.disabled = true;
-            loopStartInput2.value = '';
         }
         if (loopEndInput2) {
             loopEndInput2.disabled = true;
-            loopEndInput2.value = '';
+        }
+    } else {
+        // Loop enabled - show markers if loop points are set
+        if (loopState2.start !== null && loopState2.end !== null) {
+            updateLoopRegion(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2, audioElement2.duration, zoomState2);
+            updatePreciseLoopInputs(2);
+        }
+        
+        // Enable inputs
+        if (loopStartInput2) {
+            loopStartInput2.disabled = false;
+        }
+        if (loopEndInput2) {
+            loopEndInput2.disabled = false;
         }
     }
 });
