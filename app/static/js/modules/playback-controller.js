@@ -134,7 +134,9 @@ export class PlaybackController {
         this.isPlaying = wasPlaying !== null ? wasPlaying : !this.audioElement.paused;
         const currentTime = this.audioElement.currentTime;
         
+        console.log(`📊 ====== SWITCHING TO REVERSE MODE ======`);
         console.log(`📊 Audio element state: paused=${this.audioElement.paused}, currentTime=${currentTime.toFixed(2)}s`);
+        console.log(`📊 Loop bounds: start=${this.loopStart.toFixed(2)}s, end=${this.loopEnd.toFixed(2)}s`);
         console.log(`📊 Will play in reverse: ${this.isPlaying}`);
         
         // Pause media element (we'll use buffer source instead)
@@ -246,6 +248,12 @@ export class PlaybackController {
         // we want to start at (10 - 2) = 8s
         const loopDuration = this.loopEnd - this.loopStart;
         const reverseOffset = loopDuration - positionInLoop;
+        
+        console.log(`🔢 Reverse offset calculation:`);
+        console.log(`   positionInLoop: ${positionInLoop.toFixed(2)}s`);
+        console.log(`   loopDuration: ${loopDuration.toFixed(2)}s`);
+        console.log(`   reverseOffset: ${reverseOffset.toFixed(2)}s`);
+        console.log(`   Meaning: Start at ${reverseOffset.toFixed(2)}s in reversed buffer`);
         
         // Store timing info for position tracking
         this.reverseStartTime = this.audioContext.currentTime;
