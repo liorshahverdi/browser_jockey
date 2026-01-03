@@ -4,7 +4,15 @@
 
 A dual-track DJ mixing web application with advanced multi-track sequencer, independent pitch and tone controls, seamless timestretching with reverse mode, 3D audio visualization, BPM detection, precise loop markers, professional constant-power stereo panning, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, drag-and-drop track loading, clip-based arrangement with zoom/pan/fullscreen and real-time effects, and authentic DJ controls.
 
-**Latest Update (v3.27.3)**: Reverse playback start position bugfix! Fixed issue where clicking the reverse loop button would jump to the end of loop before starting, instead of starting from current position. See [RELEASE_NOTES_v3.27.3.md](RELEASE_NOTES_v3.27.3.md).
+**Latest Update (v3.27.7)**: Position continuity when disabling reverse mode! Fixed playback jump when toggling from reverse to forward mode. Both enabling and disabling reverse mode now continue from current position for seamless DJ performance. See [RELEASE_NOTES_v3.27.7.md](RELEASE_NOTES_v3.27.7.md).
+
+**v3.27.6**: Buffer source stop() error fix! Eliminated `InvalidStateError` exceptions when stopping playback after switching to reverse mode while paused. Added lifecycle tracking to prevent invalid API calls. See [RELEASE_NOTES_v3.27.6.md](RELEASE_NOTES_v3.27.6.md).
+
+**v3.27.5**: Reverse mode position tracking with timestretch! Fixed critical bug where switching to reverse mode with timestretching would use stale audio element position instead of actual buffer position, causing reverse mode to always start from wrong position. See [RELEASE_NOTES_v3.27.5.md](RELEASE_NOTES_v3.27.5.md).
+
+**v3.27.4**: Reverse playback double-call bugfix! Fixed issue where switching to reverse mode would start buffer playback twice, causing position jumps and incorrect behavior. Reverse mode now starts correctly once from current position. See [RELEASE_NOTES_v3.27.4.md](RELEASE_NOTES_v3.27.4.md).
+
+**v3.27.3**: Reverse playback start position bugfix! Fixed issue where clicking the reverse loop button would jump to the end of loop before starting, instead of starting from current position. See [RELEASE_NOTES_v3.27.3.md](RELEASE_NOTES_v3.27.3.md).
 
 **v3.27.2**: Loop boundary enforcement bugfix! Fixed issue where loop boundaries wouldn't update immediately when dragging the end marker backward during playback. Loop enforcement is now instant and precise. See [RELEASE_NOTES_v3.27.2.md](RELEASE_NOTES_v3.27.2.md).
 
@@ -37,21 +45,6 @@ A dual-track DJ mixing web application with advanced multi-track sequencer, inde
 **v3.10.0**: Added professional DJ crossfader with three modes (Track1↔Track2, Track1↔Mic, Track2↔Mic)! Features equal-power crossfade curves for smooth transitions, dynamic mode switching, and full three-column DJ layout (Track 1 | Mixer | Track 2). Master section reorganized with compact volume/pan controls.
 
 **v3.9.0**: Major microphone and effects routing enhancements! Added standalone microphone recording (record directly from mic without tracks), flexible vocoder/auto-tune routing (use mic OR tracks as sources), load microphone recordings to tracks, side-by-side tempo/volume controls for compact layout, and master output routing toggles for precise mixing control.
-
-## Screenshots
-
-![Browser Jockey Screenshot 1](app/screenshots/app_screenshot_2025_10_22_at_23_01_40.png)
-
-![Browser Jockey Screenshot 2](app/screenshots/app_screenshot_2025_10_23_at_02_04_14.png)
-
-![Browser Jockey Screenshot 3](app/screenshots/app_screenshot_2025_10_23_at_02_04_34.png)
-
-![Browser Jockey Screenshot 4](app/screenshots/app_screenshot_2025_10_23_at_02_04_51.png)
-
-![Browser Jockey Screenshot 5](app/screenshots/app_screenshot_2025_10_23_at_02_09_07.png)
-
-![Browser Jockey Screenshot 6 - Keyboard Sampler (v3.0)](app/screenshots/app_screenshot_2025_10_23_at_10_15_40.png)
-*v3.0 Keyboard Sampler Feature - Play tracks/loops on pentatonic scales using keyboard*
 
 ## Features
 
