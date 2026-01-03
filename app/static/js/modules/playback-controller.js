@@ -158,8 +158,12 @@ export class PlaybackController {
         console.log(`📊 Position in loop (before bounds check): ${positionInLoop.toFixed(2)}s`);
         
         // Ensure position is within loop bounds
+        // If before loop start, start from the end (for reverse playback, end is the beginning)
+        // If after loop end, wrap around
         if (positionInLoop < 0) {
-            positionInLoop = 0;
+            // Start from end of loop when playing in reverse (this will be position 0 in reverse buffer)
+            positionInLoop = loopDuration;
+            console.log(`📊 Position before loop start - starting from end for reverse: ${positionInLoop.toFixed(2)}s`);
         } else if (positionInLoop > loopDuration) {
             positionInLoop = positionInLoop % loopDuration;
         }
