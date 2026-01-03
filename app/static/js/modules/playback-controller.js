@@ -14,6 +14,7 @@ export class PlaybackController {
         
         // Audio nodes
         this.bufferSource = null; // For reverse playback
+        this.bufferSourceStarted = false; // Track if buffer source was started
         this.gainNode = audioContext.createGain();
         this.gainNode.gain.value = 1.0;
         
@@ -70,13 +71,18 @@ export class PlaybackController {
         // Stop buffer source if playing
         if (this.bufferSource) {
             try {
-                this.bufferSource.stop();
-                this.bufferSource.disconnect();
-                console.log('⏹️ Buffer source stopped and disconnected');
+                if (this.bufferSourceStarted) {
+                    this.bufferSource.stop();
+                    console.log('⏹️ Buffer source stopped and disconnected');
+                } else {
+                    console.log('⏹️ Buffer source disconnected (was never started)');
+                }
             } catch (e) {
                 console.warn('Error stopping buffer source:', e);
             }
+            this.bufferSource.disconnect();
             this.bufferSource = null;
+            this.bufferSourceStarted = false;
         }
         
         // Clear reverse state
@@ -277,8 +283,10 @@ export class PlaybackController {
         // The buffer will loop seamlessly thanks to buffer.loop = true
         if (this.isPlaying) {
             this.bufferSource.start(0, reverseOffset);
+            this.bufferSourceStarted = true;
             console.log(`🎵 Reverse playback STARTED at offset ${reverseOffset.toFixed(2)}s with seamless looping`);
         } else {
+            this.bufferSourceStarted = false;
             console.log(`⏸️ Reverse playback created but NOT started (isPlaying=false)`);
         }
     }
@@ -308,12 +316,15 @@ export class PlaybackController {
         // Stop any existing buffer source
         if (this.bufferSource) {
             try {
-                this.bufferSource.stop();
-                this.bufferSource.disconnect();
-                console.log('🛑 Stopped previous buffer source');
+                if (this.bufferSourceStarted) {
+                    this.bufferSource.stop();
+                    console.log('🛑 Stopped previous buffer source');
+                }
             } catch (e) {
                 // Ignore errors from already-stopped sources
             }
+            this.bufferSource.disconnect();
+            this.bufferSourceStarted = false;
         }
         
         // Mute media element since we're using buffer source
@@ -342,8 +353,10 @@ export class PlaybackController {
         // Start playback at the calculated offset
         if (this.isPlaying) {
             this.bufferSource.start(0, positionInLoop);
+            this.bufferSourceStarted = true;
             console.log(`🎵 Forward buffer playback STARTED at offset ${positionInLoop.toFixed(2)}s with seamless looping`);
         } else {
+            this.bufferSourceStarted = false;
             console.log(`⏸️ Forward buffer playback created but NOT started (isPlaying=false)`);
         }
     }
@@ -396,9 +409,12 @@ export class PlaybackController {
                     
                     console.log(`⏸️ Stopping reverse playback for ${this.trackId} at position ${currentPosition.toFixed(2)}s`);
                     
-                    this.bufferSource.stop();
+                    if (this.bufferSourceStarted) {
+                        this.bufferSource.stop();
+                    }
                     this.bufferSource.disconnect();
                     this.bufferSource = null;
+                    this.bufferSourceStarted = false;
                     
                     // Update audio element to match current position
                     this.audioElement.currentTime = currentPosition;
@@ -456,11 +472,12 @@ export class PlaybackController {
             // Stop the current buffer source without switching mode
             if (this.bufferSource) {
                 try {
+                if (this.bufferSourceStarted) {
                     this.bufferSource.stop();
-                    this.bufferSource.disconnect();
-                    this.bufferSource = null;
-                } catch (e) {
-                    console.warn('Error stopping buffer source:', e);
+                }
+                this.bufferSource.disconnect();
+                this.bufferSource = null;
+                this.bufferSourceStarted = false;
                 }
             }
             
@@ -547,12 +564,15 @@ export class PlaybackController {
     destroy() {
         if (this.bufferSource) {
             try {
-                this.bufferSource.stop();
+                if (this.bufferSourceStarted) {
+                    this.bufferSource.stop();
+                }
                 this.bufferSource.disconnect();
             } catch (e) {
                 // Ignore
             }
             this.bufferSource = null;
+            this.bufferSourceStarted = false;
         }
         
         if (this.gainNode) {

@@ -936,9 +936,12 @@ async function applyStretchToTrack(trackNum, stretchRatio) {
             // Stop the old buffer source without calling pause() (which would switch to normal mode)
             if (playbackCtrl.bufferSource) {
                 try {
-                    playbackCtrl.bufferSource.stop();
+                    if (playbackCtrl.bufferSourceStarted) {
+                        playbackCtrl.bufferSource.stop();
+                    }
                     playbackCtrl.bufferSource.disconnect();
                     playbackCtrl.bufferSource = null;
+                    playbackCtrl.bufferSourceStarted = false;
                 } catch (e) {
                     // Ignore errors from already-stopped sources
                 }
@@ -5114,10 +5117,15 @@ stopBtn1.addEventListener('click', () => {
     if (playbackController1) {
         if (playbackController1.bufferSource) {
             try {
-                playbackController1.bufferSource.stop();
+                if (playbackController1.bufferSourceStarted) {
+                    playbackController1.bufferSource.stop();
+                    console.log('⏹️ Track 1 buffer source stopped');
+                } else {
+                    console.log('⏹️ Track 1 buffer source cleaned up (was never started)');
+                }
                 playbackController1.bufferSource.disconnect();
                 playbackController1.bufferSource = null;
-                console.log('⏹️ Track 1 buffer source stopped');
+                playbackController1.bufferSourceStarted = false;
             } catch (e) {
                 console.warn('Error stopping buffer source:', e);
             }
@@ -5166,10 +5174,15 @@ stopBtn2.addEventListener('click', () => {
     if (playbackController2) {
         if (playbackController2.bufferSource) {
             try {
-                playbackController2.bufferSource.stop();
+                if (playbackController2.bufferSourceStarted) {
+                    playbackController2.bufferSource.stop();
+                    console.log('⏹️ Track 2 buffer source stopped');
+                } else {
+                    console.log('⏹️ Track 2 buffer source cleaned up (was never started)');
+                }
                 playbackController2.bufferSource.disconnect();
                 playbackController2.bufferSource = null;
-                console.log('⏹️ Track 2 buffer source stopped');
+                playbackController2.bufferSourceStarted = false;
             } catch (e) {
                 console.warn('Error stopping buffer source:', e);
             }
@@ -5240,10 +5253,15 @@ loopBtn1.addEventListener('click', () => {
             // Stop buffer playback entirely and switch to audio element
             if (playbackController1.bufferSource) {
                 try {
-                    playbackController1.bufferSource.stop();
+                    if (playbackController1.bufferSourceStarted) {
+                        playbackController1.bufferSource.stop();
+                        console.log('⏹️ Buffer source stopped completely');
+                    } else {
+                        console.log('⏹️ Buffer source cleaned up (was never started)');
+                    }
                     playbackController1.bufferSource.disconnect();
                     playbackController1.bufferSource = null;
-                    console.log('⏹️ Buffer source stopped completely');
+                    playbackController1.bufferSourceStarted = false;
                 } catch (e) {
                     console.warn('Error stopping buffer source:', e);
                 }
@@ -5319,9 +5337,15 @@ loopBtn2.addEventListener('click', () => {
             // Stop buffer playback entirely and switch to audio element
             if (playbackController2.bufferSource) {
                 try {
-                    playbackController2.bufferSource.stop();
+                    if (playbackController2.bufferSourceStarted) {
+                        playbackController2.bufferSource.stop();
+                        console.log('⏹️ Buffer source stopped completely');
+                    } else {
+                        console.log('⏹️ Buffer source cleaned up (was never started)');
+                    }
                     playbackController2.bufferSource.disconnect();
                     playbackController2.bufferSource = null;
+                    playbackController2.bufferSourceStarted = false;
                     console.log('⏹️ Buffer source stopped completely');
                 } catch (e) {
                     console.warn('Error stopping buffer source:', e);
