@@ -132,10 +132,23 @@ export class PlaybackController {
         
         // Store current playback state (use override if provided, otherwise detect from audio element)
         this.isPlaying = wasPlaying !== null ? wasPlaying : !this.audioElement.paused;
-        const currentTime = this.audioElement.currentTime;
+        
+        // Get ACTUAL current time - if we're in buffer playback mode, use getCurrentTime()
+        // If we're in normal MediaElement mode, use audioElement.currentTime
+        let currentTime;
+        if (this.bufferSource && this.bufferSource.buffer) {
+            // We're using buffer playback (timestretched forward mode)
+            currentTime = this.getCurrentTime();
+            console.log(`📊 Using buffer playback position: ${currentTime.toFixed(2)}s`);
+        } else {
+            // We're using audio element playback
+            currentTime = this.audioElement.currentTime;
+            console.log(`📊 Using audio element position: ${currentTime.toFixed(2)}s`);
+        }
         
         console.log(`📊 ====== SWITCHING TO REVERSE MODE ======`);
-        console.log(`📊 Audio element state: paused=${this.audioElement.paused}, currentTime=${currentTime.toFixed(2)}s`);
+        console.log(`📊 Audio element state: paused=${this.audioElement.paused}, currentTime=${this.audioElement.currentTime.toFixed(2)}s`);
+        console.log(`📊 Actual playback position: ${currentTime.toFixed(2)}s`);
         console.log(`📊 Loop bounds: start=${this.loopStart.toFixed(2)}s, end=${this.loopEnd.toFixed(2)}s`);
         console.log(`📊 Will play in reverse: ${this.isPlaying}`);
         
