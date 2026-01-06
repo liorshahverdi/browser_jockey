@@ -4985,6 +4985,7 @@ playBtn1.addEventListener('click', async () => {
             startProgressAnimation1(); // Start progress animation for buffer playback
         } else {
             // Use normal MediaElement playback
+            audioElement1.volume = 1; // Restore volume (may have been muted during buffer playback)
             audioElement1.play()
                 .then(() => {
                     console.log('✅ Audio playing successfully');
@@ -5037,6 +5038,7 @@ playBtn2.addEventListener('click', async () => {
             startProgressAnimation2(); // Start progress animation for buffer playback
         } else {
             // Use normal MediaElement playback
+            audioElement2.volume = 1; // Restore volume (may have been muted during buffer playback)
             audioElement2.play();
         }
         
@@ -5132,6 +5134,7 @@ stopBtn1.addEventListener('click', () => {
         }
         playbackController1.isPlaying = false;
         playbackController1.mode = 'normal';
+        audioElement1.volume = 1; // Restore volume (may have been muted during buffer playback)
     }
     
     // Stop reverse animation
@@ -5189,6 +5192,7 @@ stopBtn2.addEventListener('click', () => {
         }
         playbackController2.isPlaying = false;
         playbackController2.mode = 'normal';
+        audioElement2.volume = 1; // Restore volume (may have been muted during buffer playback)
     }
     
     // Stop reverse animation

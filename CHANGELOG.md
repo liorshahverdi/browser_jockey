@@ -2,7 +2,12 @@
 
 All notable changes to Browser Jockey are documented here.
 
-## [v3.27.7] - Current Release
+## [v3.27.8] - Current Release
+
+### Fixed
+- **Audio element volume restoration after buffer playback** - Fixed critical bug where audio would play silently after using timestretched loop or reverse mode. The audio element volume is now properly restored when switching back to normal playback. See [current-release/RELEASE_NOTES_v3.27.8.md](current-release/RELEASE_NOTES_v3.27.8.md)
+
+## [v3.27.7]
 
 ### Fixed
 - **Position continuity when disabling reverse mode** - Fixed playback jump when toggling from reverse to forward mode. Both enabling and disabling reverse mode now continue from current position for seamless DJ performance. See [current-release/RELEASE_NOTES_v3.27.7.md](current-release/RELEASE_NOTES_v3.27.7.md)
