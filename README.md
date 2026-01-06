@@ -12,10 +12,11 @@ A dual-track DJ mixing web application with advanced multi-track sequencer, inde
 
 📖 **[Full Changelog](CHANGELOG.md)** | 🎯 **[Features](docs/features/)** | 📚 **[User Guides](docs/guides/)** | 🧪 **[Testing Guide](docs/guides/TESTING_GUIDE.md)** | 🏗️ **[Module Architecture](MODULES.md)**
 
-**Latest Update (v3.27.7)**: Position continuity when disabling reverse mode! Fixed playback jump when toggling from reverse to forward mode. Both enabling and disabling reverse mode now continue from current position for seamless DJ performance. See [current-release/RELEASE_NOTES_v3.27.7.md](current-release/RELEASE_NOTES_v3.27.7.md).
+**Latest Update (v3.27.8)**: Audio element volume restoration after buffer playback! Fixed critical bug where audio would play silently after using timestretched loop or reverse mode. The audio element volume is now properly restored when switching back to normal playback. See [current-release/RELEASE_NOTES_v3.27.8.md](current-release/RELEASE_NOTES_v3.27.8.md).
 
 ## Recent Updates
 
+- **v3.27.8**: Audio element volume restoration after buffer playback - [Release Notes](current-release/RELEASE_NOTES_v3.27.8.md)
 - **v3.27.7**: Position continuity when disabling reverse mode - [Release Notes](current-release/RELEASE_NOTES_v3.27.7.md)
 - **v3.27.6**: Buffer source stop() error fix - [Release Notes](current-release/RELEASE_NOTES_v3.27.6.md)
 - **v3.27.5**: Reverse mode position tracking with timestretch - [Release Notes](current-release/RELEASE_NOTES_v3.27.5.md)
