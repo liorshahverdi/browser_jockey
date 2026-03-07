@@ -1471,7 +1471,24 @@ function startMicRecordingHandler() {
     }
     
     try {
-        micRecordingState = startMicRecording(micState);
+        // When auto-tune is active on the mic source, record the processed signal
+        // instead of the raw mic stream. We tap dryGain+wetGain (the auto-tune output
+        // nodes) into a dedicated MediaStreamDestination — this captures exactly the
+        // pitch-corrected mic without any other tracks bleeding in.
+        let processedStream = null;
+        let autotuneRecordDest = null;
+        if (autotuneEnabled && autotuneSource.value === 'mic' && autotuneState && audioContext) {
+            autotuneRecordDest = audioContext.createMediaStreamDestination();
+            autotuneState.dryGain.connect(autotuneRecordDest);
+            autotuneState.wetGain.connect(autotuneRecordDest);
+            processedStream = autotuneRecordDest.stream;
+            console.log('🎤 Recording auto-tuned mic output (processed stream)');
+        }
+        micRecordingState = startMicRecording(micState, processedStream);
+        // Attach the recording dest so stopMicRecordingHandler can disconnect it
+        if (autotuneRecordDest) {
+            micRecordingState._autotuneRecordDest = autotuneRecordDest;
+        }
         
         // Update UI
         micRecordBtn.style.display = 'none';
@@ -1519,6 +1536,14 @@ async function stopMicRecordingHandler() {
     }
     
     try {
+        // Disconnect the auto-tune recording tap if it was used
+        if (micRecordingState._autotuneRecordDest && autotuneState) {
+            try {
+                autotuneState.dryGain.disconnect(micRecordingState._autotuneRecordDest);
+                autotuneState.wetGain.disconnect(micRecordingState._autotuneRecordDest);
+            } catch (e) { /* already disconnected */ }
+        }
+
         // Stop recording
         const blob = await stopMicRecording(micRecordingState);
         
@@ -2310,17 +2335,20 @@ async function enableAutotune() {
         }
         audioSource = micState.micGain;
     } else if (sourceType === 'track1') {
-        if (!gain1) {
+        if (!gain1 || !finalMix1) {
             alert('Please load Track 1 first to use it with auto-tune!');
             return;
         }
-        audioSource = gain1;
+        // Use finalMix1 (last node before merger) so autotune intercepts AFTER the full
+        // effects chain. Using gain1 (first node) would leave finalMix1→merger intact,
+        // letting the unprocessed signal drown out pitch correction.
+        audioSource = finalMix1;
     } else if (sourceType === 'track2') {
-        if (!gain2) {
+        if (!gain2 || !finalMix2) {
             alert('Please load Track 2 first to use it with auto-tune!');
             return;
         }
-        audioSource = gain2;
+        audioSource = finalMix2;
     }
     
     if (!audioSource) {
@@ -2381,10 +2409,10 @@ function disableAutotune() {
         const sourceType = autotuneSource.value;
         if (sourceType === 'mic' && micState && micState.micGain && merger && !vocoderEnabled) {
             micState.micGain.connect(merger);
-        } else if (sourceType === 'track1' && gain1 && merger) {
-            gain1.connect(merger);
-        } else if (sourceType === 'track2' && gain2 && merger) {
-            gain2.connect(merger);
+        } else if (sourceType === 'track1' && finalMix1 && merger) {
+            finalMix1.connect(merger);
+        } else if (sourceType === 'track2' && finalMix2 && merger) {
+            finalMix2.connect(merger);
         }
         
         autotuneState = null;
@@ -2404,41 +2432,28 @@ function disableAutotune() {
 // Pitch correction loop
 function correctPitch() {
     if (!autotuneEnabled || !autotuneState || !autotuneState.autotuneAnalyser) return;
-    
-    const bufferLength = autotuneState.autotuneAnalyser.frequencyBinCount;
-    const dataArray = new Float32Array(bufferLength);
-    autotuneState.autotuneAnalyser.getFloatTimeDomainData(dataArray);
-    
-    // Detect pitch using autocorrelation
-    const detectedFreq = autoCorrelate(dataArray, audioContext.sampleRate);
-    
-    if (detectedFreq > 0) {
-        // Get target note based on key and scale
-        const targetFreq = getNearestNoteFrequency(detectedFreq);
-        const pitchShift = Math.log2(targetFreq / detectedFreq);
-        
-        // Apply pitch shift to all shifters (simplified)
-        const speed = parseInt(autotuneSpeedSlider.value);
-        const smoothing = speed / 1000; // Convert to seconds
-        
-        pitchShifters.forEach((shifter, i) => {
-            const semitoneOffset = (i - 6) / 12; // Spread shifters across octave
-            const shiftAmount = pitchShift + semitoneOffset;
-            
-            // Use delay time modulation for pitch shifting
-            const delayTime = 0.02 * Math.pow(2, -shiftAmount);
-            shifter.delay.delayTime.setTargetAtTime(
-                Math.max(0.001, Math.min(0.5, delayTime)),
-                audioContext.currentTime,
-                smoothing
-            );
-            
-            // Adjust gain for formant preservation
-            const gainValue = Math.exp(-Math.abs(semitoneOffset) * 2) / pitchShifters.length;
-            shifter.gain.gain.setTargetAtTime(gainValue, audioContext.currentTime, smoothing);
-        });
+
+    const analyser = autotuneState.autotuneAnalyser;
+
+    // Use frequency-domain peak detection (imported from autotune module).
+    // The local autoCorrelate() used a 0.9 MAD threshold that rarely triggers on
+    // real music signals. getByteFrequencyData + detectPitch is more reliable.
+    const freqData = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(freqData);
+    const detectedFreq = detectPitch(freqData, audioContext.sampleRate, analyser.fftSize);
+
+    if (detectedFreq > 20 && detectedFreq < 20000) {
+        // Use the fixed module function (handles all octaves correctly via MIDI math).
+        // The local getNearestNoteFrequency() was broken for notes below the root freq:
+        // JS % on negative semitones returns negative noteInOctave, causing wrong octave snaps.
+        const targetFreq = findNearestNoteInScale(
+            detectedFreq,
+            autotuneKey.value,
+            autotuneScale.value
+        );
+        correctPitchToTarget(autotuneState, detectedFreq, targetFreq);
     }
-    
+
     // Continue loop
     setTimeout(() => correctPitch(), 20); // 50Hz update rate
 }

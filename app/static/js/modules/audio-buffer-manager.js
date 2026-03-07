@@ -192,18 +192,24 @@ export class AudioBufferManager {
             const processedBuffer = await Tone.Offline(async ({ Transport }) => {
                 // Create a player for the section
                 const player = new Tone.Player(sectionBuffer).toDestination();
-                player.playbackRate = stretchRatio; // Timestretch
-                
-                // Add pitch shifting if needed (independent of tempo)
-                let output = player;
-                if (pitchShift !== 0) {
+                player.playbackRate = stretchRatio; // Changes tempo AND pitch together
+
+                // BUG-002 FIX: Apply pitch correction to cancel the pitch change introduced
+                // by playbackRate, so the final output has the original pitch at a new tempo
+                // (true timestretch). Formula: playbackRate=R shifts pitch by 12*log2(R) semitones,
+                // so we apply -12*log2(R) to cancel it, then add any user-requested pitchShift.
+                const pitchCorrection = -12 * Math.log2(stretchRatio); // semitones to cancel tempo shift
+                const totalPitchShift = pitchShift + pitchCorrection;
+
+                // Only add a PitchShift node when there is a meaningful shift to apply
+                // (threshold 0.01 semitones ≈ 0.06% freq, below human pitch JND)
+                if (Math.abs(totalPitchShift) > 0.01) {
                     const pitchShifter = new Tone.PitchShift({
-                        pitch: pitchShift
+                        pitch: totalPitchShift
                     });
                     player.disconnect();
                     player.connect(pitchShifter);
                     pitchShifter.toDestination();
-                    output = pitchShifter;
                 }
 
                 // Start playback

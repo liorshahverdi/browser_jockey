@@ -57,7 +57,7 @@ export class PlaybackController {
             const loopDuration = this.loopEnd - this.loopStart;
             
             // Account for playback rate in position calculation
-            const effectiveElapsed = elapsedTime * (this.playbackRate || 1.0);
+            const effectiveElapsed = elapsedTime * (this.currentPlaybackRate || 1.0);
             
             // As time elapsed, we moved forward through the reversed buffer
             // So reversePosition increases from reverseStartOffset

@@ -154,11 +154,15 @@ export function updateMicVolume(micGain, volume) {
  * @param {Object} micState - Microphone state object
  * @returns {Object} Recording state object
  */
-export function startMicRecording(micState) {
+export function startMicRecording(micState, overrideStream = null) {
     if (!micState || !micState.micStream) {
         throw new Error('Microphone not enabled');
     }
-    
+
+    // Use overrideStream when provided (e.g., processed auto-tune output stream).
+    // Falls back to the raw mic MediaStream if no override is given.
+    const recordStream = overrideStream || micState.micStream;
+
     const recordingState = {
         chunks: [],
         blob: null,
@@ -184,7 +188,7 @@ export function startMicRecording(micState) {
         try {
             if (mimeType === '' || MediaRecorder.isTypeSupported(mimeType)) {
                 const options = mimeType ? { mimeType } : {};
-                mediaRecorder = new MediaRecorder(micState.micStream, options);
+                mediaRecorder = new MediaRecorder(recordStream, options);
                 selectedMimeType = mimeType || 'browser-default';
                 console.log(`Using MIME type: ${selectedMimeType}`);
                 break;
