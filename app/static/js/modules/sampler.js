@@ -44,8 +44,12 @@ export function playSamplerNote(samplerAudioBuffer, scaleIndex, isUpperOctave, s
         const sustainLevel = samplerVolume * adsrParams.sustain;
         noteGain.gain.linearRampToValueAtTime(sustainLevel, now + adsrParams.attack + adsrParams.decay);
         
-        // Calculate when to start release (at the end of the buffer duration)
-        const releaseStartTime = now + samplerAudioBuffer.duration - adsrParams.release;
+        // Calculate when to start release. Clamp so it never falls before attack+decay
+        // completes — if release > buffer.duration the raw value would be in the past,
+        // causing Web Audio to skip attack/decay entirely (BUG-005).
+        const minReleaseStart = now + adsrParams.attack + adsrParams.decay;
+        const naturalRelease = now + samplerAudioBuffer.duration - adsrParams.release;
+        const releaseStartTime = Math.max(minReleaseStart, naturalRelease);
         
         // Sustain (hold at sustain level until release)
         noteGain.gain.setValueAtTime(sustainLevel, releaseStartTime);
@@ -57,7 +61,9 @@ export function playSamplerNote(samplerAudioBuffer, scaleIndex, isUpperOctave, s
     } else {
         // Standard exponential decay (original behavior)
         noteGain.gain.setValueAtTime(samplerVolume, audioContext.currentTime);
-        noteGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + samplerAudioBuffer.duration);
+        // 0.0001 = −80 dBFS ≈ perceptual silence; 0.01 (−40 dBFS) left an audible
+        // discontinuity click when the source stopped abruptly (BUG-012).
+        noteGain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + samplerAudioBuffer.duration);
     }
     
     // Connect: source -> gain -> merger (master output)

@@ -1,6 +1,6 @@
-# QA Bug Report — Browser Jockey v3.27.8
+# QA Bug Report — Browser Jockey v3.27.9
 
-**Date:** 2026-03-07
+**Date:** 2026-03-07 (updated 2026-03-07)
 **Codebase:** ~6,000 LOC across 19 JS modules
 **Architecture:** Flask server + Web Audio API + Tone.js + Three.js (all signal processing client-side)
 
@@ -13,21 +13,34 @@ All bugs were **verified by reading the actual source files**, with exact file p
 | Severity | Count | IDs |
 |----------|-------|-----|
 | 🔴 Critical | 4 | BUG-001 – BUG-004 |
-| 🟠 High | 7 | BUG-005 – BUG-011 |
+| 🟠 High | 8 | BUG-005 – BUG-011, BUG-021 |
 | 🟡 Medium | 4 | BUG-012 – BUG-015 |
 | ⚪ Low / Polish | 5 | BUG-016 – BUG-020 |
-| **Total** | **20** | |
+| **Total** | **21** | |
 
-## Fix Status (Critical Bugs)
+## Fix Status
 
-| Bug | Status | Fixed In | Test Coverage |
-|-----|--------|----------|---------------|
-| BUG-001 | ✅ **FIXED** 2026-03-07 | `autotune.js` | `tests/unit-tests.html` — 12 tests |
-| BUG-002 | ✅ **FIXED** 2026-03-07 | `timestretch-processor.js`, `audio-buffer-manager.js` | `tests/unit-tests.html` — 4 tests |
-| BUG-003 | ✅ **FIXED** 2026-03-07 | `vocoder.js` | `tests/unit-tests.html` — 7 tests |
-| BUG-004 | ✅ **FIXED** 2026-03-07 | `playback-controller.js` | `tests/unit-tests.html` — 5 tests |
+| Bug | Severity | Status | Fixed In |
+|-----|----------|--------|----------|
+| BUG-001 | 🔴 Critical | ✅ **FIXED** 2026-03-07 | `autotune.js`, `app.js` |
+| BUG-002 | 🔴 Critical | ✅ **FIXED** 2026-03-07 | `timestretch-processor.js`, `audio-buffer-manager.js` |
+| BUG-003 | 🔴 Critical | ✅ **FIXED** 2026-03-07 | `vocoder.js` |
+| BUG-004 | 🔴 Critical | ✅ **FIXED** 2026-03-07 | `playback-controller.js` |
+| BUG-006 | 🟠 High | ✅ **FIXED** 2026-03-07 | `autotune.js`, `app.js` (subsumes BUG-001 fix) |
+| BUG-009 | 🟠 High | ✅ **FIXED** 2026-03-07 | `vocoder.js` (subsumes BUG-003 fix) |
+| BUG-021 | 🟠 High | ✅ **FIXED** 2026-03-07 | `microphone.js`, `app.js` |
+| BUG-005 | 🟠 High | ✅ **FIXED** 2026-03-07 | `sampler.js` |
+| BUG-007 | 🟠 High | ✅ **FIXED** 2026-03-07 | `constants.js` |
+| BUG-008 | 🟠 High | ⏳ Open | — |
+| BUG-010 | 🟠 High | ⏳ Open | — |
+| BUG-011 | 🟠 High | ⏳ Open | — |
+| BUG-012 | 🟡 Medium | ✅ **FIXED** 2026-03-07 | `sampler.js` |
+| BUG-013 | 🟡 Medium | ✅ **FIXED** 2026-03-07 | `audio-buffer-manager.js` |
+| BUG-014 | 🟡 Medium | ⏳ Open | — |
+| BUG-015 | 🟡 Medium | ✅ **FIXED** 2026-03-07 | `config.py` |
+| BUG-016–020 | ⚪ Low | ⏳ Open | — |
 
-Run tests: start the dev server and open `http://localhost:5000/tests/unit-tests.html`
+Run tests: start the dev server and open `http://localhost:5001/tests/unit-tests.html`
 
 ---
 
@@ -59,12 +72,29 @@ The "pitch shifter" implementation consists of 12× nodes each built from `{dela
 - Secondary: Change `musicScales[scaleKey]` → `musicScales[scaleType]` (where `scaleType` is the scale type string). Apply root note MIDI offset derived from `noteFrequencies[key]` separately.
 
 > **✅ FIXED 2026-03-07** — `modules/autotune.js`, `app.js`
-> - Replaced 12× delay-node chain with `Tone.PitchShift` (phase-vocoder pitch shifting). Falls back to dry signal if Tone.js unavailable.
-> - `findNearestNoteInScale()`: changed `musicScales[scaleKey]` → `musicScales[scaleType]`; added `NOTE_NAMES` array for root-key chromatic offset calculation.
-> - `correctPitchToTarget()`: now sets `pitchShifter.pitch` in semitones instead of manipulating delay gains.
-> - **Runtime fix (2026-03-07):** `audioSource.connect(pitchShifter.input)` threw `"Overload resolution failed"` because in Tone.js v15, `Effect.input` is a `Tone.Gain` wrapper, not a native `AudioNode`. Fixed to `audioSource.connect(pitchShifter.input.input)` — the `.input.input` chain reaches the underlying native `GainNode`. A fallback `|| pitchShifter.input` handles version differences.
-> - **app.js integration fix (2026-03-07):** `correctPitch()` in `app.js` still referenced the old `pitchShifters` array (12 delay nodes), causing `ReferenceError: pitchShifters is not defined` on first correction cycle. Replaced `pitchShifters.forEach(...)` block with `correctPitchToTarget(autotuneState, detectedFreq, targetFreq)` — uses the already-imported module function.
-> - Tests: `app/static/tests/unit-tests.html` — BUG-001 suite (12 tests) + BUG-001c suite (5 tests validating the Tone.js v15 connection bridge).
+>
+> **Fix 1 — pitch shifter node:**
+> Replaced 12× delay-node chain with `Tone.PitchShift` (phase-vocoder). Falls back to dry signal if Tone.js unavailable.
+>
+> **Fix 2 — scale lookup:**
+> `findNearestNoteInScale()`: `musicScales[scaleKey]` → `musicScales[scaleType]`; added `NOTE_NAMES` array; MIDI-based `((n % 12) + 12) % 12` for always-positive octave class (0–11).
+>
+> **Fix 3 — Tone.js v15 native node bridge:**
+> `audioSource.connect(pitchShifter.input)` threw `"Overload resolution failed"` — `Effect.input` in Tone.js v15 is a `Tone.Gain` wrapper, not a native `AudioNode`. Fixed: `audioSource.connect(pitchShifter.input.input || pitchShifter.input)`.
+>
+> **Fix 4 — app.js `pitchShifters` reference error:**
+> `correctPitch()` referenced the old `pitchShifters` array (12 delay nodes), causing `ReferenceError` on first correction cycle. Replaced `pitchShifters.forEach(...)` with `correctPitchToTarget(autotuneState, detectedFreq, targetFreq)`.
+>
+> **Fix 5 — wrong autotune interception point (discovered during live testing):**
+> `enableAutotune()` used `gain1`/`gain2` as the audio source. These are the *first* nodes in the effects chain (`source → gain1 → panner → ... → finalMix1 → merger`). `audioSource.disconnect(merger)` silently failed because `gain1` connects to `panner1`, not directly to `merger`. The original `finalMix1 → merger` path stayed active at full volume, completely masking the pitch-corrected signal. Fixed: source changed to `finalMix1`/`finalMix2` (last node before `merger`), which does connect directly to `merger`. `disableAutotune()` reconnect also corrected: `finalMix1 → merger` (was `gain1 → merger`).
+>
+> **Fix 6 — pitch detection almost never triggered (discovered during live testing):**
+> `correctPitch()` used `autoCorrelate()` (time-domain AMDF with 0.9 threshold). This threshold almost never triggers on real music signals (harmonics, noise). Result: `pitchShifter.pitch` was never updated from 0. Fixed: replaced with `getByteFrequencyData` + `detectPitch()` from the autotune module (frequency-domain peak, no threshold to fail).
+>
+> **Fix 7 — `getNearestNoteFrequency()` wrong for sub-root notes (discovered during live testing):**
+> `Math.round(semitones) % 12` returns negative values in JS when `semitones < 0` (JS `%` preserves sign of dividend). A note at E3 with key=G4 gave `noteInOctave = -3`, which matches no scale interval, causing incorrect octave snapping (e.g. G2 instead of E3). Fixed: `correctPitch()` now calls `findNearestNoteInScale()` from the module, which uses `((Math.round(midiNote) % 12) + 12) % 12` — always 0–11.
+>
+> Tests: `app/static/tests/unit-tests.html` — BUG-001 suite (12 tests) + BUG-001b (5 tests) + BUG-001c (5 tests, Tone.js v15 bridge).
 
 ---
 
@@ -191,6 +221,9 @@ const naturalRelease = now + samplerAudioBuffer.duration - adsrParams.release;
 releaseStartTime = Math.max(minReleaseStart, naturalRelease);
 ```
 
+> **✅ FIXED 2026-03-07** — `modules/sampler.js` line 48
+> Added `minReleaseStart = now + attack + decay` and `releaseStartTime = Math.max(minReleaseStart, naturalRelease)`. Release can never be scheduled before the attack+decay phases complete, regardless of sample length.
+
 ---
 
 ### BUG-006 — Autotune scale lookup always returns original frequency
@@ -203,6 +236,8 @@ releaseStartTime = Math.max(minReleaseStart, naturalRelease);
 `musicScales[scaleKey]` where `scaleKey` is a MIDI note name like `'C'`. The `musicScales` object is keyed by scale type strings. Every call hits the `!scale` guard and returns the unmodified input frequency. No scale-aware pitch snapping ever occurs.
 
 **Fix:** Use `musicScales[scaleType]` for the scale array, and derive the root-note transposition from `noteFrequencies[keyNote]`.
+
+> **✅ FIXED 2026-03-07** — subsumed by BUG-001 fixes 2 and 7. `findNearestNoteInScale()` in `autotune.js` and `correctPitch()` in `app.js` both now use `musicScales[scaleType]` with correct MIDI-based modulo arithmetic.
 
 ---
 
@@ -228,6 +263,9 @@ This array has 15 elements and skips index 13. A chromatic octave should be exac
 ```js
 chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 ```
+
+> **✅ FIXED 2026-03-07** — `modules/constants.js` line 5
+> Corrected to 13 elements `[0..12]` (12 semitones + octave root). The spurious indices 14 and 15 (non-standard pitches) are removed.
 
 ---
 
@@ -327,6 +365,37 @@ cancel();
 
 ---
 
+### BUG-021 — Mic recording captures raw stream; auto-tune not included in recording
+
+**File:** `modules/microphone.js` line 187; `app.js` `startMicRecordingHandler()`
+
+**Root cause:**
+`startMicRecording()` passes `micState.micStream` (the raw `getUserMedia` `MediaStream`) directly to `MediaRecorder`. This stream is the **pre-Web Audio** microphone signal — it branches off before the Web Audio graph even sees it. Auto-tune, vocoder, EQ, and all other Web Audio processing exist inside the graph and are never present on the raw stream. A user who enables auto-tune on the mic, records, then loads to a track hears the unprocessed vocal on playback.
+
+Additionally, when the mic is subsequently disabled (e.g., after loading the recording to a track), `disableAutotune()` is called automatically because the mic source is gone. By the time Track 1 plays, auto-tune is already off.
+
+**Reproduction steps:**
+1. Enable microphone
+2. Enable auto-tune (source: mic, key: G, strength: 100%)
+3. Record a 15-second vocal
+4. Load recording to Track 1
+5. Play Track 1 — output is unprocessed; no pitch correction audible
+
+**Expected behavior:** When auto-tune is active on the mic source during recording, the recording should capture the pitch-corrected signal.
+
+**Fix:**
+- Add optional `overrideStream` parameter to `startMicRecording()` (defaults to `micState.micStream`)
+- In `startMicRecordingHandler()`, when auto-tune is active on mic: create a `MediaStreamDestination`, connect `autotuneState.dryGain` and `autotuneState.wetGain` to it, pass its stream as `overrideStream` — captures the exact auto-tuned output with no other-track bleed
+- Disconnect `autotuneRecordDest` in `stopMicRecordingHandler()` cleanup
+
+> **✅ FIXED 2026-03-07** — `modules/microphone.js`, `app.js`
+> - `startMicRecording(micState, overrideStream = null)`: `MediaRecorder` now uses `overrideStream || micState.micStream`
+> - `startMicRecordingHandler()`: when `autotuneEnabled && autotuneSource === 'mic'`, creates a dedicated `MediaStreamDestination` tapped from `autotuneState.dryGain + autotuneState.wetGain` and passes it as `overrideStream`
+> - `stopMicRecordingHandler()`: disconnects `dryGain` and `wetGain` from the recording destination on stop
+> - Auto-tune is now baked into the recording; playback of the loaded track sounds pitch-corrected without requiring auto-tune to be re-enabled on the track
+
+---
+
 ## 🟡 MEDIUM — Incorrect Output / Poor UX
 
 ---
@@ -351,6 +420,9 @@ gainNode.gain.exponentialRampToValueAtTime(0.01, endTime);
 gainNode.gain.exponentialRampToValueAtTime(0.0001, endTime); // −80 dBFS ≈ perceptual silence
 ```
 
+> **✅ FIXED 2026-03-07** — `modules/sampler.js` line 60
+> Changed ramp target `0.01` → `0.0001` (−40 dBFS → −80 dBFS). The source node now stops at perceptual silence with no audible discontinuity.
+
 ---
 
 ### BUG-013 — Cache key collision possible for very close loop points
@@ -372,6 +444,9 @@ const key = `${startTime.toFixed(3)}_${endTime.toFixed(3)}_...`;
 // After:
 const key = `${startTime.toFixed(4)}_${endTime.toFixed(4)}_...`;
 ```
+
+> **✅ FIXED 2026-03-07** — `modules/audio-buffer-manager.js` lines 84, 150
+> All `toFixed(3)` calls in cache key construction changed to `toFixed(4)` (0.1ms → 0.05ms resolution). Applies to both `loopBuffers` and `timestretched` cache keys.
 
 ---
 
@@ -413,6 +488,9 @@ import secrets
 
 SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
 ```
+
+> **✅ FIXED 2026-03-07** — `config.py` line 2
+> `secrets.token_hex(32)` generates a cryptographically random 256-bit key at startup when `SECRET_KEY` env var is not set. Set `SECRET_KEY` in the environment for persistent sessions across restarts.
 
 ---
 
@@ -507,9 +585,11 @@ Add responsive breakpoints:
 
 - All bugs include exact file paths and line numbers confirmed against source files
 - BUG-004 and BUG-007 are single-line fixes with zero risk of regression
-- BUG-001 and BUG-002 require non-trivial reimplementation; test with A/B comparison against known-pitch input
+- BUG-001 required 7 distinct fixes across two files; the delay-node replacement alone was insufficient — the interception point, pitch detection algorithm, and scale snap function all independently prevented the feature from working
+- BUG-002 requires non-trivial reimplementation; test with A/B comparison against known-tempo input
 - BUG-008 fix (LRU cache) must be benchmarked against memory-limited devices (≤ 4GB RAM)
 - BUG-015 requires environment variable support in deployment; document in README
+- BUG-021: the `MediaRecorder(micState.micStream)` pattern is correct for raw recording; the fix only changes behaviour when auto-tune is explicitly active on the mic source
 - The recording decode path (Blob → FileReader → `decodeAudioData`) is architecturally correct and is **not** a bug
 - The RAF loop exit check in `loop-controls.js` **does** exist (`mode !== 'reverse'`); only the missing stored ID is a bug (BUG-010)
 - `this.reverseStartOffset = null` in `playback-controller.js` line 90 is correctly scoped with `this.`

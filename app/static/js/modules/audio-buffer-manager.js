@@ -81,7 +81,7 @@ export class AudioBufferManager {
         }
         
         // Check cache first
-        const loopKey = `${startTime.toFixed(3)}-${endTime.toFixed(3)}`;
+        const loopKey = `${startTime.toFixed(4)}-${endTime.toFixed(4)}`;
         if (bufferData.loopBuffers.has(loopKey)) {
             console.log(`♻️ Using cached loop buffer for ${trackId}: ${loopKey}`);
             return bufferData.loopBuffers.get(loopKey);
@@ -147,7 +147,7 @@ export class AudioBufferManager {
         }
 
         // Create cache key
-        const cacheKey = `${startTime.toFixed(3)}-${endTime.toFixed(3)}-s${stretchRatio.toFixed(2)}-p${pitchShift.toFixed(1)}-${reverse ? 'r' : 'f'}`;
+        const cacheKey = `${startTime.toFixed(4)}-${endTime.toFixed(4)}-s${stretchRatio.toFixed(2)}-p${pitchShift.toFixed(1)}-${reverse ? 'r' : 'f'}`;
         
         // Check cache first
         if (bufferData.timestretched.has(cacheKey)) {
