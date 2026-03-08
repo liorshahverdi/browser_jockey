@@ -1,8 +1,26 @@
 // Musical scales and note mappings
+//
+// Canonical scale definitions: semitone offsets within one octave (0–11).
+// • musicScales: used by autotune — pitch-class set, no octave duplication
+// • scales: used by sampler keyboard — extends each diatonic scale with the
+//   octave root (12) so the 8th key plays the tonic one octave up.
+//   Pentatonic variants include extra notes beyond one octave for wider range.
+const _diatonic = {
+    chromatic:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    major:      [0, 2, 4, 5, 7, 9, 11],
+    minor:      [0, 2, 3, 5, 7, 8, 10],
+    pentatonic: [0, 2, 4, 7, 9]
+};
+
+// Autotune: canonical 0–11 pitch-class intervals
+export const musicScales = _diatonic;
+
+// Sampler: diatonic scales extended to include the octave root (12);
+// pentatonic variants extend further for wider keyboard range.
 export const scales = {
-    major: [0, 2, 4, 5, 7, 9, 11, 12],
-    minor: [0, 2, 3, 5, 7, 8, 10, 12],
-    chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    major:              [..._diatonic.major, 12],
+    minor:              [..._diatonic.minor, 12],
+    chromatic:          [..._diatonic.chromatic, 12],
     'pentatonic-major': [0, 2, 4, 7, 9, 12, 14, 16],
     'pentatonic-minor': [0, 3, 5, 7, 10, 12, 15, 17]
 };

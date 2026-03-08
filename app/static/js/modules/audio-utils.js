@@ -88,20 +88,25 @@ export function drawWaveformSimple(canvas, audioBuffer) {
     ctx.stroke();
 }
 
-// Detect BPM using autocorrelation
+// Detect BPM using energy-envelope peak picking with half/double-tempo disambiguation
 export function detectBPM(audioBuffer) {
     const data = audioBuffer.getChannelData(0);
     const sampleRate = audioBuffer.sampleRate;
-    
-    // Analyze first 30 seconds of audio
-    const samplesPerAnalysis = Math.min(sampleRate * 30, data.length);
+
+    // Preferred BPM range for DJ / dance music (configurable)
+    const BPM_MIN = 70;
+    const BPM_MAX = 180;
+
+    // Analyse up to 60 s — a longer window gives more peaks and reduces the
+    // chance of a half-time groove producing too few intervals to disambiguate.
+    const samplesPerAnalysis = Math.min(sampleRate * 60, data.length);
     const samples = data.slice(0, samplesPerAnalysis);
-    
-    // Calculate energy in windows
+
+    // RMS energy envelope
     const energyBuffer = [];
     const windowSize = 2048;
     const hopSize = 512;
-    
+
     for (let i = 0; i < samples.length - windowSize; i += hopSize) {
         let energy = 0;
         for (let j = 0; j < windowSize; j++) {
@@ -110,35 +115,46 @@ export function detectBPM(audioBuffer) {
         }
         energyBuffer.push(Math.sqrt(energy / windowSize));
     }
-    
-    // Find dynamic threshold
+
+    // Dynamic threshold
     const mean = energyBuffer.reduce((sum, val) => sum + val, 0) / energyBuffer.length;
     const variance = energyBuffer.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / energyBuffer.length;
     const stdDev = Math.sqrt(variance);
     const threshold = mean + stdDev * 0.5;
-    
-    // Find peaks above threshold
+
+    // Minimum frame distance between accepted peaks: beats cannot exceed 240 BPM.
+    // Without this constraint, sub-beat energy spikes (hi-hats, transients) create
+    // very short intervals that pollute the histogram and skew the tempo estimate.
+    const minPeakDistance = Math.ceil((sampleRate / hopSize) * (60 / 240));
+
+    // Find local-maximum peaks above threshold, enforcing minimum spacing.
+    // When two candidate peaks are closer than minPeakDistance, keep the stronger one.
     const peaks = [];
     for (let i = 1; i < energyBuffer.length - 1; i++) {
         if (energyBuffer[i] > threshold &&
-            energyBuffer[i] > energyBuffer[i - 1] && 
+            energyBuffer[i] > energyBuffer[i - 1] &&
             energyBuffer[i] > energyBuffer[i + 1]) {
-            peaks.push(i);
+            if (peaks.length === 0 || i - peaks[peaks.length - 1] >= minPeakDistance) {
+                peaks.push(i);
+            } else if (energyBuffer[i] > energyBuffer[peaks[peaks.length - 1]]) {
+                // Closer than min distance but stronger — replace
+                peaks[peaks.length - 1] = i;
+            }
         }
     }
-    
+
     if (peaks.length < 4) return 0;
-    
-    // Calculate intervals between consecutive peaks
+
+    // Inter-peak intervals (in energy-frame units)
     const intervals = [];
     for (let i = 1; i < peaks.length; i++) {
         intervals.push(peaks[i] - peaks[i - 1]);
     }
-    
-    // Use histogram to find most common interval
+
+    // Histogram: bin intervals within ±3 frames as the same beat period
     const histogram = {};
     const tolerance = 3;
-    
+
     intervals.forEach(interval => {
         let found = false;
         for (const key in histogram) {
@@ -152,8 +168,8 @@ export function detectBPM(audioBuffer) {
             histogram[interval] = 1;
         }
     });
-    
-    // Find interval with highest count
+
+    // Primary candidate: interval with the highest count
     let maxCount = 0;
     let mostCommonInterval = 0;
     for (const interval in histogram) {
@@ -162,17 +178,36 @@ export function detectBPM(audioBuffer) {
             mostCommonInterval = parseInt(interval);
         }
     }
-    
+
     if (mostCommonInterval === 0) return 0;
-    
-    // Convert interval to BPM
+
+    // Half/double-tempo disambiguation:
+    // A half-time groove (heavy transient every 2 beats) can make the detector lock
+    // onto an interval 2× the true beat period (reporting half the real BPM).
+    // Check whether half the detected interval also has significant histogram support —
+    // if ≥ 40 % as many intervals cluster there, the true beat is at the shorter period.
+    const halfInterval = Math.round(mostCommonInterval / 2);
+    if (halfInterval >= minPeakDistance) {
+        let halfCount = 0;
+        for (const key in histogram) {
+            if (Math.abs(parseInt(key) - halfInterval) <= tolerance) {
+                halfCount += histogram[key];
+            }
+        }
+        if (halfCount >= maxCount * 0.4) {
+            mostCommonInterval = halfInterval;
+        }
+    }
+
+    // Convert to BPM
     const secondsPerBeat = (mostCommonInterval * hopSize) / sampleRate;
     let bpm = 60 / secondsPerBeat;
-    
-    // Normalize to typical BPM range (60-180)
-    while (bpm < 60) bpm *= 2;
-    while (bpm > 180) bpm /= 2;
-    
+
+    // Normalise to preferred range.
+    // BPM_MIN = 70 (not 60) so a half-time misdetection at 64 BPM is doubled to 128.
+    while (bpm < BPM_MIN) bpm *= 2;
+    while (bpm > BPM_MAX) bpm /= 2;
+
     return Math.round(bpm);
 }
 

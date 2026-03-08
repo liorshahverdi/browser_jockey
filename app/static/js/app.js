@@ -399,7 +399,7 @@ let effectChain1, effectChain2, effectChainMaster;
 
 // Microphone state
 let micState = null;
-let micAnimationId = null;
+let micWaveformController = null;
 let micEnabled = false;
 let micRecordingState = null;
 let micRecordingAnimationId = null;
@@ -492,6 +492,7 @@ let samplerScale = 'pentatonic-major';
 let samplerRoot = 'C';
 let samplerVolume = 0.6; // Default 60%
 let activeKeys = new Set();
+const samplerVoiceRegistry = new Map(); // voiceId -> AudioBufferSourceNode (voice stealing)
 
 const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
@@ -1224,9 +1225,9 @@ function disableMicrophone() {
         stopMicRecordingHandler();
     }
     
-    if (micAnimationId) {
-        cancelAnimationFrame(micAnimationId);
-        micAnimationId = null;
+    if (micWaveformController) {
+        micWaveformController.cancel();
+        micWaveformController = null;
     }
     
     // Clean up tab capture if it's active
@@ -1420,7 +1421,7 @@ function drawMicWaveform() {
         return;
     }
     
-    micAnimationId = drawMicWaveformModule(micWaveform, micState.micAnalyser, micEnabled);
+    micWaveformController = drawMicWaveformModule(micWaveform, micState.micAnalyser);
 }
 
 // Update microphone volume
@@ -2867,7 +2868,8 @@ function playSamplerNoteWrapper(scaleIndex, isUpperOctave = false) {
         noteNames,
         merger,  // Pass merger for master routing
         samplerADSREnabled,
-        samplerADSRParams
+        samplerADSRParams,
+        samplerVoiceRegistry  // Voice stealing: caps concurrent nodes at MAX_VOICES
     );
 }
 
@@ -2892,7 +2894,17 @@ async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, 
     console.log('Got arrayBuffer:', arrayBuffer.byteLength, 'bytes');
     
     const tempContext = new (window.AudioContext || window.webkitAudioContext)();
-    const audioBuffer = await tempContext.decodeAudioData(arrayBuffer);
+    let audioBuffer;
+    try {
+        audioBuffer = await tempContext.decodeAudioData(arrayBuffer);
+    } catch (decodeErr) {
+        tempContext.close();
+        throw new Error(
+            `Could not decode audio file "${file.name}". ` +
+            `The format may not be supported by this browser. ` +
+            `Try MP3, WAV, OGG, or AAC. (${decodeErr.message})`
+        );
+    }
     console.log('Decoded audio:', audioBuffer.duration, 'seconds');
     
     // Store audio buffer for zoom
@@ -4015,7 +4027,7 @@ audioFile1.addEventListener('change', async (e) => {
             await loadAudioFile(file, waveform1, bpm1Display, audioElement1, zoomState1, key1Display);
         } catch (error) {
             console.error('Error loading audio file:', error);
-            alert('⚠️ Error analyzing audio file: ' + error.message + '\n\nThe file will still play, but waveform/BPM/key detection may not work.');
+            alert('⚠️ ' + error.message);
         }
         
         // Initialize buffer manager and playback controller for reverse playback
@@ -4177,7 +4189,7 @@ audioFile2.addEventListener('change', async (e) => {
             await loadAudioFile(file, waveform2, bpm2Display, audioElement2, zoomState2, key2Display);
         } catch (error) {
             console.error('Error loading audio file:', error);
-            alert('⚠️ Error analyzing audio file: ' + error.message + '\n\nThe file will still play, but waveform/BPM/key detection may not work.');
+            alert('⚠️ ' + error.message);
         }
         
         // Initialize buffer manager and playback controller for reverse playback

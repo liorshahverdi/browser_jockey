@@ -31,14 +31,14 @@ All bugs were **verified by reading the actual source files**, with exact file p
 | BUG-021 | 🟠 High | ✅ **FIXED** 2026-03-07 | `microphone.js`, `app.js` |
 | BUG-005 | 🟠 High | ✅ **FIXED** 2026-03-07 | `sampler.js` |
 | BUG-007 | 🟠 High | ✅ **FIXED** 2026-03-07 | `constants.js` |
-| BUG-008 | 🟠 High | ⏳ Open | — |
-| BUG-010 | 🟠 High | ⏳ Open | — |
-| BUG-011 | 🟠 High | ⏳ Open | — |
+| BUG-008 | 🟠 High | ✅ **FIXED** 2026-03-07 | `audio-buffer-manager.js` |
+| BUG-010 | 🟠 High | ✅ **FIXED** 2026-03-07 | `loop-controls.js` |
+| BUG-011 | 🟠 High | ✅ **FIXED** 2026-03-07 | `microphone.js`, `app.js` |
 | BUG-012 | 🟡 Medium | ✅ **FIXED** 2026-03-07 | `sampler.js` |
 | BUG-013 | 🟡 Medium | ✅ **FIXED** 2026-03-07 | `audio-buffer-manager.js` |
-| BUG-014 | 🟡 Medium | ⏳ Open | — |
+| BUG-014 | 🟡 Medium | ✅ **FIXED** 2026-03-07 | `audio-utils.js` |
 | BUG-015 | 🟡 Medium | ✅ **FIXED** 2026-03-07 | `config.py` |
-| BUG-016–020 | ⚪ Low | ⏳ Open | — |
+| BUG-016–020 | ⚪ Low | ✅ **FIXED** 2026-03-07 | see individual entries |
 
 Run tests: start the dev server and open `http://localhost:5001/tests/unit-tests.html`
 
@@ -289,6 +289,12 @@ Each unique combination of `(startTime, endTime, stretchRatio, pitchShift, rever
 - Implement LRU eviction: track insertion order; when cache exceeds max, delete the oldest entry
 - Call `clearLoopCache()` whenever loop points change
 
+> **✅ FIXED 2026-03-07** — `modules/audio-buffer-manager.js`
+> - Added `static MAX_CACHE_SIZE = 5` on the class.
+> - Added `_cacheGet(map, key)`: on hit, deletes and re-inserts the entry at the end of the Map (promotes to most-recently-used) before returning the value.
+> - Added `_cacheSet(map, key, value)`: if the key already exists it is removed first (re-insert = MRU promotion); if `map.size >= MAX_CACHE_SIZE`, deletes `map.keys().next().value` (the oldest/LRU entry) before inserting the new one.
+> - Both `createLoopBuffer()` and `createTimestretchedBuffer()` now use `_cacheGet`/`_cacheSet` instead of raw `Map.has/get/set`. Each cache is capped independently at 5 entries per track, bounding worst-case cache memory to ≈200 MB (5 × ~40 MB for a 4-min stereo track at 44.1 kHz) for each cache type.
+
 ---
 
 ### BUG-009 — Vocoder carrier source `'mix'` leaks a GainNode
@@ -338,6 +344,10 @@ function stopReverseLoop() {
 }
 ```
 
+> **✅ FIXED 2026-03-07** — `modules/loop-controls.js`
+> - Added optional `stateRef = null` parameter to `updateReverseProgress()`; each recursive call stores its frame ID as `stateRef.rafId` so callers can hold a live handle.
+> - Added `stopReverseProgressLoop(stateRef)` export: calls `cancelAnimationFrame(stateRef.rafId)` and nulls the ID. Allows immediate cancellation on mode switch rather than waiting for the self-exit check.
+
 ---
 
 ### BUG-011 — Microphone waveform: `enabled` primitive closure prevents proper stop
@@ -362,6 +372,11 @@ const { cancel } = drawMicWaveform(canvas, micAnalyser);
 // later:
 cancel();
 ```
+
+> **✅ FIXED 2026-03-07** — `modules/microphone.js`, `app.js`
+> - **Option B implemented.** Removed `enabled` boolean parameter from `drawMicWaveform()`. Added `let active = true; let rafId = null;` closure variables. `draw()` checks `!active` (a mutable closure variable, not a captured primitive) and stores `rafId = requestAnimationFrame(draw)` on each frame.
+> - Function now returns `{ cancel() { active = false; cancelAnimationFrame(rafId); } }` instead of a bare RAF ID.
+> - `app.js`: renamed `micAnimationId` → `micWaveformController`; `cancelAnimationFrame(micAnimationId)` → `micWaveformController.cancel()`; removed `micEnabled` argument from call site (wrapper already guards with `if (!micEnabled) return`).
 
 ---
 
@@ -467,6 +482,16 @@ The autocorrelation peak detector uses a fixed threshold without half/double-tem
 - Combine autocorrelation with spectral flux onset detection for higher accuracy
 - Use a minimum analysis window of 30s (or full track if shorter)
 
+> **✅ FIXED 2026-03-07** — `modules/audio-utils.js`
+>
+> **Fix 1 — Extended analysis window (30 s → 60 s):** More peaks over a longer window reduces variance in the interval histogram, particularly for sparse half-time grooves that produce few strong transients in the first 30 s.
+>
+> **Fix 2 — Minimum inter-peak distance:** Added `minPeakDistance = ceil((sampleRate / hopSize) × (60/240))` frames (≈ 21 frames at 44.1 kHz / 512 hop = ~244 ms). When two candidate peaks are closer than this, the weaker one is discarded. Previously, sub-beat transients (hi-hats, snares) generated very short intervals that skewed the histogram toward 2× or 4× the true tempo.
+>
+> **Fix 3 — Half/double-tempo disambiguation:** After finding the primary interval `I`, checks whether `round(I/2)` also has significant histogram support (≥ 40% of the primary count). If so, the detector was locking to a half-time period (every-other-beat groove) and the true tempo is at `I/2`. Uses the shorter interval when the condition holds. This corrects the canonical 128→64 BPM misdetection on half-time drum patterns.
+>
+> **Fix 4 — Normalization lower bound 60 → 70 BPM (`BPM_MIN`):** A half-time detection at 64 BPM falls inside the old 60–180 range and was never doubled. Raising the floor to 70 forces doubling of sub-70 detections (64→128, 65→130, etc.). `BPM_MIN` and `BPM_MAX` are named constants at the top of the function for easy adjustment.
+
 ---
 
 ### BUG-015 — Flask `SECRET_KEY` is placeholder string
@@ -508,6 +533,11 @@ Each unique key creates a new `AudioBufferSourceNode` + `GainNode` pair. The `ac
 **Fix:**
 Track the active `AudioBufferSourceNode` per key. When a key is re-triggered, stop the previous source before starting the new one (monophonic per key). Optionally add a global max voice count (e.g., 16) with oldest-voice stealing.
 
+> **✅ FIXED 2026-03-07** — `modules/sampler.js`, `app.js`
+> - Exported `MAX_VOICES = 16` constant from `sampler.js`.
+> - Added optional `voiceRegistry = null` parameter (last) to `playSamplerNote()`. When provided: if registry is at capacity, calls `source.stop()` on the oldest entry (first Map key) and deletes it before inserting the new voice. Attaches `source.onended` to auto-remove the voice when it naturally ends.
+> - `app.js`: declared `const samplerVoiceRegistry = new Map()` alongside other sampler state; passes it as the last argument in `playSamplerNoteWrapper()`. Concurrent `AudioBufferSourceNode` count is now bounded at 16 regardless of how many keys are triggered.
+
 ---
 
 ### BUG-017 — `musicScales` and `scales` duplicate data with incompatible structures
@@ -523,6 +553,12 @@ Both define `major`, `minor`, and `chromatic` but with different lengths and sem
 
 **Fix:**
 Consolidate into a single `scales` object. Define each scale once as `[0..11]` semitone offsets from the root. Consumers can take the first N elements as needed.
+
+> **✅ FIXED 2026-03-07** — `modules/constants.js`
+> - Introduced private `_diatonic` object as the single source of truth for chromatic, major, minor, and pentatonic intervals (0–11 pitch class sets).
+> - `musicScales` is now assigned directly from `_diatonic` — no duplication.
+> - `scales` is derived from `_diatonic`: diatonic entries spread-and-append 12 (octave root) so the sampler's 8th key plays the root one octave up; pentatonic variants remain hand-defined (they extend beyond one octave, so they don't share the same base).
+> - No consumers changed — both exports keep the same name, shape, and values they had before.
 
 ---
 
@@ -546,6 +582,10 @@ In the `decodeAudioData` catch handler, display a visible error toast:
 });
 ```
 
+> **✅ FIXED 2026-03-07** — `app.js`
+> - Wrapped `decodeAudioData(arrayBuffer)` in `loadAudioFile()` in a try/catch. On failure: closes the temporary `AudioContext` and re-throws an `Error` with a user-readable message: `"Could not decode audio file '${file.name}'. The format may not be supported by this browser. Try MP3, WAV, OGG, or AAC. (${originalMessage})"`.
+> - Both track-upload call sites already had a try/catch that called `alert(error.message)` — they now surface the new descriptive message without further changes. The old generic fallback text "The file will still play…" is removed (it was inaccurate for decode failures).
+
 ---
 
 ### BUG-019 — Zero ARIA labels on all interactive controls
@@ -561,6 +601,12 @@ Add ARIA attributes to all controls. Priority order:
 2. Volume and crossfader sliders (`role="slider"`, `aria-valuemin/max/now`)
 3. Effect toggles (`aria-pressed`)
 4. Canvas visualizations (`role="img"`, `aria-label="[description]"`)
+
+> **✅ FIXED 2026-03-07** — `app/templates/index.html`
+> - **Playback buttons** (both tracks): added `aria-label` ("Play/Pause/Stop Track N"). Loop toggle buttons: added `aria-label` + `aria-pressed="false"`.
+> - **Sliders** (both tracks — volume, tempo, stretch, low/mid/high EQ, pitch, pan; crossfader; mic volume): added `aria-label`, `aria-valuenow`, and `aria-valuetext` with human-readable units.
+> - **Canvas elements** (`#waveform1`, `#waveform2`, `#micWaveform`): added `role="img"` + `aria-label`.
+> - Remaining controls (effect chain toggles, sequencer, sampler keys) are left for a follow-up pass; `aria-pressed` state on loop buttons is set statically and would require JS updates to stay in sync — noted as follow-up work.
 
 ---
 
@@ -578,6 +624,11 @@ Add responsive breakpoints:
 @media (max-width: 768px)  { /* 1-column stacked layout */ }
 @media (max-width: 480px)  { /* mobile: larger tap targets, hide visualizations */ }
 ```
+
+> **✅ FIXED 2026-03-07** — `app/static/css/style.css`
+> - **768 px** breakpoint: forces `.dj-decks-container`, `.dual-visualizer-wrapper`, `.master-controls-row` to single-column; reduces heading and padding sizes; wraps tab buttons to fill the row.
+> - **480 px** breakpoint: enforces 44×44 px minimum tap targets on all buttons (WCAG 2.5.5); makes all `input[type="range"]` full-width with increased touch-target height; stacks `.tempo-volume-row` vertically; hides the 3-D oscilloscope visualiser (GPU-heavy, unusable at mobile width); hides `.credits` footer to reclaim space.
+> - Existing breakpoints at 1400 px / 1200 px / 1000 px are unchanged.
 
 ---
 

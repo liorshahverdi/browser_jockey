@@ -1,8 +1,13 @@
 // Keyboard sampler functionality
 import { scales, keyboardMap } from './constants.js';
 
+export const MAX_VOICES = 16;
+
 // Play a sampler note
-export function playSamplerNote(samplerAudioBuffer, scaleIndex, isUpperOctave, samplerScale, samplerRoot, samplerVolume, audioContext, recordingDestination, noteNames, merger = null, adsrEnabled = false, adsrParams = null) {
+// voiceRegistry: optional Map owned by the caller for voice-stealing. When the
+// Map reaches MAX_VOICES the oldest (first-inserted) voice is stopped before the
+// new one starts, bounding the number of concurrent AudioBufferSourceNodes.
+export function playSamplerNote(samplerAudioBuffer, scaleIndex, isUpperOctave, samplerScale, samplerRoot, samplerVolume, audioContext, recordingDestination, noteNames, merger = null, adsrEnabled = false, adsrParams = null, voiceRegistry = null) {
     if (!samplerAudioBuffer) return;
     
     // Get the scale intervals
@@ -82,9 +87,22 @@ export function playSamplerNote(samplerAudioBuffer, scaleIndex, isUpperOctave, s
         noteGain.connect(recordingDestination);
     }
     
+    // Voice stealing: evict the oldest voice when at the polyphony limit
+    if (voiceRegistry) {
+        if (voiceRegistry.size >= MAX_VOICES) {
+            const oldestId = voiceRegistry.keys().next().value;
+            const oldestSource = voiceRegistry.get(oldestId);
+            try { oldestSource.stop(); } catch (e) { /* already stopped */ }
+            voiceRegistry.delete(oldestId);
+        }
+        const voiceId = `${scaleIndex}-${isUpperOctave ? 1 : 0}-${audioContext.currentTime.toFixed(6)}`;
+        voiceRegistry.set(voiceId, source);
+        source.onended = () => voiceRegistry.delete(voiceId);
+    }
+
     // Play
     source.start(0);
-    
+
     console.log(`Playing note: scale index ${scaleIndex}, semitone offset ${semitoneOffset}, rate ${playbackRate.toFixed(3)}`);
 }
 

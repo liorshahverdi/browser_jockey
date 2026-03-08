@@ -66,7 +66,7 @@
                             </div>
                         </div>
                         <div class="waveform-container">
-                            <canvas id="waveform1" class="waveform-canvas"></canvas>
+                            <canvas id="waveform1" class="waveform-canvas" role="img" aria-label="Track 1 waveform"></canvas>
                             <div id="waveformProgress1" class="waveform-progress"></div>
                             <div id="loopMarkerStart1" class="loop-marker loop-marker-start" style="display: none;">A</div>
                             <div id="loopMarkerEnd1" class="loop-marker loop-marker-end" style="display: none;">B</div>
@@ -86,12 +86,12 @@
                             <span class="duration-display"><span id="currentTime1">0:00</span> / <span id="duration1">0:00</span></span>
                         </div>
                         <div class="track-controls">
-                            <button id="playBtn1" class="control-btn-small" disabled>▶️</button>
-                            <button id="pauseBtn1" class="control-btn-small" disabled>⏸️</button>
-                            <button id="stopBtn1" class="control-btn-small" disabled>⏹️</button>
-                            <button id="loopBtn1" class="control-btn-small loop-btn" disabled title="Enable loop (click waveform twice to set A-B points)">🔁</button>
-                            <button id="reverseLoopBtn1" class="control-btn-small reverse-loop-btn" disabled title="Enable reverse loop">🔁⏪</button>
-                            <button id="clearLoopBtn1" class="control-btn-small" disabled title="Clear loop points">❌</button>
+                            <button id="playBtn1" class="control-btn-small" disabled aria-label="Play Track 1">▶️</button>
+                            <button id="pauseBtn1" class="control-btn-small" disabled aria-label="Pause Track 1">⏸️</button>
+                            <button id="stopBtn1" class="control-btn-small" disabled aria-label="Stop Track 1">⏹️</button>
+                            <button id="loopBtn1" class="control-btn-small loop-btn" disabled title="Enable loop (click waveform twice to set A-B points)" aria-label="Enable A-B loop for Track 1" aria-pressed="false">🔁</button>
+                            <button id="reverseLoopBtn1" class="control-btn-small reverse-loop-btn" disabled title="Enable reverse loop" aria-label="Enable reverse loop for Track 1" aria-pressed="false">🔁⏪</button>
+                            <button id="clearLoopBtn1" class="control-btn-small" disabled title="Clear loop points" aria-label="Clear loop points for Track 1">❌</button>
                         </div>
                     </div>
                     
@@ -128,36 +128,36 @@
                         <div class="tempo-volume-row">
                             <div class="volume-control-inline">
                                 <label>Volume: <span id="volumeValue1">100%</span></label>
-                                <input type="range" id="volumeSlider1" min="0" max="100" step="1" value="100" class="volume-slider">
+                                <input type="range" id="volumeSlider1" min="0" max="100" step="1" value="100" class="volume-slider" aria-label="Track 1 volume" aria-valuenow="100" aria-valuetext="100%">
                             </div>
                             <div class="tempo-control-inline">
                                 <label>Tempo: <span id="tempoValue1">1.0x</span></label>
-                                <input type="range" id="tempoSlider1" min="0.25" max="2.0" step="0.05" value="1.0">
+                                <input type="range" id="tempoSlider1" min="0.25" max="2.0" step="0.05" value="1.0" aria-label="Track 1 tempo" aria-valuenow="1.0" aria-valuetext="1.0x">
                             </div>
                             <div class="stretch-control-inline">
                                 <label>Stretch: <span id="stretchValue1">1.0x</span></label>
-                                <input type="range" id="stretchSlider1" min="0.5" max="2.0" step="0.05" value="1.0" class="stretch-slider">
+                                <input type="range" id="stretchSlider1" min="0.5" max="2.0" step="0.05" value="1.0" class="stretch-slider" aria-label="Track 1 time-stretch ratio" aria-valuenow="1.0" aria-valuetext="1.0x">
                             </div>
                             <div class="eq-control-inline">
                                 <label>Low: <span id="lowValue1">0dB</span></label>
-                                <input type="range" id="lowSlider1" min="-12" max="12" step="0.5" value="0" class="eq-slider">
+                                <input type="range" id="lowSlider1" min="-12" max="12" step="0.5" value="0" class="eq-slider" aria-label="Track 1 low EQ" aria-valuenow="0" aria-valuetext="0dB">
                             </div>
                             <div class="eq-control-inline">
                                 <label>Mid: <span id="midValue1">0dB</span></label>
-                                <input type="range" id="midSlider1" min="-12" max="12" step="0.5" value="0" class="eq-slider">
+                                <input type="range" id="midSlider1" min="-12" max="12" step="0.5" value="0" class="eq-slider" aria-label="Track 1 mid EQ" aria-valuenow="0" aria-valuetext="0dB">
                             </div>
                             <div class="eq-control-inline">
                                 <label>High: <span id="highValue1">0dB</span></label>
-                                <input type="range" id="highSlider1" min="-12" max="12" step="0.5" value="0" class="eq-slider">
+                                <input type="range" id="highSlider1" min="-12" max="12" step="0.5" value="0" class="eq-slider" aria-label="Track 1 high EQ" aria-valuenow="0" aria-valuetext="0dB">
                             </div>
                             <div class="pitch-control-inline">
                                 <label>Pitch: <span id="pitchValue1">0</span></label>
-                                <input type="range" id="pitchSlider1" min="-12" max="12" step="0.1" value="0" class="pitch-slider">
+                                <input type="range" id="pitchSlider1" min="-12" max="12" step="0.1" value="0" class="pitch-slider" aria-label="Track 1 pitch shift in semitones" aria-valuenow="0" aria-valuetext="0 semitones">
                             </div>
                         </div>
                         <div class="pan-control-inline">
                             <label>Pan: <span id="panValue1">Center</span></label>
-                            <input type="range" id="panSlider1" min="-100" max="100" step="1" value="0" class="pan-slider">
+                            <input type="range" id="panSlider1" min="-100" max="100" step="1" value="0" class="pan-slider" aria-label="Track 1 stereo pan" aria-valuenow="0" aria-valuetext="Center">
                         </div>
                         <div class="effect-chain-container" id="effectChain1">
                             <!-- Effect chain UI will be dynamically generated here -->
@@ -279,7 +279,7 @@
                             <span class="crossfader-label-center">CENTER</span>
                             <span class="crossfader-label-right" id="crossfaderLabelRight">Track 2</span>
                         </div>
-                        <input type="range" id="crossfader" min="0" max="100" step="1" value="50" class="crossfader-slider">
+                        <input type="range" id="crossfader" min="0" max="100" step="1" value="50" class="crossfader-slider" aria-label="Crossfader" aria-valuenow="50" aria-valuetext="50% / 50%">
                         <div class="crossfader-value">
                             <span id="crossfaderValue">50% / 50%</span>
                         </div>
@@ -300,7 +300,7 @@
                         </button>
                         <div class="mic-volume-control" style="display: none;" id="micVolumeControl">
                             <label>Mic Volume: <span id="micVolumeValue">100%</span></label>
-                            <input type="range" id="micVolumeSlider" min="0" max="100" step="1" value="100" class="volume-slider">
+                            <input type="range" id="micVolumeSlider" min="0" max="100" step="1" value="100" class="volume-slider" aria-label="Microphone volume" aria-valuenow="100" aria-valuetext="100%">
                         </div>
                         <div class="mic-monitoring" style="display: none;" id="micMonitoring">
                             <label>
@@ -435,7 +435,7 @@
                     </div>
                     <div class="mic-waveform-container" style="display: none;" id="micWaveformContainer">
                         <label>Mic Input Level:</label>
-                        <canvas id="micWaveform" class="waveform-canvas" style="height: 60px;"></canvas>
+                        <canvas id="micWaveform" class="waveform-canvas" style="height: 60px;" role="img" aria-label="Microphone input level waveform"></canvas>
                     </div>
                 </div>
                 
@@ -472,7 +472,7 @@
                             </div>
                         </div>
                         <div class="waveform-container">
-                            <canvas id="waveform2" class="waveform-canvas"></canvas>
+                            <canvas id="waveform2" class="waveform-canvas" role="img" aria-label="Track 2 waveform"></canvas>
                             <div id="waveformProgress2" class="waveform-progress"></div>
                             <div id="loopMarkerStart2" class="loop-marker loop-marker-start" style="display: none;">A</div>
                             <div id="loopMarkerEnd2" class="loop-marker loop-marker-end" style="display: none;">B</div>
@@ -492,12 +492,12 @@
                             <span class="duration-display"><span id="currentTime2">0:00</span> / <span id="duration2">0:00</span></span>
                         </div>
                         <div class="track-controls">
-                            <button id="playBtn2" class="control-btn-small" disabled>▶️</button>
-                            <button id="pauseBtn2" class="control-btn-small" disabled>⏸️</button>
-                            <button id="stopBtn2" class="control-btn-small" disabled>⏹️</button>
-                            <button id="loopBtn2" class="control-btn-small loop-btn" disabled title="Enable loop (click waveform twice to set A-B points)">🔁</button>
-                            <button id="reverseLoopBtn2" class="control-btn-small reverse-loop-btn" disabled title="Enable reverse loop">🔁⏪</button>
-                            <button id="clearLoopBtn2" class="control-btn-small" disabled title="Clear loop points">❌</button>
+                            <button id="playBtn2" class="control-btn-small" disabled aria-label="Play Track 2">▶️</button>
+                            <button id="pauseBtn2" class="control-btn-small" disabled aria-label="Pause Track 2">⏸️</button>
+                            <button id="stopBtn2" class="control-btn-small" disabled aria-label="Stop Track 2">⏹️</button>
+                            <button id="loopBtn2" class="control-btn-small loop-btn" disabled title="Enable loop (click waveform twice to set A-B points)" aria-label="Enable A-B loop for Track 2" aria-pressed="false">🔁</button>
+                            <button id="reverseLoopBtn2" class="control-btn-small reverse-loop-btn" disabled title="Enable reverse loop" aria-label="Enable reverse loop for Track 2" aria-pressed="false">🔁⏪</button>
+                            <button id="clearLoopBtn2" class="control-btn-small" disabled title="Clear loop points" aria-label="Clear loop points for Track 2">❌</button>
                         </div>
                     </div>
                     
@@ -534,36 +534,36 @@
                         <div class="tempo-volume-row">
                             <div class="volume-control-inline">
                                 <label>Volume: <span id="volumeValue2">100%</span></label>
-                                <input type="range" id="volumeSlider2" min="0" max="100" step="1" value="100" class="volume-slider">
+                                <input type="range" id="volumeSlider2" min="0" max="100" step="1" value="100" class="volume-slider" aria-label="Track 2 volume" aria-valuenow="100" aria-valuetext="100%">
                             </div>
                             <div class="tempo-control-inline">
                                 <label>Tempo: <span id="tempoValue2">1.0x</span></label>
-                                <input type="range" id="tempoSlider2" min="0.25" max="2.0" step="0.05" value="1.0">
+                                <input type="range" id="tempoSlider2" min="0.25" max="2.0" step="0.05" value="1.0" aria-label="Track 2 tempo" aria-valuenow="1.0" aria-valuetext="1.0x">
                             </div>
                             <div class="stretch-control-inline">
                                 <label>Stretch: <span id="stretchValue2">1.0x</span></label>
-                                <input type="range" id="stretchSlider2" min="0.5" max="2.0" step="0.05" value="1.0" class="stretch-slider">
+                                <input type="range" id="stretchSlider2" min="0.5" max="2.0" step="0.05" value="1.0" class="stretch-slider" aria-label="Track 2 time-stretch ratio" aria-valuenow="1.0" aria-valuetext="1.0x">
                             </div>
                             <div class="eq-control-inline">
                                 <label>Low: <span id="lowValue2">0dB</span></label>
-                                <input type="range" id="lowSlider2" min="-12" max="12" step="0.5" value="0" class="eq-slider">
+                                <input type="range" id="lowSlider2" min="-12" max="12" step="0.5" value="0" class="eq-slider" aria-label="Track 2 low EQ" aria-valuenow="0" aria-valuetext="0dB">
                             </div>
                             <div class="eq-control-inline">
                                 <label>Mid: <span id="midValue2">0dB</span></label>
-                                <input type="range" id="midSlider2" min="-12" max="12" step="0.5" value="0" class="eq-slider">
+                                <input type="range" id="midSlider2" min="-12" max="12" step="0.5" value="0" class="eq-slider" aria-label="Track 2 mid EQ" aria-valuenow="0" aria-valuetext="0dB">
                             </div>
                             <div class="eq-control-inline">
                                 <label>High: <span id="highValue2">0dB</span></label>
-                                <input type="range" id="highSlider2" min="-12" max="12" step="0.5" value="0" class="eq-slider">
+                                <input type="range" id="highSlider2" min="-12" max="12" step="0.5" value="0" class="eq-slider" aria-label="Track 2 high EQ" aria-valuenow="0" aria-valuetext="0dB">
                             </div>
                             <div class="pitch-control-inline">
                                 <label>Pitch: <span id="pitchValue2">0</span></label>
-                                <input type="range" id="pitchSlider2" min="-12" max="12" step="0.1" value="0" class="pitch-slider">
+                                <input type="range" id="pitchSlider2" min="-12" max="12" step="0.1" value="0" class="pitch-slider" aria-label="Track 2 pitch shift in semitones" aria-valuenow="0" aria-valuetext="0 semitones">
                             </div>
                         </div>
                         <div class="pan-control-inline">
                             <label>Pan: <span id="panValue2">Center</span></label>
-                            <input type="range" id="panSlider2" min="-100" max="100" step="1" value="0" class="pan-slider">
+                            <input type="range" id="panSlider2" min="-100" max="100" step="1" value="0" class="pan-slider" aria-label="Track 2 stereo pan" aria-valuenow="0" aria-valuetext="Center">
                         </div>
                         <div class="effect-chain-container" id="effectChain2">
                             <!-- Effect chain UI will be dynamically generated here -->

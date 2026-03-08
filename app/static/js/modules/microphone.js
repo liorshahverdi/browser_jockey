@@ -79,63 +79,73 @@ export function disableMicrophone(micState) {
 }
 
 /**
- * Draw microphone waveform visualization
+ * Draw microphone waveform visualization.
  * @param {HTMLCanvasElement} canvas - Canvas element to draw on
  * @param {AnalyserNode} micAnalyser - Microphone analyser node
- * @param {boolean} enabled - Whether microphone is enabled
- * @returns {number} Animation frame ID
+ * @returns {{ cancel: Function }} Controller — call cancel() to stop the loop
  */
-export function drawMicWaveform(canvas, micAnalyser, enabled) {
-    if (!micAnalyser || !enabled) {
-        return null;
+export function drawMicWaveform(canvas, micAnalyser) {
+    if (!micAnalyser) {
+        return { cancel: () => {} };
     }
-    
+
     const ctx = canvas.getContext('2d');
     const width = canvas.width = canvas.offsetWidth * window.devicePixelRatio;
     const height = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-    
+
     const bufferLength = micAnalyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-    
+
+    let rafId = null;
+    let active = true;
+
     function draw() {
-        if (!enabled) return;
-        
-        const animationId = requestAnimationFrame(draw);
-        
+        if (!active) return;
+
+        rafId = requestAnimationFrame(draw);
+
         micAnalyser.getByteTimeDomainData(dataArray);
-        
+
         // Clear canvas
         ctx.fillStyle = 'rgba(20, 20, 30, 0.1)';
         ctx.fillRect(0, 0, width, height);
-        
+
         // Draw waveform
         ctx.lineWidth = 2 * window.devicePixelRatio;
         ctx.strokeStyle = '#00ff88';
         ctx.beginPath();
-        
+
         const sliceWidth = width / bufferLength;
         let x = 0;
-        
+
         for (let i = 0; i < bufferLength; i++) {
             const v = dataArray[i] / 128.0;
             const y = v * height / 2;
-            
+
             if (i === 0) {
                 ctx.moveTo(x, y);
             } else {
                 ctx.lineTo(x, y);
             }
-            
+
             x += sliceWidth;
         }
-        
+
         ctx.lineTo(width, height / 2);
         ctx.stroke();
-        
-        return animationId;
     }
-    
-    return draw();
+
+    draw();
+
+    return {
+        cancel() {
+            active = false;
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+        }
+    };
 }
 
 /**

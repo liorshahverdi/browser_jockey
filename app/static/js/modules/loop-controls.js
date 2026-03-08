@@ -13,22 +13,35 @@ export function formatTime(seconds) {
  * This provides smooth visual feedback without manual currentTime manipulation
  * @param {PlaybackController} playbackController - The playback controller instance
  * @param {Function} updateProgressCallback - Callback to update the UI progress
+ * @param {Object|null} stateRef - Optional { rafId: null } object; caller can cancel via stopReverseProgressLoop()
  */
-export function updateReverseProgress(playbackController, updateProgressCallback) {
+export function updateReverseProgress(playbackController, updateProgressCallback, stateRef = null) {
     if (!playbackController || playbackController.mode !== 'reverse') {
         return;
     }
-    
+
     // Get current time from playback controller (it calculates based on buffer position)
     const currentTime = playbackController.getCurrentTime();
-    
+
     // Update UI
     if (updateProgressCallback) {
         updateProgressCallback(currentTime);
     }
-    
-    // Continue updating
-    requestAnimationFrame(() => updateReverseProgress(playbackController, updateProgressCallback));
+
+    // Continue updating; store the frame ID so the caller can force-cancel
+    const rafId = requestAnimationFrame(() => updateReverseProgress(playbackController, updateProgressCallback, stateRef));
+    if (stateRef) stateRef.rafId = rafId;
+}
+
+/**
+ * Force-cancel a loop started by updateReverseProgress()
+ * @param {Object} stateRef - The same { rafId } object passed to updateReverseProgress
+ */
+export function stopReverseProgressLoop(stateRef) {
+    if (stateRef && stateRef.rafId !== null) {
+        cancelAnimationFrame(stateRef.rafId);
+        stateRef.rafId = null;
+    }
 }
 
 // Update loop region display

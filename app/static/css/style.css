@@ -4903,3 +4903,118 @@ body.sequencer-fullscreen .visualization-wrapper {
     align-items: center;
 }
 
+/* ─── Responsive breakpoints ─────────────────────────────────────────────── */
+
+/* 768 px — tablet: single-column, reduced font sizes, stacked mixer controls */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+        letter-spacing: 0.05em;
+    }
+
+    .controls {
+        padding: 15px;
+        border-radius: 10px;
+    }
+
+    /* Stack the 3-column DJ layout (already done at 1400px, repeat for clarity) */
+    .dj-decks-container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    /* Stack dual-track visualiser */
+    .dual-visualizer-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    /* Stack master controls */
+    .master-controls-row {
+        grid-template-columns: 1fr;
+    }
+
+    /* Waveform canvas: give it a fixed minimum height on small screens */
+    .waveform-canvas {
+        min-height: 80px;
+    }
+
+    /* Mixer section: reduce padding */
+    .dj-mixer-section {
+        padding: 12px;
+    }
+
+    /* Crossfader labels: smaller text */
+    .crossfader-label-left,
+    .crossfader-label-right,
+    .crossfader-label-center {
+        font-size: 0.75rem;
+    }
+
+    /* Tab buttons: fill row */
+    .tab-navigation {
+        flex-wrap: wrap;
+    }
+
+    .tab-btn {
+        flex: 1 1 auto;
+        text-align: center;
+    }
+}
+
+/* 480 px — mobile: single-column, larger tap targets, hide 3-D visualiser */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.4rem;
+    }
+
+    /* Larger tap targets for buttons */
+    .control-btn-small {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1.1rem;
+    }
+
+    .control-btn {
+        min-height: 44px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Sliders: full-width and taller touch target */
+    input[type="range"] {
+        height: 28px;
+        width: 100%;
+    }
+
+    /* Stack effect controls vertically */
+    .tempo-volume-row {
+        flex-direction: column;
+    }
+
+    /* Hide the 3-D oscilloscope visualiser — too heavy for mobile */
+    .dual-visualizer-wrapper {
+        display: none;
+    }
+
+    /* Mic waveform canvas: reduce height on mobile */
+    #micWaveform {
+        height: 40px !important;
+    }
+
+    /* Upload buttons: full-width */
+    .upload-btn {
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    /* Credits: hide on mobile to reclaim space */
+    .credits {
+        display: none;
+    }
+}
+

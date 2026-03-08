@@ -7,9 +7,44 @@
  */
 
 export class AudioBufferManager {
+    static MAX_CACHE_SIZE = 5;
+
     constructor(audioContext) {
         this.audioContext = audioContext;
         this.buffers = new Map(); // trackId -> { original: AudioBuffer, loopBuffers: Map, timestretched: Map }
+    }
+
+    /**
+     * LRU-aware cache read. Promotes the entry to most-recently-used on hit.
+     * @param {Map} map - The cache Map
+     * @param {string} key
+     * @returns {*} Cached value, or undefined on miss
+     */
+    _cacheGet(map, key) {
+        if (!map.has(key)) return undefined;
+        const value = map.get(key);
+        // Re-insert at the end so it becomes the most-recently-used entry
+        map.delete(key);
+        map.set(key, value);
+        return value;
+    }
+
+    /**
+     * LRU-aware cache write. Evicts the oldest entry when the Map is full.
+     * @param {Map} map - The cache Map
+     * @param {string} key
+     * @param {*} value
+     */
+    _cacheSet(map, key, value) {
+        // If key already exists, remove it so the re-insert lands at the end
+        if (map.has(key)) map.delete(key);
+        // Evict least-recently-used (first/oldest inserted) entry if at capacity
+        if (map.size >= AudioBufferManager.MAX_CACHE_SIZE) {
+            const oldestKey = map.keys().next().value;
+            map.delete(oldestKey);
+            console.log(`🗑️ LRU evicted cache entry: ${oldestKey}`);
+        }
+        map.set(key, value);
     }
 
     /**
@@ -80,11 +115,12 @@ export class AudioBufferManager {
             return null;
         }
         
-        // Check cache first
+        // Check cache first (LRU-promoted on hit)
         const loopKey = `${startTime.toFixed(4)}-${endTime.toFixed(4)}`;
-        if (bufferData.loopBuffers.has(loopKey)) {
+        const cached = this._cacheGet(bufferData.loopBuffers, loopKey);
+        if (cached !== undefined) {
             console.log(`♻️ Using cached loop buffer for ${trackId}: ${loopKey}`);
-            return bufferData.loopBuffers.get(loopKey);
+            return cached;
         }
         
         const originalBuffer = bufferData.original;
@@ -120,8 +156,8 @@ export class AudioBufferManager {
         // Reverse the loop buffer
         const reversedLoopBuffer = this.reverseAudioBuffer(loopBuffer);
         
-        // Cache it for future use
-        bufferData.loopBuffers.set(loopKey, reversedLoopBuffer);
+        // Cache it (LRU eviction when over MAX_CACHE_SIZE)
+        this._cacheSet(bufferData.loopBuffers, loopKey, reversedLoopBuffer);
         
         const memoryMB = (loopLength * originalBuffer.numberOfChannels * 4 / (1024 * 1024)).toFixed(2);
         console.log(`✅ Reversed loop buffer created and cached: ${memoryMB} MB`);
@@ -149,10 +185,11 @@ export class AudioBufferManager {
         // Create cache key
         const cacheKey = `${startTime.toFixed(4)}-${endTime.toFixed(4)}-s${stretchRatio.toFixed(2)}-p${pitchShift.toFixed(1)}-${reverse ? 'r' : 'f'}`;
         
-        // Check cache first
-        if (bufferData.timestretched.has(cacheKey)) {
+        // Check cache first (LRU-promoted on hit)
+        const cachedTs = this._cacheGet(bufferData.timestretched, cacheKey);
+        if (cachedTs !== undefined) {
             console.log(`♻️ Using cached timestretched buffer for ${trackId}: ${cacheKey}`);
-            return bufferData.timestretched.get(cacheKey);
+            return cachedTs;
         }
 
         console.log(`🎵 Creating timestretched buffer for ${trackId}: ${cacheKey}`);
@@ -225,8 +262,8 @@ export class AudioBufferManager {
                 finalBuffer = this.reverseAudioBuffer(rawBuffer);
             }
 
-            // Cache the result
-            bufferData.timestretched.set(cacheKey, finalBuffer);
+            // Cache the result (LRU eviction when over MAX_CACHE_SIZE)
+            this._cacheSet(bufferData.timestretched, cacheKey, finalBuffer);
             
             const memoryMB = (finalBuffer.length * finalBuffer.numberOfChannels * 4 / (1024 * 1024)).toFixed(2);
             console.log(`✅ Timestretched buffer created and cached: ${memoryMB} MB`);
