@@ -81,6 +81,7 @@ import {
 import { Sequencer } from './modules/sequencer.js';
 import { HotCueManager, HOT_CUE_COLORS } from './modules/hot-cues.js';
 import { BeatGrid } from './modules/beat-grid.js';
+import { SidechainCompressor } from './modules/sidechain.js';
 
 // Get DOM elements for Track 1
 const audioFile1 = document.getElementById('audioFile1');
@@ -250,6 +251,22 @@ const slipPlayhead1 = document.getElementById('slipPlayhead1');
 const slipPlayhead2 = document.getElementById('slipPlayhead2');
 const slipState1    = { enabled: false, startAudioTime: 0, startWallMs: 0 };
 const slipState2    = { enabled: false, startAudioTime: 0, startWallMs: 0 };
+
+// Sidechain Compression DOM elements & instance (F-009)
+const sidechainToggle   = document.getElementById('sidechainToggle');
+const scThresholdSlider = document.getElementById('scThreshold');
+const scThresholdVal    = document.getElementById('scThresholdVal');
+const scRatioSlider     = document.getElementById('scRatio');
+const scRatioVal        = document.getElementById('scRatioVal');
+const scAttackSlider    = document.getElementById('scAttack');
+const scAttackVal       = document.getElementById('scAttackVal');
+const scReleaseSlider   = document.getElementById('scRelease');
+const scReleaseVal      = document.getElementById('scReleaseVal');
+const scWetSlider       = document.getElementById('scWet');
+const scWetVal          = document.getElementById('scWetVal');
+const scGainReduction   = document.getElementById('scGainReduction');
+const scGRVal           = document.getElementById('scGRVal');
+let sidechainCompressor = null;
 
 // Shared visualizer elements
 const container = document.getElementById('visualizer-container');
@@ -4114,6 +4131,7 @@ audioFile1.addEventListener('change', async (e) => {
         enableBeatGridControls(1, getBPMValue(bpm1Display));
         drawBeatGrid(1);
         slipBtn1.disabled = false;
+        sidechainToggle.disabled = false;
 
         // Initialize buffer manager and playback controller for reverse playback
         try {
@@ -4288,6 +4306,7 @@ audioFile2.addEventListener('change', async (e) => {
         enableBeatGridControls(2, getBPMValue(bpm2Display));
         drawBeatGrid(2);
         slipBtn2.disabled = false;
+        sidechainToggle.disabled = false;
 
         // Initialize buffer manager and playback controller for reverse playback
         try {
@@ -7624,6 +7643,89 @@ function initSlipControls(trackNumber) {
 
 initSlipControls(1);
 initSlipControls(2);
+
+// ----- F-009: Sidechain Compression -----
+function trySetupSidechain() {
+    if (sidechainCompressor && sidechainCompressor.isReady()) return true;
+
+    if (!audioContext) {
+        sidechainToggle.title = 'Play a track first to initialize the audio engine';
+        return false;
+    }
+    if (!gain1) {
+        sidechainToggle.title = 'Load Track 1 first (it provides the sidechain trigger)';
+        return false;
+    }
+    if (!finalMix2 || !merger) {
+        sidechainToggle.title = 'Load and play Track 2 first (it is the signal being ducked)';
+        return false;
+    }
+
+    if (!sidechainCompressor) sidechainCompressor = new SidechainCompressor(audioContext);
+    sidechainCompressor.setup(gain1, finalMix2, merger);
+    sidechainCompressor.onGainReduction = (pct) => {
+        scGainReduction.style.width = pct + '%';
+        scGRVal.textContent = pct + '%';
+    };
+    sidechainToggle.title = 'Duck Track 2 based on Track 1 energy';
+    return true;
+}
+
+function initSidechainControls() {
+    sidechainToggle.addEventListener('click', () => {
+        if (!sidechainCompressor || !sidechainCompressor.enabled) {
+            if (!trySetupSidechain()) {
+                // Flash the button red briefly to signal the requirement
+                sidechainToggle.style.borderColor = '#ff4444';
+                sidechainToggle.style.color = '#ff4444';
+                setTimeout(() => {
+                    sidechainToggle.style.borderColor = '';
+                    sidechainToggle.style.color = '';
+                }, 1200);
+                return;
+            }
+            sidechainCompressor.enable();
+            sidechainToggle.textContent = 'ON';
+            sidechainToggle.classList.add('active');
+        } else {
+            sidechainCompressor.disable();
+            sidechainToggle.textContent = 'OFF';
+            sidechainToggle.classList.remove('active');
+        }
+    });
+
+    scThresholdSlider.addEventListener('input', () => {
+        const v = parseInt(scThresholdSlider.value);
+        scThresholdVal.textContent = v + ' dBFS';
+        if (sidechainCompressor) sidechainCompressor.setThreshold(v);
+    });
+
+    scRatioSlider.addEventListener('input', () => {
+        const v = parseFloat(scRatioSlider.value);
+        scRatioVal.textContent = v + ':1';
+        if (sidechainCompressor) sidechainCompressor.setRatio(v);
+    });
+
+    scAttackSlider.addEventListener('input', () => {
+        const v = parseInt(scAttackSlider.value);
+        scAttackVal.textContent = v + ' ms';
+        if (sidechainCompressor) sidechainCompressor.setAttack(v);
+    });
+
+    scReleaseSlider.addEventListener('input', () => {
+        const v = parseInt(scReleaseSlider.value);
+        scReleaseVal.textContent = v + ' ms';
+        if (sidechainCompressor) sidechainCompressor.setRelease(v);
+    });
+
+    scWetSlider.addEventListener('input', () => {
+        const v = parseInt(scWetSlider.value);
+        scWetVal.textContent = v + '%';
+        if (sidechainCompressor) sidechainCompressor.setWet(v / 100);
+    });
+}
+
+initSidechainControls();
 
 // Helper function to update precise loop input values
 function updatePreciseLoopInputs(trackNumber) {

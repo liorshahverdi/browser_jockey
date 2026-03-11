@@ -96,7 +96,7 @@ Maintain a hidden "master" playback position that advances at 1× speed regardle
 
 ---
 
-### F-009 — Sidechain Compression
+### ~~F-009 — Sidechain Compression~~ ✅ Implemented v3.28.0
 
 **Complexity:** High
 **New module:** `modules/sidechain.js`

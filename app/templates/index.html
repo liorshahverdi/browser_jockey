@@ -346,6 +346,49 @@
                     </div>
                 </div>
                 
+                <!-- Sidechain Compression — F-009 -->
+                <div class="sidechain-section">
+                    <div class="sidechain-header">
+                        <span class="sidechain-title">⊗ Sidechain</span>
+                        <button id="sidechainToggle" class="sidechain-toggle-btn" disabled title="Duck Track 2 based on Track 1 energy — load both tracks first">OFF</button>
+                        <span class="sidechain-source-badge">T1 → T2</span>
+                    </div>
+                    <div class="sidechain-controls">
+                        <div class="sc-row">
+                            <label class="sc-label" for="scThreshold">Threshold</label>
+                            <input type="range" id="scThreshold" class="sc-slider" min="-40" max="0" step="1" value="-12">
+                            <span class="sc-value" id="scThresholdVal">-12 dBFS</span>
+                        </div>
+                        <div class="sc-row">
+                            <label class="sc-label" for="scRatio">Ratio</label>
+                            <input type="range" id="scRatio" class="sc-slider" min="2" max="20" step="0.5" value="4">
+                            <span class="sc-value" id="scRatioVal">4:1</span>
+                        </div>
+                        <div class="sc-row">
+                            <label class="sc-label" for="scAttack">Attack</label>
+                            <input type="range" id="scAttack" class="sc-slider" min="1" max="50" step="1" value="5">
+                            <span class="sc-value" id="scAttackVal">5 ms</span>
+                        </div>
+                        <div class="sc-row">
+                            <label class="sc-label" for="scRelease">Release</label>
+                            <input type="range" id="scRelease" class="sc-slider" min="20" max="500" step="10" value="150">
+                            <span class="sc-value" id="scReleaseVal">150 ms</span>
+                        </div>
+                        <div class="sc-row">
+                            <label class="sc-label" for="scWet">Wet/Dry</label>
+                            <input type="range" id="scWet" class="sc-slider" min="0" max="100" step="1" value="100">
+                            <span class="sc-value" id="scWetVal">100%</span>
+                        </div>
+                        <div class="sc-meter-row">
+                            <span class="sc-meter-label">GR</span>
+                            <div class="sc-meter-track">
+                                <div class="sc-meter-bar" id="scGainReduction"></div>
+                            </div>
+                            <span class="sc-value" id="scGRVal">0%</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="microphone-section">
                     <div class="mic-header">🎤 Microphone Input</div>
                     <div class="mic-controls">
