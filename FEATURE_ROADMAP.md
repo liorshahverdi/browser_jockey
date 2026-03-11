@@ -57,7 +57,7 @@ Features that were already implemented in the codebase have been removed from th
 
 ---
 
-### F-005 — Beat Grid + Quantize
+### ~~F-005 — Beat Grid + Quantize~~ ✅ Implemented v3.28.0
 
 **Dependency:** BPM detection (already improved — v3.27.9)
 **Complexity:** Medium
@@ -75,7 +75,7 @@ Auto-generate a beat grid from detected BPM. Snap loop points and hot cue points
 
 ---
 
-### F-006 — Slip Mode
+### ~~F-006 — Slip Mode~~ ✅ Implemented v3.28.0
 
 **Complexity:** Medium
 **Module:** `modules/playback-controller.js`

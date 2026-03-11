@@ -72,6 +72,7 @@
                             <div id="loopMarkerEnd1" class="loop-marker loop-marker-end" style="display: none;">B</div>
                             <div id="loopRegion1" class="loop-region" style="display: none;"></div>
                             <div id="timeTooltip1" class="time-tooltip" style="display: none;">0:00.000</div>
+                            <canvas id="beatGridCanvas1" class="beat-grid-canvas" aria-hidden="true"></canvas>
                             <div id="hotCueMarker1_0" class="hot-cue-marker" style="display:none;"></div>
                             <div id="hotCueMarker1_1" class="hot-cue-marker" style="display:none;"></div>
                             <div id="hotCueMarker1_2" class="hot-cue-marker" style="display:none;"></div>
@@ -80,6 +81,7 @@
                             <div id="hotCueMarker1_5" class="hot-cue-marker" style="display:none;"></div>
                             <div id="hotCueMarker1_6" class="hot-cue-marker" style="display:none;"></div>
                             <div id="hotCueMarker1_7" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="slipPlayhead1" class="slip-playhead"></div>
                         </div>
                         <div class="waveform-zoom-controls">
                             <button id="zoomInBtn1" class="zoom-btn" title="Zoom in">🔍+</button>
@@ -100,6 +102,7 @@
                             <button id="loopBtn1" class="control-btn-small loop-btn" disabled title="Enable loop (click waveform twice to set A-B points)" aria-label="Enable A-B loop for Track 1" aria-pressed="false">🔁</button>
                             <button id="reverseLoopBtn1" class="control-btn-small reverse-loop-btn" disabled title="Enable reverse loop" aria-label="Enable reverse loop for Track 1" aria-pressed="false">🔁⏪</button>
                             <button id="clearLoopBtn1" class="control-btn-small" disabled title="Clear loop points" aria-label="Clear loop points for Track 1">❌</button>
+                            <button id="slipBtn1" class="control-btn-small slip-btn" disabled title="Slip mode — hold to freeze loop position; release to snap back" aria-label="Slip mode Track 1">SLIP</button>
                         </div>
                         <div class="hot-cues-section" id="hotCuesSection1">
                             <div class="hot-cues-top-row">
@@ -125,6 +128,29 @@
                                 <span class="hc-hint-item">Dbl-click → <strong>rename</strong></span>
                                 <span class="hc-hint-sep">·</span>
                                 <span class="hc-hint-item"><kbd>1</kbd>–<kbd>8</kbd> → jump &nbsp;<kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>8</kbd> → set</span>
+                            </div>
+                        </div>
+
+                        <div class="beat-grid-section" id="beatGridSection1">
+                            <div class="beat-grid-top-row">
+                                <span class="beat-grid-label">Beat Grid</span>
+                                <button class="beat-grid-toggle-btn" id="beatGridToggle1" disabled>Grid: OFF</button>
+                                <button class="beat-snap-btn" id="snapToggle1" disabled>⊡ Snap: OFF</button>
+                                <span class="beat-grid-bpm-display">BPM: <span id="beatGridBPM1">--</span></span>
+                            </div>
+                            <div class="beat-grid-controls-row">
+                                <button class="beat-nudge-btn" id="nudgeLeft1" disabled title="Shift grid left (fine)">◄</button>
+                                <button class="tap-tempo-btn" id="tapTempo1" disabled>Tap Tempo <span class="tap-count" id="tapCount1"></span></button>
+                                <button class="beat-nudge-btn" id="nudgeRight1" disabled title="Shift grid right (fine)">►</button>
+                            </div>
+                            <div class="beat-grid-hint">
+                                <span class="bg-hint-item">Grid marks beats on the waveform</span>
+                                <span class="bg-hint-sep">·</span>
+                                <span class="bg-hint-item"><kbd>Tap</kbd> to override BPM</span>
+                                <span class="bg-hint-sep">·</span>
+                                <span class="bg-hint-item"><kbd>◄ ►</kbd> fine-tune alignment</span>
+                                <span class="bg-hint-sep">·</span>
+                                <span class="bg-hint-item"><kbd>⊡ Snap</kbd> quantizes loop &amp; cue points to beats</span>
                             </div>
                         </div>
                     </div>
@@ -512,6 +538,7 @@
                             <div id="loopMarkerEnd2" class="loop-marker loop-marker-end" style="display: none;">B</div>
                             <div id="loopRegion2" class="loop-region" style="display: none;"></div>
                             <div id="timeTooltip2" class="time-tooltip" style="display: none;">0:00.000</div>
+                            <canvas id="beatGridCanvas2" class="beat-grid-canvas" aria-hidden="true"></canvas>
                             <div id="hotCueMarker2_0" class="hot-cue-marker" style="display:none;"></div>
                             <div id="hotCueMarker2_1" class="hot-cue-marker" style="display:none;"></div>
                             <div id="hotCueMarker2_2" class="hot-cue-marker" style="display:none;"></div>
@@ -520,6 +547,7 @@
                             <div id="hotCueMarker2_5" class="hot-cue-marker" style="display:none;"></div>
                             <div id="hotCueMarker2_6" class="hot-cue-marker" style="display:none;"></div>
                             <div id="hotCueMarker2_7" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="slipPlayhead2" class="slip-playhead"></div>
                         </div>
                         <div class="waveform-zoom-controls">
                             <button id="zoomInBtn2" class="zoom-btn" title="Zoom in">🔍+</button>
@@ -540,6 +568,7 @@
                             <button id="loopBtn2" class="control-btn-small loop-btn" disabled title="Enable loop (click waveform twice to set A-B points)" aria-label="Enable A-B loop for Track 2" aria-pressed="false">🔁</button>
                             <button id="reverseLoopBtn2" class="control-btn-small reverse-loop-btn" disabled title="Enable reverse loop" aria-label="Enable reverse loop for Track 2" aria-pressed="false">🔁⏪</button>
                             <button id="clearLoopBtn2" class="control-btn-small" disabled title="Clear loop points" aria-label="Clear loop points for Track 2">❌</button>
+                            <button id="slipBtn2" class="control-btn-small slip-btn" disabled title="Slip mode — hold to freeze loop position; release to snap back" aria-label="Slip mode Track 2">SLIP</button>
                         </div>
                         <div class="hot-cues-section" id="hotCuesSection2">
                             <div class="hot-cues-top-row">
@@ -565,6 +594,29 @@
                                 <span class="hc-hint-item">Dbl-click → <strong>rename</strong></span>
                                 <span class="hc-hint-sep">·</span>
                                 <span class="hc-hint-item"><kbd>1</kbd>–<kbd>8</kbd> → jump &nbsp;<kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>8</kbd> → set</span>
+                            </div>
+                        </div>
+
+                        <div class="beat-grid-section" id="beatGridSection2">
+                            <div class="beat-grid-top-row">
+                                <span class="beat-grid-label">Beat Grid</span>
+                                <button class="beat-grid-toggle-btn" id="beatGridToggle2" disabled>Grid: OFF</button>
+                                <button class="beat-snap-btn" id="snapToggle2" disabled>⊡ Snap: OFF</button>
+                                <span class="beat-grid-bpm-display">BPM: <span id="beatGridBPM2">--</span></span>
+                            </div>
+                            <div class="beat-grid-controls-row">
+                                <button class="beat-nudge-btn" id="nudgeLeft2" disabled title="Shift grid left (fine)">◄</button>
+                                <button class="tap-tempo-btn" id="tapTempo2" disabled>Tap Tempo <span class="tap-count" id="tapCount2"></span></button>
+                                <button class="beat-nudge-btn" id="nudgeRight2" disabled title="Shift grid right (fine)">►</button>
+                            </div>
+                            <div class="beat-grid-hint">
+                                <span class="bg-hint-item">Grid marks beats on the waveform</span>
+                                <span class="bg-hint-sep">·</span>
+                                <span class="bg-hint-item"><kbd>Tap</kbd> to override BPM</span>
+                                <span class="bg-hint-sep">·</span>
+                                <span class="bg-hint-item"><kbd>◄ ►</kbd> fine-tune alignment</span>
+                                <span class="bg-hint-sep">·</span>
+                                <span class="bg-hint-item"><kbd>⊡ Snap</kbd> quantizes loop &amp; cue points to beats</span>
                             </div>
                         </div>
                     </div>

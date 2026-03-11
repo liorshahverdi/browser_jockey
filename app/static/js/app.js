@@ -80,6 +80,7 @@ import {
 } from './modules/theremin.js';
 import { Sequencer } from './modules/sequencer.js';
 import { HotCueManager, HOT_CUE_COLORS } from './modules/hot-cues.js';
+import { BeatGrid } from './modules/beat-grid.js';
 
 // Get DOM elements for Track 1
 const audioFile1 = document.getElementById('audioFile1');
@@ -219,6 +220,36 @@ const hotCueMarkers2 = Array.from({ length: 8 }, (_, i) => document.getElementBy
 const hotCueManager1 = new HotCueManager('track1');
 const hotCueManager2 = new HotCueManager('track2');
 let focusedHotCueTrack = 1; // which track 1-8 keyboard shortcuts target
+
+// Beat Grid DOM elements
+const beatGridCanvas1  = document.getElementById('beatGridCanvas1');
+const beatGridCanvas2  = document.getElementById('beatGridCanvas2');
+const beatGridToggle1  = document.getElementById('beatGridToggle1');
+const beatGridToggle2  = document.getElementById('beatGridToggle2');
+const snapToggle1      = document.getElementById('snapToggle1');
+const snapToggle2      = document.getElementById('snapToggle2');
+const tapTempo1        = document.getElementById('tapTempo1');
+const tapTempo2        = document.getElementById('tapTempo2');
+const tapCount1        = document.getElementById('tapCount1');
+const tapCount2        = document.getElementById('tapCount2');
+const nudgeLeft1       = document.getElementById('nudgeLeft1');
+const nudgeLeft2       = document.getElementById('nudgeLeft2');
+const nudgeRight1      = document.getElementById('nudgeRight1');
+const nudgeRight2      = document.getElementById('nudgeRight2');
+const beatGridBPMEl1   = document.getElementById('beatGridBPM1');
+const beatGridBPMEl2   = document.getElementById('beatGridBPM2');
+
+// Beat Grid managers
+const beatGrid1 = new BeatGrid();
+const beatGrid2 = new BeatGrid();
+
+// Slip Mode DOM elements & state
+const slipBtn1      = document.getElementById('slipBtn1');
+const slipBtn2      = document.getElementById('slipBtn2');
+const slipPlayhead1 = document.getElementById('slipPlayhead1');
+const slipPlayhead2 = document.getElementById('slipPlayhead2');
+const slipState1    = { enabled: false, startAudioTime: 0, startWallMs: 0 };
+const slipState2    = { enabled: false, startAudioTime: 0, startWallMs: 0 };
 
 // Shared visualizer elements
 const container = document.getElementById('visualizer-container');
@@ -4079,6 +4110,11 @@ audioFile1.addEventListener('change', async (e) => {
         updateHotCueUI(1);
         updateHotCueMarkersAfterZoom(1);
 
+        // Set up beat grid with detected BPM
+        enableBeatGridControls(1, getBPMValue(bpm1Display));
+        drawBeatGrid(1);
+        slipBtn1.disabled = false;
+
         // Initialize buffer manager and playback controller for reverse playback
         try {
             if (!audioContext) {
@@ -4248,6 +4284,11 @@ audioFile2.addEventListener('change', async (e) => {
         updateHotCueUI(2);
         updateHotCueMarkersAfterZoom(2);
 
+        // Set up beat grid with detected BPM
+        enableBeatGridControls(2, getBPMValue(bpm2Display));
+        drawBeatGrid(2);
+        slipBtn2.disabled = false;
+
         // Initialize buffer manager and playback controller for reverse playback
         try {
             if (!audioContext) {
@@ -4355,14 +4396,14 @@ waveform1.parentElement.addEventListener('click', (e) => {
             
             if (distToStart < distToEnd) {
                 // Move start marker
-                loopState1.start = time;
-                console.log('Loop start (A) moved to:', formatTimeWithMs(time));
+                loopState1.start = snapTimeForTrack(time, 1);
+                console.log('Loop start (A) moved to:', formatTimeWithMs(loopState1.start));
             } else {
                 // Move end marker
-                loopState1.end = time;
-                console.log('Loop end (B) moved to:', formatTimeWithMs(time));
+                loopState1.end = snapTimeForTrack(time, 1);
+                console.log('Loop end (B) moved to:', formatTimeWithMs(loopState1.end));
             }
-            
+
             // Ensure start < end
             if (loopState1.start > loopState1.end) {
                 [loopState1.start, loopState1.end] = [loopState1.end, loopState1.start];
@@ -4372,13 +4413,13 @@ waveform1.parentElement.addEventListener('click', (e) => {
             console.log('🎯 In else block - setting points. settingPoint:', loopState1.settingPoint);
             if (loopState1.settingPoint === 'start') {
                 console.log('🅰️ About to set start marker to:', time);
-                loopState1.start = time;
+                loopState1.start = snapTimeForTrack(time, 1);
                 loopState1.settingPoint = 'end';
                 console.log('Loop start (A) set at:', formatTimeWithMs(time));
                 console.log('🅰️ After setting: start =', loopState1.start, ', settingPoint =', loopState1.settingPoint);
             } else {
                 console.log('🅱️ About to set end marker to:', time);
-                loopState1.end = time;
+                loopState1.end = snapTimeForTrack(time, 1);
                 loopState1.settingPoint = 'start';
                 
                 // Ensure start < end
@@ -4547,11 +4588,11 @@ waveform2.parentElement.addEventListener('click', (e) => {
             
             if (distToStart < distToEnd) {
                 // Move start marker
-                loopState2.start = time;
+                loopState2.start = snapTimeForTrack(time, 2);
                 console.log('Loop start (A) moved to:', formatTimeWithMs(time));
             } else {
                 // Move end marker
-                loopState2.end = time;
+                loopState2.end = snapTimeForTrack(time, 2);
                 console.log('Loop end (B) moved to:', formatTimeWithMs(time));
             }
             
@@ -4562,11 +4603,11 @@ waveform2.parentElement.addEventListener('click', (e) => {
         } else {
             // Setting loop points - first click sets A, second click sets B
             if (loopState2.settingPoint === 'start') {
-                loopState2.start = time;
+                loopState2.start = snapTimeForTrack(time, 2);
                 loopState2.settingPoint = 'end';
                 console.log('Loop start (A) set at:', formatTimeWithMs(time));
             } else {
-                loopState2.end = time;
+                loopState2.end = snapTimeForTrack(time, 2);
                 loopState2.settingPoint = 'start';
                 
                 // Ensure start < end
@@ -4960,6 +5001,20 @@ function updateWaveformProgress1() {
             // Playhead is after visible range
             waveformProgress1.style.width = '100%';
         }
+
+        // Update slip ghost playhead
+        if (slipState1.enabled) {
+            const slipPos = Math.min(
+                slipState1.startAudioTime + (Date.now() - slipState1.startWallMs) / 1000,
+                duration
+            );
+            if (slipPos >= visibleStartTime && slipPos <= visibleEndTime) {
+                slipPlayhead1.style.left = ((slipPos - visibleStartTime) / visibleDuration * 100) + '%';
+                slipPlayhead1.style.display = 'block';
+            } else {
+                slipPlayhead1.style.display = 'none';
+            }
+        }
     }
 }
 
@@ -4992,6 +5047,20 @@ function updateWaveformProgress2() {
         } else {
             // Playhead is after visible range
             waveformProgress2.style.width = '100%';
+        }
+
+        // Update slip ghost playhead
+        if (slipState2.enabled) {
+            const slipPos = Math.min(
+                slipState2.startAudioTime + (Date.now() - slipState2.startWallMs) / 1000,
+                duration
+            );
+            if (slipPos >= visibleStartTime && slipPos <= visibleEndTime) {
+                slipPlayhead2.style.left = ((slipPos - visibleStartTime) / visibleDuration * 100) + '%';
+                slipPlayhead2.style.display = 'block';
+            } else {
+                slipPlayhead2.style.display = 'none';
+            }
         }
     }
 }
@@ -7297,6 +7366,7 @@ function updateLoopMarkersAfterZoom(trackNumber) {
         updateLoopRegion(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2, audioElement2.duration, zoomState2);
     }
     updateHotCueMarkersAfterZoom(trackNumber);
+    drawBeatGrid(trackNumber);
 }
 
 // ---- Hot Cue helpers ----
@@ -7402,7 +7472,7 @@ function initHotCueButtons(trackNumber) {
                 manager.jumpToCue(i, audioElement);
                 flashHotCueBtn(btn, 'jump');
             } else {
-                manager.setCue(i, audioElement.currentTime);
+                manager.setCue(i, snapTimeForTrack(audioElement.currentTime, trackNumber));
                 flashHotCueBtn(btn, 'set');
             }
             updateHotCueUI(trackNumber);
@@ -7427,6 +7497,133 @@ function initHotCueButtons(trackNumber) {
 // Initialise button handlers at startup (buttons are disabled until a file loads)
 initHotCueButtons(1);
 initHotCueButtons(2);
+
+// ---- Beat Grid helpers ----
+
+/** Draw the beat grid overlay for the given track. */
+function drawBeatGrid(trackNumber) {
+    const bg     = trackNumber === 1 ? beatGrid1      : beatGrid2;
+    const canvas = trackNumber === 1 ? beatGridCanvas1 : beatGridCanvas2;
+    const zs     = trackNumber === 1 ? zoomState1     : zoomState2;
+    if (canvas) bg.draw(canvas, zs);
+}
+
+/**
+ * Snap rawTime to the nearest beat if snap is enabled for the track.
+ * Returns rawTime unchanged otherwise.
+ */
+function snapTimeForTrack(rawTime, trackNumber) {
+    const bg = trackNumber === 1 ? beatGrid1 : beatGrid2;
+    return bg.snapEnabled ? bg.snapTime(rawTime) : rawTime;
+}
+
+/** Enable all beat grid controls for a track and set up its BPM display. */
+function enableBeatGridControls(trackNumber, bpm) {
+    const bg      = trackNumber === 1 ? beatGrid1       : beatGrid2;
+    const toggle  = trackNumber === 1 ? beatGridToggle1 : beatGridToggle2;
+    const snap    = trackNumber === 1 ? snapToggle1     : snapToggle2;
+    const tap     = trackNumber === 1 ? tapTempo1       : tapTempo2;
+    const left    = trackNumber === 1 ? nudgeLeft1      : nudgeLeft2;
+    const right   = trackNumber === 1 ? nudgeRight1     : nudgeRight2;
+    const bpmEl   = trackNumber === 1 ? beatGridBPMEl1  : beatGridBPMEl2;
+
+    bg.setBPM(bpm);
+    bpmEl.textContent = bpm ? bpm.toFixed(1) : '--';
+
+    [toggle, snap, tap, left, right].forEach(el => el && (el.disabled = false));
+}
+
+/** Wire beat-grid button events for one track (called once at startup). */
+function initBeatGridControls(trackNumber) {
+    const bg      = trackNumber === 1 ? beatGrid1       : beatGrid2;
+    const toggle  = trackNumber === 1 ? beatGridToggle1 : beatGridToggle2;
+    const snap    = trackNumber === 1 ? snapToggle1     : snapToggle2;
+    const tap     = trackNumber === 1 ? tapTempo1       : tapTempo2;
+    const cntEl   = trackNumber === 1 ? tapCount1       : tapCount2;
+    const left    = trackNumber === 1 ? nudgeLeft1      : nudgeLeft2;
+    const right   = trackNumber === 1 ? nudgeRight1     : nudgeRight2;
+    const bpmEl   = trackNumber === 1 ? beatGridBPMEl1  : beatGridBPMEl2;
+
+    if (!toggle) return; // guard against missing DOM
+
+    toggle.addEventListener('click', () => {
+        bg.gridVisible = !bg.gridVisible;
+        toggle.textContent = `Grid: ${bg.gridVisible ? 'ON' : 'OFF'}`;
+        toggle.classList.toggle('active', bg.gridVisible);
+        drawBeatGrid(trackNumber);
+    });
+
+    snap.addEventListener('click', () => {
+        bg.snapEnabled = !bg.snapEnabled;
+        snap.textContent = `⊡ Snap: ${bg.snapEnabled ? 'ON' : 'OFF'}`;
+        snap.classList.toggle('active', bg.snapEnabled);
+    });
+
+    tap.addEventListener('click', () => {
+        const newBPM = bg.tap();
+        cntEl.textContent = bg.getTapCount();
+        if (newBPM !== null) {
+            bpmEl.textContent = newBPM.toFixed(1);
+            drawBeatGrid(trackNumber);
+        }
+    });
+
+    left.addEventListener('click',  () => { bg.nudge(-1); drawBeatGrid(trackNumber); });
+    right.addEventListener('click', () => { bg.nudge(+1); drawBeatGrid(trackNumber); });
+}
+
+initBeatGridControls(1);
+initBeatGridControls(2);
+
+// ----- F-006: Slip Mode -----
+function enterSlip(trackNumber) {
+    const state  = trackNumber === 1 ? slipState1  : slipState2;
+    const audioEl = trackNumber === 1 ? audioElement1 : audioElement2;
+    const btn    = trackNumber === 1 ? slipBtn1    : slipBtn2;
+    if (state.enabled) return;
+    state.enabled        = true;
+    state.startAudioTime = audioEl.currentTime;
+    state.startWallMs    = Date.now();
+    btn.classList.add('active');
+}
+
+function exitSlip(trackNumber) {
+    const state  = trackNumber === 1 ? slipState1  : slipState2;
+    const audioEl = trackNumber === 1 ? audioElement1 : audioElement2;
+    const btn    = trackNumber === 1 ? slipBtn1    : slipBtn2;
+    const ph     = trackNumber === 1 ? slipPlayhead1 : slipPlayhead2;
+    if (!state.enabled) return;
+    state.enabled = false;
+    btn.classList.remove('active');
+    ph.style.display = 'none';
+    if (audioEl.duration) {
+        const elapsed  = (Date.now() - state.startWallMs) / 1000;
+        const snapTime = Math.min(Math.max(0, state.startAudioTime + elapsed), audioEl.duration - 0.05);
+        audioEl.currentTime = snapTime;
+    }
+}
+
+function initSlipControls(trackNumber) {
+    const btn = trackNumber === 1 ? slipBtn1 : slipBtn2;
+
+    const onStart = (e) => {
+        e.preventDefault();
+        enterSlip(trackNumber);
+        const onEnd = () => {
+            exitSlip(trackNumber);
+            window.removeEventListener('mouseup',   onEnd);
+            window.removeEventListener('touchend',  onEnd);
+        };
+        window.addEventListener('mouseup',  onEnd);
+        window.addEventListener('touchend', onEnd);
+    };
+
+    btn.addEventListener('mousedown',  onStart);
+    btn.addEventListener('touchstart', onStart, { passive: false });
+}
+
+initSlipControls(1);
+initSlipControls(2);
 
 // Helper function to update precise loop input values
 function updatePreciseLoopInputs(trackNumber) {
