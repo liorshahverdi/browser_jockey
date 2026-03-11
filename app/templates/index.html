@@ -72,6 +72,14 @@
                             <div id="loopMarkerEnd1" class="loop-marker loop-marker-end" style="display: none;">B</div>
                             <div id="loopRegion1" class="loop-region" style="display: none;"></div>
                             <div id="timeTooltip1" class="time-tooltip" style="display: none;">0:00.000</div>
+                            <div id="hotCueMarker1_0" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker1_1" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker1_2" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker1_3" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker1_4" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker1_5" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker1_6" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker1_7" class="hot-cue-marker" style="display:none;"></div>
                         </div>
                         <div class="waveform-zoom-controls">
                             <button id="zoomInBtn1" class="zoom-btn" title="Zoom in">🔍+</button>
@@ -93,8 +101,34 @@
                             <button id="reverseLoopBtn1" class="control-btn-small reverse-loop-btn" disabled title="Enable reverse loop" aria-label="Enable reverse loop for Track 1" aria-pressed="false">🔁⏪</button>
                             <button id="clearLoopBtn1" class="control-btn-small" disabled title="Clear loop points" aria-label="Clear loop points for Track 1">❌</button>
                         </div>
+                        <div class="hot-cues-section" id="hotCuesSection1">
+                            <div class="hot-cues-top-row">
+                                <span class="hot-cues-label">Hot Cues</span>
+                                <div class="hot-cues-buttons">
+                                    <button class="hot-cue-btn" id="hotCue1_0" data-track="1" data-cue="0" disabled>1</button>
+                                    <button class="hot-cue-btn" id="hotCue1_1" data-track="1" data-cue="1" disabled>2</button>
+                                    <button class="hot-cue-btn" id="hotCue1_2" data-track="1" data-cue="2" disabled>3</button>
+                                    <button class="hot-cue-btn" id="hotCue1_3" data-track="1" data-cue="3" disabled>4</button>
+                                    <button class="hot-cue-btn" id="hotCue1_4" data-track="1" data-cue="4" disabled>5</button>
+                                    <button class="hot-cue-btn" id="hotCue1_5" data-track="1" data-cue="5" disabled>6</button>
+                                    <button class="hot-cue-btn" id="hotCue1_6" data-track="1" data-cue="6" disabled>7</button>
+                                    <button class="hot-cue-btn" id="hotCue1_7" data-track="1" data-cue="7" disabled>8</button>
+                                </div>
+                            </div>
+                            <div class="hot-cues-hint">
+                                <span class="hc-hint-item"><kbd>Click</kbd> empty → <strong>set</strong></span>
+                                <span class="hc-hint-sep">·</span>
+                                <span class="hc-hint-item"><kbd>Click</kbd> filled → <strong>jump</strong></span>
+                                <span class="hc-hint-sep">·</span>
+                                <span class="hc-hint-item"><kbd>Shift</kbd>+click → <strong>delete</strong></span>
+                                <span class="hc-hint-sep">·</span>
+                                <span class="hc-hint-item">Dbl-click → <strong>rename</strong></span>
+                                <span class="hc-hint-sep">·</span>
+                                <span class="hc-hint-item"><kbd>1</kbd>–<kbd>8</kbd> → jump &nbsp;<kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>8</kbd> → set</span>
+                            </div>
+                        </div>
                     </div>
-                    
+
                     <div class="track-controls-panel">
                         <div class="quick-loop-section" style="display: none;" id="quickLoopSection1">
                             <label class="quick-loop-label">Quick Loop:</label>
@@ -478,6 +512,14 @@
                             <div id="loopMarkerEnd2" class="loop-marker loop-marker-end" style="display: none;">B</div>
                             <div id="loopRegion2" class="loop-region" style="display: none;"></div>
                             <div id="timeTooltip2" class="time-tooltip" style="display: none;">0:00.000</div>
+                            <div id="hotCueMarker2_0" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker2_1" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker2_2" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker2_3" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker2_4" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker2_5" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker2_6" class="hot-cue-marker" style="display:none;"></div>
+                            <div id="hotCueMarker2_7" class="hot-cue-marker" style="display:none;"></div>
                         </div>
                         <div class="waveform-zoom-controls">
                             <button id="zoomInBtn2" class="zoom-btn" title="Zoom in">🔍+</button>
@@ -499,8 +541,34 @@
                             <button id="reverseLoopBtn2" class="control-btn-small reverse-loop-btn" disabled title="Enable reverse loop" aria-label="Enable reverse loop for Track 2" aria-pressed="false">🔁⏪</button>
                             <button id="clearLoopBtn2" class="control-btn-small" disabled title="Clear loop points" aria-label="Clear loop points for Track 2">❌</button>
                         </div>
+                        <div class="hot-cues-section" id="hotCuesSection2">
+                            <div class="hot-cues-top-row">
+                                <span class="hot-cues-label">Hot Cues</span>
+                                <div class="hot-cues-buttons">
+                                    <button class="hot-cue-btn" id="hotCue2_0" data-track="2" data-cue="0" disabled>1</button>
+                                    <button class="hot-cue-btn" id="hotCue2_1" data-track="2" data-cue="1" disabled>2</button>
+                                    <button class="hot-cue-btn" id="hotCue2_2" data-track="2" data-cue="2" disabled>3</button>
+                                    <button class="hot-cue-btn" id="hotCue2_3" data-track="2" data-cue="3" disabled>4</button>
+                                    <button class="hot-cue-btn" id="hotCue2_4" data-track="2" data-cue="4" disabled>5</button>
+                                    <button class="hot-cue-btn" id="hotCue2_5" data-track="2" data-cue="5" disabled>6</button>
+                                    <button class="hot-cue-btn" id="hotCue2_6" data-track="2" data-cue="6" disabled>7</button>
+                                    <button class="hot-cue-btn" id="hotCue2_7" data-track="2" data-cue="7" disabled>8</button>
+                                </div>
+                            </div>
+                            <div class="hot-cues-hint">
+                                <span class="hc-hint-item"><kbd>Click</kbd> empty → <strong>set</strong></span>
+                                <span class="hc-hint-sep">·</span>
+                                <span class="hc-hint-item"><kbd>Click</kbd> filled → <strong>jump</strong></span>
+                                <span class="hc-hint-sep">·</span>
+                                <span class="hc-hint-item"><kbd>Shift</kbd>+click → <strong>delete</strong></span>
+                                <span class="hc-hint-sep">·</span>
+                                <span class="hc-hint-item">Dbl-click → <strong>rename</strong></span>
+                                <span class="hc-hint-sep">·</span>
+                                <span class="hc-hint-item"><kbd>1</kbd>–<kbd>8</kbd> → jump &nbsp;<kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>8</kbd> → set</span>
+                            </div>
+                        </div>
                     </div>
-                    
+
                     <div class="track-controls-panel">
                         <div class="quick-loop-section" style="display: none;" id="quickLoopSection2">
                             <label class="quick-loop-label">Quick Loop:</label>

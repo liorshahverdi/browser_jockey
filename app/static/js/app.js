@@ -79,6 +79,7 @@ import {
     cleanupTheremin
 } from './modules/theremin.js';
 import { Sequencer } from './modules/sequencer.js';
+import { HotCueManager, HOT_CUE_COLORS } from './modules/hot-cues.js';
 
 // Get DOM elements for Track 1
 const audioFile1 = document.getElementById('audioFile1');
@@ -207,6 +208,17 @@ const exportLoop2 = document.getElementById('exportLoop2');
 const exportFormat2 = document.getElementById('exportFormat2');
 const waveformColor2 = document.getElementById('waveformColor2');
 const resetColor2 = document.getElementById('resetColor2');
+
+// Hot Cue DOM elements
+const hotCueBtns1 = Array.from({ length: 8 }, (_, i) => document.getElementById(`hotCue1_${i}`));
+const hotCueBtns2 = Array.from({ length: 8 }, (_, i) => document.getElementById(`hotCue2_${i}`));
+const hotCueMarkers1 = Array.from({ length: 8 }, (_, i) => document.getElementById(`hotCueMarker1_${i}`));
+const hotCueMarkers2 = Array.from({ length: 8 }, (_, i) => document.getElementById(`hotCueMarker2_${i}`));
+
+// Hot Cue managers
+const hotCueManager1 = new HotCueManager('track1');
+const hotCueManager2 = new HotCueManager('track2');
+let focusedHotCueTrack = 1; // which track 1-8 keyboard shortcuts target
 
 // Shared visualizer elements
 const container = document.getElementById('visualizer-container');
@@ -2875,6 +2887,36 @@ function playSamplerNoteWrapper(scaleIndex, isUpperOctave = false) {
 
 // Keyboard event handlers using module
 function handleKeyDown(event) {
+    // Hot cue keyboard shortcuts: 1-8 jump, Shift+1-8 set cue on focused track.
+    // Use event.code ('Digit1'–'Digit8') so Shift+digit still resolves correctly
+    // (event.key for Shift+1 is '!' on US keyboards, not '1').
+    if (!event.ctrlKey && !event.metaKey && !event.altKey &&
+        event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+        const codeMatch = event.code && event.code.match(/^Digit([1-8])$/);
+        if (codeMatch) {
+            const idx       = parseInt(codeMatch[1], 10) - 1;
+            const manager   = focusedHotCueTrack === 1 ? hotCueManager1 : hotCueManager2;
+            const audioEl   = focusedHotCueTrack === 1 ? audioElement1  : audioElement2;
+            const trackBtns = focusedHotCueTrack === 1 ? hotCueBtns1    : hotCueBtns2;
+            if (trackBtns[0] && !trackBtns[0].disabled) {
+                if (event.shiftKey) {
+                    manager.setCue(idx, audioEl.currentTime);
+                    flashHotCueBtn(trackBtns[idx], 'set');
+                    updateHotCueUI(focusedHotCueTrack);
+                    updateHotCueMarkersAfterZoom(focusedHotCueTrack);
+                    event.preventDefault();
+                    return;
+                } else {
+                    const jumped = manager.jumpToCue(idx, audioEl);
+                    if (jumped) {
+                        flashHotCueBtn(trackBtns[idx], 'jump');
+                        event.preventDefault();
+                        return;
+                    }
+                }
+            }
+        }
+    }
     samplerHandleKeyDown(event, samplerEnabled, activeKeys, playSamplerNoteWrapper);
 }
 
@@ -4029,13 +4071,20 @@ audioFile1.addEventListener('change', async (e) => {
             console.error('Error loading audio file:', error);
             alert('⚠️ ' + error.message);
         }
-        
+
+        // Load hot cues for this file
+        hotCueManager1.loadCues(fileHashFrom(file));
+        focusedHotCueTrack = 1;
+        hotCueBtns1.forEach(btn => btn && (btn.disabled = false));
+        updateHotCueUI(1);
+        updateHotCueMarkersAfterZoom(1);
+
         // Initialize buffer manager and playback controller for reverse playback
         try {
             if (!audioContext) {
                 await initAudioContext();
             }
-            
+
             console.log('Initializing buffer-based reverse playback for Track 1...');
             bufferManager1 = new AudioBufferManager(audioContext);
             await bufferManager1.loadAudioBuffer(file, 'track1');
@@ -4191,13 +4240,20 @@ audioFile2.addEventListener('change', async (e) => {
             console.error('Error loading audio file:', error);
             alert('⚠️ ' + error.message);
         }
-        
+
+        // Load hot cues for this file
+        hotCueManager2.loadCues(fileHashFrom(file));
+        focusedHotCueTrack = 2;
+        hotCueBtns2.forEach(btn => btn && (btn.disabled = false));
+        updateHotCueUI(2);
+        updateHotCueMarkersAfterZoom(2);
+
         // Initialize buffer manager and playback controller for reverse playback
         try {
             if (!audioContext) {
                 await initAudioContext();
             }
-            
+
             console.log('Initializing buffer-based reverse playback for Track 2...');
             bufferManager2 = new AudioBufferManager(audioContext);
             await bufferManager2.loadAudioBuffer(file, 'track2');
@@ -7240,7 +7296,137 @@ function updateLoopMarkersAfterZoom(trackNumber) {
     } else if (trackNumber === 2 && loopState2.start !== null && loopState2.end !== null) {
         updateLoopRegion(loopState2, loopRegion2, loopMarkerStart2, loopMarkerEnd2, audioElement2.duration, zoomState2);
     }
+    updateHotCueMarkersAfterZoom(trackNumber);
 }
+
+// ---- Hot Cue helpers ----
+
+/** Build a stable file key from name + size (no async needed). */
+function fileHashFrom(file) {
+    return encodeURIComponent(file.name) + '|' + file.size;
+}
+
+/** Update hot cue button appearance to reflect current cue state. */
+function updateHotCueUI(trackNumber) {
+    const manager = trackNumber === 1 ? hotCueManager1 : hotCueManager2;
+    const btns    = trackNumber === 1 ? hotCueBtns1    : hotCueBtns2;
+    const cues = manager.getCues();
+    btns.forEach((btn, i) => {
+        if (!btn) return;
+        const cue = cues[i];
+        if (cue) {
+            btn.classList.add('cue-set');
+            btn.style.backgroundColor = cue.color;
+            btn.textContent = cue.label || String(i + 1);
+            btn.title = `Cue ${i + 1} @ ${formatTime(cue.time)} — Click: jump, Shift+click: delete, Dbl-click: rename`;
+        } else {
+            btn.classList.remove('cue-set');
+            btn.style.backgroundColor = '';
+            btn.textContent = String(i + 1);
+            btn.title = `Hot Cue ${i + 1} — Click to set at current position`;
+        }
+    });
+}
+
+/** Reposition absolutely-placed hot cue marker divs after zoom or scroll. */
+function updateHotCueMarkersAfterZoom(trackNumber) {
+    const manager      = trackNumber === 1 ? hotCueManager1 : hotCueManager2;
+    const markers      = trackNumber === 1 ? hotCueMarkers1 : hotCueMarkers2;
+    const zoomState    = trackNumber === 1 ? zoomState1     : zoomState2;
+    const audioElement = trackNumber === 1 ? audioElement1  : audioElement2;
+    const duration = audioElement.duration;
+
+    if (!duration || isNaN(duration) || !zoomState.audioBuffer) {
+        markers.forEach(m => m && (m.style.display = 'none'));
+        return;
+    }
+
+    const cues      = manager.getCues();
+    const viewStart = zoomState.offset;
+    // Clamp viewEnd to [0,1] to avoid rounding issues at zoom level 1
+    const viewEnd   = Math.min(1, viewStart + 1 / zoomState.level);
+
+    cues.forEach((cue, i) => {
+        const marker = markers[i];
+        if (!marker) return;
+        if (!cue) { marker.style.display = 'none'; return; }
+
+        const posNorm = cue.time / duration;
+        if (posNorm < viewStart || posNorm > viewEnd) {
+            marker.style.display = 'none';
+            return;
+        }
+        const leftPct = Math.min(100, ((posNorm - viewStart) / (viewEnd - viewStart)) * 100);
+        marker.style.left            = leftPct + '%';
+        marker.style.backgroundColor = cue.color;
+        marker.style.boxShadow       = `0 0 5px ${cue.color}`;
+        marker.style.display         = 'block';
+    });
+}
+
+/** Brief visual flash on a hot cue button for set (bright white) or jump (pulse). */
+function flashHotCueBtn(btn, type) {
+    if (!btn) return;
+    btn.classList.remove('hc-flash-set', 'hc-flash-jump');
+    void btn.offsetWidth; // force reflow to restart animation
+    btn.classList.add(type === 'set' ? 'hc-flash-set' : 'hc-flash-jump');
+    btn.addEventListener('animationend', () => {
+        btn.classList.remove('hc-flash-set', 'hc-flash-jump');
+    }, { once: true });
+}
+
+/** Wire up hot cue button click / dblclick handlers for one track. */
+function initHotCueButtons(trackNumber) {
+    const manager      = trackNumber === 1 ? hotCueManager1 : hotCueManager2;
+    const btns         = trackNumber === 1 ? hotCueBtns1    : hotCueBtns2;
+    const audioElement = trackNumber === 1 ? audioElement1  : audioElement2;
+
+    btns.forEach((btn, i) => {
+        if (!btn) return;
+
+        // Track last click time to suppress the second click of a dblclick without
+        // adding delay to single clicks (important for real-time DJ use).
+        let lastClickMs = 0;
+
+        btn.addEventListener('click', (e) => {
+            if (btn.disabled) return;
+            const now = Date.now();
+            if (now - lastClickMs < 300) { lastClickMs = 0; return; } // 2nd click of dblclick
+            lastClickMs = now;
+
+            focusedHotCueTrack = trackNumber;
+            const cues = manager.getCues();
+            if (e.shiftKey) {
+                manager.deleteCue(i);
+            } else if (cues[i]) {
+                manager.jumpToCue(i, audioElement);
+                flashHotCueBtn(btn, 'jump');
+            } else {
+                manager.setCue(i, audioElement.currentTime);
+                flashHotCueBtn(btn, 'set');
+            }
+            updateHotCueUI(trackNumber);
+            updateHotCueMarkersAfterZoom(trackNumber);
+        });
+
+        btn.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            lastClickMs = 0; // reset so next single-click fires normally
+            if (btn.disabled) return;
+            const cues = manager.getCues();
+            if (!cues[i]) return;
+            const newLabel = prompt(`Label for Cue ${i + 1} (max 12 chars):`, cues[i].label || '');
+            if (newLabel !== null) {
+                manager.setLabel(i, newLabel);
+                updateHotCueUI(trackNumber);
+            }
+        });
+    });
+}
+
+// Initialise button handlers at startup (buttons are disabled until a file loads)
+initHotCueButtons(1);
+initHotCueButtons(2);
 
 // Helper function to update precise loop input values
 function updatePreciseLoopInputs(trackNumber) {

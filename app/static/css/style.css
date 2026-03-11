@@ -5018,3 +5018,138 @@ body.sequencer-fullscreen .visualization-wrapper {
     }
 }
 
+/* ============================================================
+   F-004 — Hot Cues
+   ============================================================ */
+
+.hot-cues-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+}
+
+.hot-cues-top-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.hot-cues-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    white-space: nowrap;
+    min-width: 58px;
+}
+
+.hot-cues-buttons {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.hot-cue-btn {
+    width: 34px;
+    height: 28px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(40, 40, 40, 0.85);
+    transition: transform 0.08s, box-shadow 0.1s, background-color 0.15s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 2px;
+    position: relative;
+}
+
+.hot-cue-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.hot-cue-btn.cue-set {
+    color: rgba(0, 0, 0, 0.85);
+    border-color: transparent;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.hot-cue-btn:not(:disabled):hover {
+    transform: translateY(-2px) scale(1.06);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    filter: brightness(1.15);
+}
+
+.hot-cue-btn:not(:disabled):active {
+    transform: scale(0.93);
+}
+
+/* Flash animations */
+@keyframes hcFlashSet {
+    0%   { filter: brightness(1); outline: 3px solid #fff; outline-offset: 1px; }
+    50%  { filter: brightness(2.5); outline-color: #fff; }
+    100% { filter: brightness(1); outline: none; }
+}
+
+@keyframes hcFlashJump {
+    0%   { filter: brightness(1); outline: 3px solid rgba(255,255,255,0.6); outline-offset: 1px; }
+    40%  { filter: brightness(1.8); }
+    100% { filter: brightness(1); outline: none; }
+}
+
+.hot-cue-btn.hc-flash-set  { animation: hcFlashSet  0.28s ease-out forwards; }
+.hot-cue-btn.hc-flash-jump { animation: hcFlashJump 0.22s ease-out forwards; }
+
+/* Hint row */
+.hot-cues-hint {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.42);
+    line-height: 1.4;
+}
+
+.hot-cues-hint strong {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+}
+
+.hc-hint-sep {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 12px;
+}
+
+.hot-cues-hint kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    font-size: 9px;
+    font-family: monospace;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 3px;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.6;
+}
+
+/* Waveform cue-point marker line */
+.hot-cue-marker {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 2px;
+    pointer-events: none;
+    z-index: 2;
+    transform: translateX(-50%);
+}
+
