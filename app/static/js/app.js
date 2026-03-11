@@ -264,9 +264,11 @@ const scReleaseSlider   = document.getElementById('scRelease');
 const scReleaseVal      = document.getElementById('scReleaseVal');
 const scWetSlider       = document.getElementById('scWet');
 const scWetVal          = document.getElementById('scWetVal');
-const scGainReduction   = document.getElementById('scGainReduction');
-const scGRVal           = document.getElementById('scGRVal');
-let sidechainCompressor = null;
+const scGainReduction      = document.getElementById('scGainReduction');
+const scGRVal              = document.getElementById('scGRVal');
+const sidechainDirectionBtn = document.getElementById('sidechainDirection');
+let sidechainCompressor    = null;
+let sidechainDir           = 1; // 1 = T1→T2 (duck T2),  2 = T2→T1 (duck T1)
 
 // Shared visualizer elements
 const container = document.getElementById('visualizer-container');
@@ -4132,6 +4134,7 @@ audioFile1.addEventListener('change', async (e) => {
         drawBeatGrid(1);
         slipBtn1.disabled = false;
         sidechainToggle.disabled = false;
+        sidechainDirectionBtn.disabled = false;
 
         // Initialize buffer manager and playback controller for reverse playback
         try {
@@ -4307,6 +4310,7 @@ audioFile2.addEventListener('change', async (e) => {
         drawBeatGrid(2);
         slipBtn2.disabled = false;
         sidechainToggle.disabled = false;
+        sidechainDirectionBtn.disabled = false;
 
         // Initialize buffer manager and playback controller for reverse playback
         try {
@@ -7652,22 +7656,29 @@ function trySetupSidechain() {
         sidechainToggle.title = 'Play a track first to initialize the audio engine';
         return false;
     }
-    if (!gain1) {
-        sidechainToggle.title = 'Load Track 1 first (it provides the sidechain trigger)';
+
+    const isDir1 = sidechainDir === 1;
+    const tapNode  = isDir1 ? gain1    : gain2;
+    const duckMix  = isDir1 ? finalMix2 : finalMix1;
+    const srcLabel = isDir1 ? 'Track 1' : 'Track 2';
+    const dstLabel = isDir1 ? 'Track 2' : 'Track 1';
+
+    if (!tapNode) {
+        sidechainToggle.title = `Load and play ${srcLabel} first (sidechain trigger)`;
         return false;
     }
-    if (!finalMix2 || !merger) {
-        sidechainToggle.title = 'Load and play Track 2 first (it is the signal being ducked)';
+    if (!duckMix || !merger) {
+        sidechainToggle.title = `Load and play ${dstLabel} first (signal to duck)`;
         return false;
     }
 
     if (!sidechainCompressor) sidechainCompressor = new SidechainCompressor(audioContext);
-    sidechainCompressor.setup(gain1, finalMix2, merger);
+    sidechainCompressor.setup(tapNode, duckMix, merger);
     sidechainCompressor.onGainReduction = (pct) => {
         scGainReduction.style.width = pct + '%';
         scGRVal.textContent = pct + '%';
     };
-    sidechainToggle.title = 'Duck Track 2 based on Track 1 energy';
+    sidechainToggle.title = `Duck ${dstLabel} based on ${srcLabel} energy`;
     return true;
 }
 
@@ -7722,6 +7733,34 @@ function initSidechainControls() {
         const v = parseInt(scWetSlider.value);
         scWetVal.textContent = v + '%';
         if (sidechainCompressor) sidechainCompressor.setWet(v / 100);
+    });
+
+    sidechainDirectionBtn.addEventListener('click', () => {
+        const wasEnabled = sidechainCompressor && sidechainCompressor.enabled;
+
+        // Tear down current wiring before switching direction
+        if (sidechainCompressor) {
+            sidechainCompressor.destroy();
+            sidechainCompressor = null;
+        }
+
+        // Flip direction
+        sidechainDir = sidechainDir === 1 ? 2 : 1;
+        sidechainDirectionBtn.textContent = sidechainDir === 1 ? 'T1 → T2' : 'T2 → T1';
+
+        // Reset GR meter
+        scGainReduction.style.width = '0%';
+        scGRVal.textContent = '0%';
+
+        // Re-enable with new direction if it was running
+        if (wasEnabled) {
+            if (trySetupSidechain()) {
+                sidechainCompressor.enable();
+            } else {
+                sidechainToggle.textContent = 'OFF';
+                sidechainToggle.classList.remove('active');
+            }
+        }
     });
 }
 

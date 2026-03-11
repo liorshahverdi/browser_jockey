@@ -5403,15 +5403,28 @@ body.sequencer-fullscreen .visualization-wrapper {
     text-transform: uppercase;
 }
 
-.sidechain-source-badge {
+.sidechain-direction-btn {
     font-size: 0.6rem;
-    color: rgba(255, 85, 153, 0.55);
-    background: rgba(255, 85, 153, 0.1);
-    border: 1px solid rgba(255, 85, 153, 0.2);
+    color: rgba(255, 85, 153, 0.65);
+    background: rgba(255, 85, 153, 0.08);
+    border: 1px solid rgba(255, 85, 153, 0.25);
     border-radius: 3px;
-    padding: 1px 5px;
+    padding: 2px 7px;
     margin-left: auto;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sidechain-direction-btn:hover:not(:disabled) {
+    background: rgba(255, 85, 153, 0.2);
+    border-color: rgba(255, 85, 153, 0.5);
+    color: #ff88bb;
+}
+
+.sidechain-direction-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
 }
 
 .sidechain-toggle-btn {
