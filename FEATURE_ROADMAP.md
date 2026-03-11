@@ -23,6 +23,7 @@ Features that were already implemented in the codebase have been removed from th
 | 7. Recording + Export | 4 | F-040 – F-043 |
 | 8. Analysis + Intelligence | 4 | F-044 – F-047 |
 | 9. Project + Data Management | 3 | F-049 – F-051 |
+| 9. Project + Data Management | 3 | F-049 – F-051 |
 | 10. UX + Accessibility | 5 | F-052 – F-055, F-057 |
 | **Total** | **46** | |
 
