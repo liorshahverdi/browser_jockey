@@ -1136,6 +1136,45 @@
                         <button id="loadToTrack2Btn" class="control-btn">
                             <span class="record-icon">📥</span> Load to Track 2
                         </button>
+                        <div class="transcription-separator"></div>
+                        <button id="transcribeBtn" class="control-btn transcribe-btn">
+                            <span class="record-icon">✏️</span> Transcribe
+                        </button>
+                    </div>
+                    <div class="transcription-panel" id="transcriptionPanel" style="display: none;">
+                        <div class="transcription-options-row">
+                            <div class="transcription-option-group">
+                                <label for="transcriptionLanguage" class="transcription-label">Language:</label>
+                                <select id="transcriptionLanguage" class="transcription-select">
+                                    <option value="auto" selected>Auto-detect</option>
+                                    <option value="english">English</option>
+                                    <option value="spanish">Spanish</option>
+                                    <option value="french">French</option>
+                                    <option value="german">German</option>
+                                    <option value="japanese">Japanese</option>
+                                    <option value="chinese">Chinese</option>
+                                    <option value="portuguese">Portuguese</option>
+                                    <option value="arabic">Arabic</option>
+                                </select>
+                            </div>
+                            <div class="transcription-option-group">
+                                <input type="checkbox" id="transcriptionTimestamps" class="transcription-checkbox">
+                                <label for="transcriptionTimestamps" class="transcription-label">Timestamps</label>
+                            </div>
+                        </div>
+                        <div class="transcription-progress-row" id="transcriptionProgressRow" style="display: none;">
+                            <span class="transcription-status-text" id="transcriptionStatus"></span>
+                            <div class="transcription-progress-track">
+                                <div class="transcription-progress-bar" id="transcriptionProgressBar" style="width: 0%;"></div>
+                            </div>
+                            <span class="transcription-progress-pct" id="transcriptionProgressPct">0%</span>
+                        </div>
+                        <textarea id="transcriptionOutput" class="transcription-output" readonly
+                            placeholder="Transcription will appear here…" rows="5"></textarea>
+                        <div class="transcription-action-row" id="transcriptionActionRow" style="display: none;">
+                            <button id="transcriptionCopyBtn" class="control-btn transcription-action-btn">📋 Copy</button>
+                            <button id="transcriptionExportBtn" class="control-btn transcription-action-btn">💾 Export .txt</button>
+                        </div>
                     </div>
                     <div class="recording-waveform-container" style="display: none;">
                         <label>Recorded Output:</label>

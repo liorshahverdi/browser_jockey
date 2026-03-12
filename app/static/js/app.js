@@ -82,6 +82,7 @@ import { Sequencer } from './modules/sequencer.js';
 import { HotCueManager, HOT_CUE_COLORS } from './modules/hot-cues.js';
 import { BeatGrid } from './modules/beat-grid.js';
 import { SidechainCompressor } from './modules/sidechain.js';
+import { Transcriber } from './modules/transcription.js';
 
 // Get DOM elements for Track 1
 const audioFile1 = document.getElementById('audioFile1');
@@ -289,6 +290,20 @@ const recordingTime = document.getElementById('recordingTime');
 const recordingWaveform = document.getElementById('recordingWaveform');
 const recordingWaveformContainer = document.querySelector('.recording-waveform-container');
 const recordedAudio = document.getElementById('recordedAudio');
+
+// Transcription DOM elements
+const transcribeBtn            = document.getElementById('transcribeBtn');
+const transcriptionPanel       = document.getElementById('transcriptionPanel');
+const transcriptionLanguage    = document.getElementById('transcriptionLanguage');
+const transcriptionTimestamps  = document.getElementById('transcriptionTimestamps');
+const transcriptionProgressRow = document.getElementById('transcriptionProgressRow');
+const transcriptionStatus      = document.getElementById('transcriptionStatus');
+const transcriptionProgressBar = document.getElementById('transcriptionProgressBar');
+const transcriptionProgressPct = document.getElementById('transcriptionProgressPct');
+const transcriptionOutput      = document.getElementById('transcriptionOutput');
+const transcriptionActionRow   = document.getElementById('transcriptionActionRow');
+const transcriptionCopyBtn     = document.getElementById('transcriptionCopyBtn');
+const transcriptionExportBtn   = document.getElementById('transcriptionExportBtn');
 
 // Dual Track Control elements
 const playBothBtn = document.getElementById('playBothBtn');
@@ -545,6 +560,9 @@ let recordingInterval;
 let recordingDestination;
 let recordingAnalyser;
 let recordingAnimationId;
+
+const transcriber = new Transcriber();
+let   transcriptionModelLoaded = false;
 
 // Keyboard Sampler state
 let samplerEnabled = false;
@@ -5976,6 +5994,95 @@ stopRecordBtn.addEventListener('click', stopRecording);
 downloadBtn.addEventListener('click', downloadRecordingWrapper);
 loadToTrack1Btn.addEventListener('click', loadRecordingToTrack1);
 loadToTrack2Btn.addEventListener('click', loadRecordingToTrack2);
+
+// Transcription button handlers
+transcribeBtn.addEventListener('click', handleTranscribeClick);
+transcriptionCopyBtn.addEventListener('click', handleTranscriptionCopy);
+transcriptionExportBtn.addEventListener('click', handleTranscriptionExport);
+
+// Set up Transcriber callbacks once
+transcriber.onStatus = (msg) => {
+    transcriptionStatus.textContent = msg;
+    transcriptionProgressRow.style.display = 'flex';
+};
+transcriber.onModelProgress = (file, pct) => {
+    transcriptionProgressBar.style.width = pct + '%';
+    transcriptionProgressPct.textContent  = pct + '%';
+    transcriptionStatus.textContent = `Downloading ${file.split('/').pop()}…`;
+};
+transcriber.onReady = () => {
+    transcriptionModelLoaded = true;
+    transcriptionStatus.textContent = 'Model ready.';
+    transcriptionProgressBar.style.width = '100%';
+    transcriptionProgressPct.textContent  = '100%';
+    _runTranscription();  // fire off inference now that model is warm
+};
+transcriber.onResult = (text) => {
+    transcriptionOutput.value = text;
+    transcriptionProgressRow.style.display = 'none';
+    transcriptionActionRow.style.display    = 'flex';
+    transcribeBtn.disabled = false;
+    transcribeBtn.classList.remove('loading');
+    transcribeBtn.innerHTML = '<span class="record-icon">✏️</span> Transcribe';
+};
+transcriber.onError = (msg) => {
+    transcriptionStatus.textContent = `Error: ${msg}`;
+    transcribeBtn.disabled = false;
+    transcribeBtn.classList.remove('loading');
+    transcribeBtn.innerHTML = '<span class="record-icon">✏️</span> Transcribe';
+    console.error('[Transcription]', msg);
+};
+
+async function handleTranscribeClick() {
+    const blob = recordingState.blob || recordedBlob;
+    if (!blob) return;
+    transcriptionPanel.style.display = 'block';
+    transcribeBtn.disabled = true;
+    transcribeBtn.classList.add('loading');
+    transcribeBtn.innerHTML = '<span class="record-icon">⏳</span> Working…';
+    transcriptionOutput.value = '';
+    transcriptionActionRow.style.display    = 'none';
+    transcriptionProgressBar.style.width    = '0%';
+    transcriptionProgressPct.textContent    = '0%';
+    if (!transcriptionModelLoaded) {
+        transcriber.loadModel();   // onReady → _runTranscription()
+    } else {
+        _runTranscription();
+    }
+}
+
+async function _runTranscription() {
+    const blob = recordingState.blob || recordedBlob;
+    if (!blob || !audioContext) return;
+    await transcriber.transcribe(blob, audioContext, {
+        language:   transcriptionLanguage?.value ?? 'auto',
+        timestamps: transcriptionTimestamps?.checked ?? false
+    });
+}
+
+async function handleTranscriptionCopy() {
+    const text = transcriptionOutput.value;
+    if (!text) return;
+    try {
+        await navigator.clipboard.writeText(text);
+        const orig = transcriptionCopyBtn.textContent;
+        transcriptionCopyBtn.textContent = '✅ Copied!';
+        setTimeout(() => { transcriptionCopyBtn.textContent = orig; }, 1800);
+    } catch {
+        transcriptionOutput.select();
+        document.execCommand('copy');
+    }
+}
+
+function handleTranscriptionExport() {
+    const text = transcriptionOutput.value;
+    if (!text) return;
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    const a   = Object.assign(document.createElement('a'), { href: url, download: `transcription_${Date.now()}.txt` });
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
 
 // Dual Track Control button handlers
 playBothBtn.addEventListener('click', playBothTracks);

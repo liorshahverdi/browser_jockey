@@ -5549,3 +5549,169 @@ body.sequencer-fullscreen .visualization-wrapper {
     transition: width 0.04s linear;
 }
 
+
+/* ================================================================
+   Transcription Feature Styles
+   ================================================================ */
+
+.transcription-separator {
+    flex-basis: 100%;
+    height: 1px;
+    background: rgba(139, 92, 246, 0.4);
+    margin: 6px 0;
+}
+
+.transcribe-btn {
+    border-color: rgba(139, 92, 246, 0.6) !important;
+    color: #c4b5fd !important;
+}
+
+.transcribe-btn:hover {
+    background: rgba(139, 92, 246, 0.15) !important;
+    border-color: #8b5cf6 !important;
+    color: #ddd6fe !important;
+}
+
+.transcribe-btn.loading {
+    opacity: 0.7;
+    animation: transcribe-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes transcribe-pulse {
+    0%, 100% { border-color: rgba(139, 92, 246, 0.4); }
+    50%       { border-color: #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.5); }
+}
+
+.transcription-panel {
+    background: rgba(139, 92, 246, 0.06);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.transcription-options-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.transcription-option-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.transcription-label {
+    font-size: 0.8rem;
+    color: #c4b5fd;
+    white-space: nowrap;
+}
+
+.transcription-select {
+    background: rgba(20, 10, 35, 0.8);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    border-radius: 4px;
+    color: #e2d9f3;
+    font-size: 0.8rem;
+    padding: 3px 6px;
+    cursor: pointer;
+}
+
+.transcription-select:focus {
+    outline: none;
+    border-color: #8b5cf6;
+}
+
+.transcription-checkbox {
+    accent-color: #8b5cf6;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+.transcription-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.transcription-status-text {
+    font-size: 0.75rem;
+    color: #c4b5fd;
+    white-space: nowrap;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+
+.transcription-progress-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(139, 92, 246, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.transcription-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #7c3aed 0%, #8b5cf6 100%);
+    border-radius: 3px;
+    transition: width 0.2s ease;
+}
+
+.transcription-progress-pct {
+    font-size: 0.75rem;
+    color: #a78bfa;
+    min-width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.transcription-output {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(10, 5, 20, 0.7);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 5px;
+    color: #e2d9f3;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    padding: 8px 10px;
+    resize: vertical;
+}
+
+.transcription-output:focus {
+    outline: none;
+    border-color: #8b5cf6;
+}
+
+.transcription-output::placeholder {
+    color: rgba(167, 139, 250, 0.4);
+}
+
+.transcription-action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.transcription-action-btn {
+    font-size: 0.8rem !important;
+    padding: 5px 12px !important;
+    border-color: rgba(139, 92, 246, 0.5) !important;
+    color: #c4b5fd !important;
+}
+
+.transcription-action-btn:hover {
+    background: rgba(139, 92, 246, 0.15) !important;
+    border-color: #8b5cf6 !important;
+    color: #ddd6fe !important;
+}
