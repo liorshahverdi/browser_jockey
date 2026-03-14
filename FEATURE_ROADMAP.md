@@ -1,7 +1,7 @@
 # Feature Roadmap — Browser Jockey
 
 **Base version:** v3.27.9
-**Date:** 2026-03-07
+**Date:** 2026-03-14
 **Architecture:** Flask + Web Audio API + Tone.js + Three.js (~6,000 LOC, 19 JS modules)
 
 All features are grounded in the existing architecture. Bug-fix prerequisites are noted where a feature depends on fixing a known bug first.
@@ -16,16 +16,16 @@ Features that were already implemented in the codebase have been removed from th
 |----------|----------|-----|
 | 1. Core Playback | 3 | F-004 – F-006 |
 | 2. Effects + Processing | 8 | F-009 – F-016 |
-| 3. Mixer + Routing | 4 | F-018 – F-021 |
+| 3. Mixer + Routing | 3 | F-018, F-020 – F-021 |
 | 4. Sequencer | 6 | F-022 – F-027 |
 | 5. Theremin + Motion | 5 | F-029 – F-033 |
 | 6. Sampler | 4 | F-036 – F-039 |
 | 7. Recording + Export | 4 | F-040 – F-043 |
 | 8. Analysis + Intelligence | 4 | F-044 – F-047 |
 | 9. Project + Data Management | 3 | F-049 – F-051 |
-| 9. Project + Data Management | 3 | F-049 – F-051 |
 | 10. UX + Accessibility | 5 | F-052 – F-055, F-057 |
-| **Total** | **46** | |
+| 11. New Features (v3.28.2+) | 4 | F-059 – F-062 |
+| **Total** | **49** | |
 
 ---
 
@@ -47,7 +47,7 @@ Features that were already implemented in the codebase have been removed from th
 - **Labels:** editable text label per cue slot (max 12 chars), displayed on waveform marker
 - **Colors:** 8 fixed colors, one per slot — `#ff4444, #ff9900, #ffdd00, #44dd44, #44aaff, #8844ff, #ff44cc, #ffffff`
 - **Waveform markers:** colored vertical lines rendered on the waveform canvas at the cue time position; re-rendered on every `drawWaveform()` call
-- **Keyboard triggers:** `1`–`8` jump to cue N; `Shift+1`–`Shift+8` set cue N at current position
+- **Keyboard triggers:** `1`–`8` jump to cue N on focused track; `Shift+1`–`Shift+8` set cue N; `Alt+1`–`Alt+8` jump to cue N on the *other* track (cross-deck, no focus change) — UI hint shown in the hot-cues-hint row of each track
 - **Persistence:** stored in `IndexedDB` keyed by `SHA-1(filename + filesize)` so cues survive page reload and reloading the same file. Schema:
   ```js
   { fileHash: string, trackId: string, cues: [{ id: 0-7, time: number, label: string, color: string }] }
@@ -57,7 +57,7 @@ Features that were already implemented in the codebase have been removed from th
 
 ---
 
-### ~~F-005 — Beat Grid + Quantize~~ ✅ Implemented v3.28.0
+### ~~F-005 — Beat Grid + Quantize~~ ✅ Implemented v3.28.1
 
 **Dependency:** BPM detection (already improved — v3.27.9)
 **Complexity:** Medium
@@ -75,7 +75,7 @@ Auto-generate a beat grid from detected BPM. Snap loop points and hot cue points
 
 ---
 
-### ~~F-006 — Slip Mode~~ ✅ Implemented v3.28.0
+### ~~F-006 — Slip Mode~~ ✅ Implemented v3.28.1
 
 **Complexity:** Medium
 **Module:** `modules/playback-controller.js`
@@ -96,7 +96,7 @@ Maintain a hidden "master" playback position that advances at 1× speed regardle
 
 ---
 
-### ~~F-009 — Sidechain Compression~~ ✅ Implemented v3.28.0
+### ~~F-009 — Sidechain Compression~~ ✅ Implemented v3.29.0 (bidirectional v3.30.0)
 
 **Complexity:** High
 **New module:** `modules/sidechain.js`
@@ -287,24 +287,21 @@ Route any track to a secondary audio output for headphone pre-monitoring before 
 
 ---
 
-### F-019 — Master Limiter + Metering
+### ~~F-019 — Master Limiter + Metering~~ ✅ Implemented v3.32.0
 
 **Complexity:** Medium
-**Module:** `modules/mixer.js`
+**Module:** `app.js` (inline, no separate module)
 
-A transparent hard limiter on the master output bus prevents digital clipping when both tracks peak simultaneously. Combined with peak and loudness metering visible during performance.
+A transparent hard limiter on the master output bus prevents digital clipping when both tracks peak simultaneously. Three horizontal RMS VU meters with peak hold and latching clip indicators.
 
-**Limiter implementation:**
-- `DynamicsCompressorNode` after the master `ChannelMergerNode`: `{ threshold: -0.1, knee: 0, ratio: 20, attack: 0.001, release: 0.01 }` — at ratio 20:1 with zero knee this functions as a hard limiter
-- Configurable ceiling: expose `threshold` as a UI control (−3 to 0 dBFS)
-
-**Metering features:**
-- Peak level: sample `masterAnalyser.getFloatTimeDomainData()` per RAF frame; track `peakLevel = Math.max(...Math.abs(samples))`; display as a vertical bar
-- Peak hold: hold displayed peak for 3 seconds after it's set, then fall at 12 dB/s
-- Clip indicator: red segment above −0.1 dBFS; latches on (stays lit until clicked); driven by `DynamicsCompressorNode.reduction` > 0
-- LUFS meter: rolling 400ms integrated loudness using ITU-R BS.1770-4 K-weighting. Approximate implementation: `AnalyserNode` at 1024 FFT → apply K-weighting frequency response → compute RMS → convert to dBFS → display on −24 to 0 LUFS scale
-
-**UI:** Vertical stereo meter strip in the mixer center column, drawn on a `<canvas>` element updated on RAF.
+**Implemented:**
+- `DynamicsCompressorNode` (`limiterNode`) inserted between `gainMaster` and all downstream nodes: `{ threshold: -1, knee: 0, ratio: 20, attack: 0.001, release: 0.01 }`
+- Three `AnalyserNode` side-taps: `track1MeterAnalyser` (on `finalMix1`), `track2MeterAnalyser` (on `finalMix2`), `masterMeterAnalyser` (on `limiterNode`)
+- Per-track VU rows (`vuMeterRow1/2`) shown on track load; master section (`masterMeterSection`) shown on audio context init
+- RMS ballistics: 12 dB/s decay; peak hold 3s then decays; clip dot latches red above −0.5 dBFS; click to reset
+- Color gradient: green (#22c55e) → yellow (#eab308) → orange (#f97316) → red (#ef4444) across 0–100% of −48 dBFS to 0 dBFS
+- Limiter toggle button (purple when on); GR readout from `limiterNode.reduction`
+- `updateVUMeters()` called each RAF frame from `animate()`; `setupTrackMeter(n)` called on track load (guarded: no-ops if `audioContext` or `finalMix` not yet ready)
 
 ---
 
@@ -1041,7 +1038,7 @@ First-launch interactive walkthrough that guides new users to the key controls w
 |----------|----|---------|--------|--------|
 | P1 | F-004 | Hot Cues | Med | High |
 | P1 | F-005 | Beat Grid + Quantize | Med | High |
-| P1 | F-019 | Master Limiter + Metering | Med | High |
+| ~~P1~~ | ~~F-019~~ | ~~Master Limiter + Metering~~ | ~~Med~~ | ~~High~~ |
 | P1 | F-036 | Pad Grid View | Med | High |
 | P1 | F-043 | Recording Level Metering | Low | High |
 | P2 | F-006 | Slip Mode | Med | Med |
@@ -1067,6 +1064,11 @@ First-launch interactive walkthrough that guides new users to the key controls w
 | P3 | F-051 | Track Library / Crates | High | High |
 | P3 | F-054 | Touch / Mobile PWA | High | Med |
 | P3 | F-055 | ARIA Accessibility (full) | Med | Med |
+| ~~P1~~ | ~~F-058~~ | ~~Loop Roll + Beat Jump~~ | ~~Med~~ | ~~High~~ |
+| P1 | F-059 | FX Automation Lanes | High | High |
+| P2 | F-060 | AI Mix Transition Advisor | Med | High |
+| P2 | F-061 | Mix Session Chapters | Med | High |
+| P3 | F-062 | Collaborative DJ Session | High | High |
 
 ---
 
@@ -1099,3 +1101,198 @@ The following features from earlier roadmap versions were removed because they a
 | F-035 | Fix Chromatic Scale | BUG-007: `constants.js` corrected to 13 elements \[0..12\] |
 | F-048 | Fix IndexedDB Delete | `deleteProject()` uses direct key lookup (not cursor scan) |
 | F-056 | CSS Responsive Breakpoints | BUG-020: 768px and 480px breakpoints added to `style.css` |
+| F-058–F-062 | Browser Whisper Transcription | Implemented v3.31.0: `modules/transcription.js` + `modules/transcription-worker.js`, Xenova/whisper-base via Transformers.js CDN worker |
+| F-058 | Loop Roll + Beat Jump | Implemented v3.28.1: `startRoll`/`endRoll`/`doBeatJump` in `app.js`; 8 roll + 8 jump buttons per track wired to slip mode + beat grid; keyboard `[`/`]`/`{`/`}` |
+| F-019 | Master Limiter + Per-Track VU Metering | Implemented v3.32.0: `DynamicsCompressorNode` on master bus; 3× `AnalyserNode` meter taps (track1, track2, master); horizontal RMS canvas meters with peak hold + clip latch; limiter toggle + GR readout; `initMasterLimiter()` / `setupTrackMeter(n)` / `updateVUMeters()` in `app.js` |
+
+---
+
+## Category 11: New Features (v3.28.2+)
+
+---
+
+### ~~F-058 — Loop Roll + Beat Jump~~ ✅ Implemented v3.28.1
+
+**Complexity:** Medium
+**Module:** `app.js`, `modules/beat-grid.js`, UI
+
+CDJ-style loop roll and beat jump — the two most-used live performance controls on professional hardware that are currently absent from Browser Jockey. Both build directly on the existing beat grid (F-005) and slip mode (F-006) infrastructure.
+
+**Loop Roll:**
+- 8 hold-to-roll buttons per track: `1/32`, `1/16`, `1/8`, `1/4`, `1/2`, `1`, `2`, `4` bars
+- `mousedown`/`touchstart`: snap `audioElement.currentTime` to the nearest beat grid boundary (`snapTimeForTrack()`), activate the loop at `[currentBeat, currentBeat + rollLength]`, simultaneously enter slip mode (`slipState{n}.enabled = true`, `startWallMs = Date.now()`)
+- `mouseup`/`touchend` (window-level, same pattern as slip mode): exit loop, seek to the slip position — audio snaps to where it would have been without the roll, exactly as slip mode already does
+- Roll length in seconds: `rollBars × beatsPerBar × (60 / bpm)`; `beatsPerBar = 4` (4/4 assumed)
+
+**Beat Jump:**
+- 8 buttons per track: `−8`, `−4`, `−2`, `−1`, `+1`, `+2`, `+4`, `+8` beats
+- Each click: `audioElement.currentTime += jumpBeats × (60 / bpm)`; clamped to `[0, duration]`
+- If loop is active: loop markers shift by the same offset — `loopStart += delta`, `loopEnd += delta` — so the loop region jumps with the playhead
+- Snap: if beat grid is active, the result is quantized via `snapTimeForTrack()` so the jump lands on the exact beat
+
+**UI placement:** `.loop-roll-section` below the existing loop controls; two rows — roll buttons in a pill group, jump buttons as `−8 −4 −2 −1 | +1 +2 +4 +8` on a single row.
+
+**Keyboard bindings** (extend `handleKeyDown`):
+- `Shift+Q/W/E/R/T` → roll 1/32–4 bars on focused deck
+- `[` / `]` → beat jump −1 / +1 on focused deck
+- `{` / `}` → beat jump −4 / +4
+
+**Key integration points:** `snapTimeForTrack()` from `beat-grid.js`; `slipState{1,2}` and the ghost playhead update already handle the visual feedback with zero new rendering code.
+
+---
+
+### F-059 — FX Automation Lanes
+
+**Complexity:** High
+**New module:** `modules/automation.js`
+
+Record and play back real-time parameter movements — the core feature that elevates Browser Jockey from a live performance tool to a composition and production environment. Any knob or slider can be automated: it will move itself during playback exactly as you moved it during a record pass.
+
+**Data model:**
+```js
+// Per track, per parameter
+AutomationLane {
+    paramKey: string,        // e.g. 'eq1Low', 'reverbWet1', 'crossfader'
+    setter: (value) => void, // live setter function reference
+    min: number, max: number,
+    points: [{ time: number, value: number }]  // sorted by time, sparse
+}
+```
+
+**Playback (read path):**
+- On each RAF frame: for each active lane, binary-search `points` for the two control points bracketing `audioElement.currentTime`; linearly interpolate value; call `lane.setter(interpolated)`
+- Lanes with no points in the current time window are skipped (no write)
+- `AutomationManager` class: `add(lane)`, `remove(paramKey)`, `tick(currentTime)`, `clear()`
+
+**Record mode (write path):**
+- "Arm" button per lane: when armed + playback is running, each `input` event on the bound control appends `{ time: audioElement.currentTime, value: control.value }` to `lane.points`
+- Coalescing: if the previous point is within 16ms, replace it instead of appending (avoids flood at 60fps)
+- After recording pass: run a Ramer-Douglas-Peucker simplification (`epsilon = 0.002`) to remove redundant collinear points — typical reduction from ~3600 points/minute to ~50–200
+
+**Draw mode:**
+- Canvas lane below each waveform (40px tall, collapsible) — same x-axis time mapping as waveform zoom/scroll
+- Left-click drag: draws freehand curve (appends points under cursor); snaps vertically to 1/128 of range
+- Right-click: erases points in a ±50ms window around click
+- Ctrl+drag: draws straight line segment between mousedown and mouseup points
+- Points rendered as a filled polyline in the track color at 60% opacity
+
+**Automatable parameters (initial set):**
+- Per track: EQ low/mid/high gain, filter cutoff, filter resonance, reverb wet, delay wet, delay feedback, pitch shift semitones, track volume, mute (step-function)
+- Global: crossfader, master volume
+
+**UI placement:** `.automation-lane` canvas elements between the waveform container and the beat grid section. A collapsible "Automation" section header with a `+` button to add lanes and a dropdown to select the parameter.
+
+**Persistence:** automation data serialized to `localStorage` as JSON alongside hot cues, keyed by `encodeURIComponent(filename)|size`.
+
+---
+
+### F-060 — AI Mix Transition Advisor
+
+**Complexity:** Medium
+**New module:** `modules/mix-advisor.js`
+
+Analyze both loaded tracks and compute a mix compatibility score with a concrete suggestion for where to start and end the transition — the exact data a DJ needs when previewing an unfamiliar track. Runs entirely client-side using data already computed by existing systems (BPM, key detection, beat grid, energy).
+
+**Compatibility score (0–100):**
+
+| Factor | Weight | How computed |
+|--------|--------|-------------|
+| Harmonic compatibility | 40% | Camelot distance between track keys (0 steps = 40pts, 1 step = 28pts, 2 steps = 10pts, 3+ = 0pts) |
+| BPM proximity | 30% | `1 − |bpm1 − bpm2| / max(bpm1, bpm2)`; ≤2% diff = full score |
+| Energy envelope match | 20% | Pearson correlation of the last 16-bar RMS window of Track 1 against the first 16-bar window of Track 2 |
+| Phrase alignment | 10% | Whether the suggested mix-in lands on an 8-bar phrase boundary of both tracks simultaneously |
+
+**Suggested mix window:**
+- Mix-out point on Track 1: last 8-bar phrase before the track's energy centroid falls below 60% of its peak (i.e., the approaching outro)
+- Mix-in point on Track 2: first 8-bar phrase where energy rises above 40% of Track 2's peak (the intro buildup end)
+- Both points are then snapped to the nearest 8-bar grid boundary using each track's `firstBeatOffset` and `bpm`
+
+**UI:**
+- "Analyze Mix" button appears in the mixer center column when both tracks have loaded and BPM + key are detected
+- Score pill: `[██████░░░░] 68 / 100` with label "Good match" (green ≥ 70), "Workable" (40–70, yellow), "Difficult" (< 40, red)
+- Camelot positions shown side by side: `8B ↔ 9B — 1 step`
+- BPM ratio: `128 → 130 bpm — 1.6% off`
+- "Apply suggestion" button: sets Track 1 loop end to the mix-out point (via existing `setLoopEnd()`), sets Track 2 hot cue 1 to the mix-in point (via `hotCueManager2.setCue(0, mixInTime)`)
+- Suggestion markers drawn on both waveforms as dashed yellow vertical lines via the existing marker overlay system
+
+**Performance:** the energy correlation computation runs in a `Worker` (reuse the pattern from `transcription-worker.js`) to avoid blocking the UI — typical track is 240,000 windows at 0.1s hop = ~240ms of computation.
+
+---
+
+### F-061 — Mix Session Chapters
+
+**Complexity:** Medium
+**Module:** `modules/recording.js`, `modules/recorder.js`
+
+During a recorded mix session, automatically detect when transitions happen and insert chapter markers. After the mix is recorded, a navigable chapter list appears on the recorded waveform. Integrates with the existing transcription feature — if a transcription is run on the recording, chapter timestamps become section headers in the transcript.
+
+**Transition detection (real-time, during recording):**
+- Monitor two signals during `MediaRecorder` capture:
+  1. **Crossfader position crossings:** when crossfader crosses the 25% or 75% threshold (i.e., clearly moving from one track to the other), record a candidate transition at `Date.now() - recordingStartTime`
+  2. **Energy crossover:** compare Track 1 and Track 2 `AnalyserNode` RMS via the existing `recordingAnalyser`; when the dominant track flips, record a candidate transition
+- Debounce: transitions within 30 seconds of the previous one are suppressed (prevents rapid bouncing crossfader from flooding the chapter list)
+- Chapter object: `{ timeMs: number, label: string, type: 'crossfader' | 'energy' | 'manual' }`
+
+**Manual chapters:**
+- "Mark Chapter" button (or `M` key) during recording: inserts a manual chapter at the current recording timestamp
+- Double-click on the recorded waveform (post-recording): inserts a manual chapter at the clicked position
+
+**Post-recording UI:**
+- Chapter list panel below the recorded audio player: `[0:00] Mix Start`, `[2:34] Transition`, `[5:12] Transition`, with edit icons
+- Click any chapter → `recordedAudio.currentTime = chapter.timeMs / 1000`
+- Click edit icon → inline text input to rename the chapter label
+- Chapter markers drawn as small colored triangles on the `recordingWaveform` canvas (amber for auto-detected, white for manual)
+
+**Export integrations:**
+- "Export Cue Sheet (.cue)" button: generates a `.cue` file (standard CD cue sheet format) with one `TRACK` entry per chapter
+- "Export Chapters (.txt)" button: plain text list with timestamps and labels
+- Transcription integration: when `transcriptionOutput` has content and chapters exist, the "Export .txt" button in the transcription panel prefixes each chapter's text block with its timestamp label
+
+**Storage:** chapters saved alongside `recordingState.blob` reference in `recordingState.chapters[]`; survive until the next recording session starts.
+
+---
+
+### F-062 — Collaborative DJ Session (WebRTC)
+
+**Complexity:** High
+**New module:** `modules/collaboration.js`
+**Server change:** `app/routes.py` — one signaling endpoint (~20 lines)
+
+Two users share control of a live Browser Jockey session over a direct peer-to-peer WebRTC data channel. One user loads and controls Track 1; the other controls Track 2. The crossfader and master controls are shared. No audio is streamed — only parameter messages are sent, keeping latency under 50ms on typical connections.
+
+**Session model:**
+- Host creates a session: `POST /session/offer` receives their SDP offer, stores it server-side with a 6-character room code, returns the code
+- Guest joins with code: `GET /session/answer?code=XXXXXX` returns the host SDP; guest sends back their SDP answer via `POST /session/answer`
+- ICE candidates exchanged via `POST /session/ice?code=XXXXXX&role=host|guest`
+- Sessions expire after 30 minutes; Flask stores in-memory in a `{}` dict (no DB needed; Render free tier handles ~50 concurrent sessions trivially)
+- After ICE negotiation completes, all communication is direct peer-to-peer — the Flask server is completely out of the data path
+
+**WebRTC data channel config:**
+```js
+const dc = peerConnection.createDataChannel('params', {
+    ordered: false,        // UDP-like: don't wait for retransmit
+    maxRetransmits: 0      // drop stale messages, never queue
+});
+```
+Messages are JSON: `{ type: 'param', key: 'crossfader', value: 0.6, seq: 1458 }`. On receive: apply only if `seq > lastSeq[key]` (last-write-wins per parameter).
+
+**Synced parameters:**
+- Crossfader (both users can move; LWW resolution)
+- Master volume (host controls; guest changes are echoed back rejected)
+- Track 1 volume, EQ, effects (host-owned; replicated to guest read-only)
+- Track 2 volume, EQ, effects (guest-owned; replicated to host read-only)
+- Hot cue jumps, loop toggle, play/pause: broadcast as one-shot events (`{ type: 'event', action: 'hotCueJump', track: 2, index: 3 }`)
+- Track loaded notification: `{ type: 'event', action: 'trackLoaded', track: 1, filename: '...', bpm: 128, key: 'Am' }` — the remote user sees the filename/BPM/key update in their UI without the audio (audio stays local)
+
+**Ownership model:**
+- Host: owns Track 1. Guest: owns Track 2. Ownership displayed as a colored badge on each deck header: `🔵 You` / `🟠 Partner`
+- Controls owned by the partner are visually dimmed and pointer-events disabled locally; they animate when the partner moves them
+- Either user can move the crossfader — it's explicitly shared
+
+**UI:**
+- "Share Session" button in the app header → generates a join URL (`https://browserjockey.com/?join=XXXXXX`) and copies to clipboard
+- Session status pill: `● Waiting for partner` (amber) → `● Partner connected` (green) → `● Disconnected` (red, with auto-reconnect attempt)
+- Partner's cursor position shown as a ghost dot on any canvas element they are hovering (sent as `{ type: 'cursor', x: 0.4, y: 0.7, canvas: 'waveform2' }` at 10fps)
+- Chat: a minimal 3-line scrolling text overlay at the bottom of the mixer panel; press `T` to focus the input field; messages broadcast over the same data channel
+
+**Graceful degradation:** if WebRTC is unavailable (rare corporate firewalls), show a friendly error: "Collaboration requires a modern browser with WebRTC support. Try Chrome or Firefox." The rest of the app works normally.

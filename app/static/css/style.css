@@ -5142,6 +5142,17 @@ body.sequencer-fullscreen .visualization-wrapper {
     line-height: 1.6;
 }
 
+.hc-hint-crossdeck {
+    margin-top: 2px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 3px;
+    color: rgba(255,255,255,0.32);
+}
+.hc-hint-crossdeck-label {
+    color: rgba(255,255,255,0.22);
+    font-style: italic;
+}
+
 /* Waveform cue-point marker line */
 .hot-cue-marker {
     position: absolute;
@@ -5714,4 +5725,138 @@ body.sequencer-fullscreen .visualization-wrapper {
     background: rgba(139, 92, 246, 0.15) !important;
     border-color: #8b5cf6 !important;
     color: #ddd6fe !important;
+}
+
+/* ================================================================
+   Loop Roll + Beat Jump (F-058)
+   ================================================================ */
+.loop-roll-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    background: rgba(245, 158, 11, 0.05);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 6px;
+    margin: 4px 0;
+}
+.loop-roll-controls-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.roll-group, .jump-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.lr-label {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    min-width: 28px;
+}
+.roll-buttons, .jump-buttons {
+    display: flex;
+    gap: 3px;
+}
+.roll-btn, .jump-btn {
+    font-size: 0.68rem;
+    padding: 3px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid;
+    background: transparent;
+    transition: background 0.1s, box-shadow 0.1s;
+}
+.roll-btn {
+    border-color: rgba(245, 158, 11, 0.5);
+    color: #fbbf24;
+}
+.roll-btn:hover { background: rgba(245, 158, 11, 0.15); }
+.roll-btn.active {
+    background: rgba(245, 158, 11, 0.35);
+    border-color: #f59e0b;
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+}
+.jump-btn {
+    border-color: rgba(100, 210, 230, 0.4);
+    color: #67e8f9;
+    min-width: 26px;
+    text-align: center;
+}
+.jump-btn:hover { background: rgba(100, 210, 230, 0.12); }
+.roll-btn:disabled, .jump-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* ================================================================
+   VU Metering + Master Limiter (F-019)
+   ================================================================ */
+.vu-meter-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+}
+.vu-meter-canvas {
+    flex: 1;
+    display: block;
+    border-radius: 2px;
+    background: rgba(0,0,0,0.5);
+}
+.vu-clip-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(239,68,68,0.5);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.05s;
+}
+.vu-clip-indicator.lit {
+    background: #ef4444;
+    box-shadow: 0 0 6px rgba(239,68,68,0.8);
+}
+.master-meter-section {
+    padding: 8px 10px;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    margin: 4px 0;
+    display: none;
+}
+.master-meter-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+}
+.master-limiter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.limiter-btn {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid rgba(139,92,246,0.5);
+    background: transparent;
+    color: #a78bfa;
+    transition: background 0.1s;
+}
+.limiter-btn.active {
+    background: rgba(139,92,246,0.25);
+    border-color: #8b5cf6;
+    box-shadow: 0 0 5px rgba(139,92,246,0.4);
+}
+.limiter-gr-label {
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.45);
 }

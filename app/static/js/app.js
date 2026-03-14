@@ -305,6 +305,23 @@ const transcriptionActionRow   = document.getElementById('transcriptionActionRow
 const transcriptionCopyBtn     = document.getElementById('transcriptionCopyBtn');
 const transcriptionExportBtn   = document.getElementById('transcriptionExportBtn');
 
+// Loop Roll + Beat Jump DOM
+const loopRollSection1 = document.getElementById('loopRollSection1');
+const loopRollSection2 = document.getElementById('loopRollSection2');
+
+// VU Meters + Master Limiter (F-019)
+const vuMeter1Canvas     = document.getElementById('vuMeter1');
+const vuMeter2Canvas     = document.getElementById('vuMeter2');
+const vuMasterCanvas     = document.getElementById('vuMasterMeter');
+const vuClip1            = document.getElementById('vuClip1');
+const vuClip2            = document.getElementById('vuClip2');
+const vuMasterClip       = document.getElementById('vuMasterClip');
+const vuMeterRow1        = document.getElementById('vuMeterRow1');
+const vuMeterRow2        = document.getElementById('vuMeterRow2');
+const masterMeterSection = document.getElementById('masterMeterSection');
+const limiterToggleBtn   = document.getElementById('limiterToggle');
+const limiterGRSpan      = document.getElementById('limiterGR');
+
 // Dual Track Control elements
 const playBothBtn = document.getElementById('playBothBtn');
 const playBothRecordBtn = document.getElementById('playBothRecordBtn');
@@ -564,6 +581,26 @@ let recordingAnimationId;
 const transcriber = new Transcriber();
 let   transcriptionModelLoaded = false;
 
+// Roll state: saves loop state before roll so it can be restored on release
+const rollState1 = { active: false, prevEnabled: false, prevStart: null, prevEnd: null };
+const rollState2 = { active: false, prevEnabled: false, prevStart: null, prevEnd: null };
+
+// VU meter + limiter state (F-019)
+let track1MeterAnalyser = null;
+let track2MeterAnalyser = null;
+let masterMeterAnalyser = null;
+let limiterNode         = null;
+let limiterEnabled      = true;
+const vuBuf             = new Float32Array(256);
+const VU_MIN_DB         = -48;
+const VU_DECAY_DB_PER_MS = 12 / 1000;
+const VU_PEAK_HOLD_MS   = 3000;
+const vuState = {
+    track1: { level: -48, peak: -48, _lastMs: 0, _peakHoldStart: 0, clipped: false },
+    track2: { level: -48, peak: -48, _lastMs: 0, _peakHoldStart: 0, clipped: false },
+    master: { level: -48, peak: -48, _lastMs: 0, _peakHoldStart: 0, clipped: false },
+};
+
 // Keyboard Sampler state
 let samplerEnabled = false;
 let samplerSource = null; // 'track1', 'track2', 'track1-loop', 'track2-loop', 'recording'
@@ -737,27 +774,41 @@ async function loadRecordingToTrack1() {
         
         console.log('Loading audio file for waveform and analysis');
         await loadAudioFile(file, waveform1, bpm1Display, audioElement1, zoomState1, key1Display);
-        
+
+        // Enable hot cues, beat grid, slip, sidechain — same as normal file-load path
+        hotCueManager1.loadCues(fileHashFrom(file));
+        focusedHotCueTrack = 1;
+        hotCueBtns1.forEach(btn => btn && (btn.disabled = false));
+        updateHotCueUI(1);
+        updateHotCueMarkersAfterZoom(1);
+        enableBeatGridControls(1, getBPMValue(bpm1Display));
+        enableLoopRollControls(1);
+        setupTrackMeter(1);
+        drawBeatGrid(1);
+        slipBtn1.disabled = false;
+        sidechainToggle.disabled = false;
+        sidechainDirectionBtn.disabled = false;
+
         // Initialize buffer manager and playback controller for reverse playback
         try {
             if (!audioContext) {
                 await initAudioContext();
             }
-            
+
             console.log('Initializing buffer-based reverse playback for Track 1...');
             bufferManager1 = new AudioBufferManager(audioContext);
             await bufferManager1.loadAudioBuffer(file, 'track1');
-            
+
             // Create playback controller - it will connect to effects chain later in initAudioContext
             playbackController1 = new PlaybackController(audioContext, audioElement1, null, 'track1');
             playbackController1.bufferManager = bufferManager1;
-            
+
             console.log('✅ Buffer-based reverse playback initialized for Track 1');
         } catch (error) {
             console.error('Error initializing reverse playback:', error);
             // Non-fatal - reverse playback won't work but normal playback will
         }
-        
+
         if (!scene) {
             console.log('Initializing 3D visualization');
             initThreeJS();
@@ -885,13 +936,26 @@ async function loadRecordingToTrack2() {
         
         console.log('Loading audio file for waveform and analysis');
         await loadAudioFile(file, waveform2, bpm2Display, audioElement2, zoomState2, key2Display);
-        
+
+        // Enable hot cues, beat grid, slip, sidechain — same as normal file-load path
+        hotCueManager2.loadCues(fileHashFrom(file));
+        hotCueBtns2.forEach(btn => btn && (btn.disabled = false));
+        updateHotCueUI(2);
+        updateHotCueMarkersAfterZoom(2);
+        enableBeatGridControls(2, getBPMValue(bpm2Display));
+        enableLoopRollControls(2);
+        setupTrackMeter(2);
+        drawBeatGrid(2);
+        slipBtn2.disabled = false;
+        sidechainToggle.disabled = false;
+        sidechainDirectionBtn.disabled = false;
+
         // Initialize buffer manager and playback controller for reverse playback
         try {
             if (!audioContext) {
                 await initAudioContext();
             }
-            
+
             console.log('Initializing buffer-based reverse playback for Track 2...');
             bufferManager2 = new AudioBufferManager(audioContext);
             await bufferManager2.loadAudioBuffer(file, 'track2');
@@ -2955,35 +3019,61 @@ function playSamplerNoteWrapper(scaleIndex, isUpperOctave = false) {
 
 // Keyboard event handlers using module
 function handleKeyDown(event) {
-    // Hot cue keyboard shortcuts: 1-8 jump, Shift+1-8 set cue on focused track.
-    // Use event.code ('Digit1'–'Digit8') so Shift+digit still resolves correctly
-    // (event.key for Shift+1 is '!' on US keyboards, not '1').
-    if (!event.ctrlKey && !event.metaKey && !event.altKey &&
+    // Hot cue keyboard shortcuts:
+    //   1-8        → jump to cue on focused track
+    //   Shift+1-8  → set cue on focused track
+    //   Alt+1-8    → jump to cue on the OTHER track (cross-deck trigger)
+    // Use event.code ('Digit1'–'Digit8') so Shift+digit resolves correctly.
+    if (!event.ctrlKey && !event.metaKey &&
         event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
         const codeMatch = event.code && event.code.match(/^Digit([1-8])$/);
         if (codeMatch) {
-            const idx       = parseInt(codeMatch[1], 10) - 1;
-            const manager   = focusedHotCueTrack === 1 ? hotCueManager1 : hotCueManager2;
-            const audioEl   = focusedHotCueTrack === 1 ? audioElement1  : audioElement2;
-            const trackBtns = focusedHotCueTrack === 1 ? hotCueBtns1    : hotCueBtns2;
-            if (trackBtns[0] && !trackBtns[0].disabled) {
-                if (event.shiftKey) {
-                    manager.setCue(idx, audioEl.currentTime);
-                    flashHotCueBtn(trackBtns[idx], 'set');
-                    updateHotCueUI(focusedHotCueTrack);
-                    updateHotCueMarkersAfterZoom(focusedHotCueTrack);
-                    event.preventDefault();
-                    return;
-                } else {
-                    const jumped = manager.jumpToCue(idx, audioEl);
+            const idx = parseInt(codeMatch[1], 10) - 1;
+            // Alt+digit = always target the non-focused track (jump only, no set)
+            if (event.altKey) {
+                const altTrack    = focusedHotCueTrack === 1 ? 2 : 1;
+                const altManager  = altTrack === 1 ? hotCueManager1 : hotCueManager2;
+                const altAudioEl  = altTrack === 1 ? audioElement1  : audioElement2;
+                const altTrackBtns = altTrack === 1 ? hotCueBtns1   : hotCueBtns2;
+                if (altTrackBtns[0] && !altTrackBtns[0].disabled) {
+                    const jumped = altManager.jumpToCue(idx, altAudioEl);
                     if (jumped) {
-                        flashHotCueBtn(trackBtns[idx], 'jump');
+                        flashHotCueBtn(altTrackBtns[idx], 'jump');
                         event.preventDefault();
                         return;
                     }
                 }
+            } else if (!event.altKey) {
+                const manager   = focusedHotCueTrack === 1 ? hotCueManager1 : hotCueManager2;
+                const audioEl   = focusedHotCueTrack === 1 ? audioElement1  : audioElement2;
+                const trackBtns = focusedHotCueTrack === 1 ? hotCueBtns1    : hotCueBtns2;
+                if (trackBtns[0] && !trackBtns[0].disabled) {
+                    if (event.shiftKey) {
+                        manager.setCue(idx, audioEl.currentTime);
+                        flashHotCueBtn(trackBtns[idx], 'set');
+                        updateHotCueUI(focusedHotCueTrack);
+                        updateHotCueMarkersAfterZoom(focusedHotCueTrack);
+                        event.preventDefault();
+                        return;
+                    } else {
+                        const jumped = manager.jumpToCue(idx, audioEl);
+                        if (jumped) {
+                            flashHotCueBtn(trackBtns[idx], 'jump');
+                            event.preventDefault();
+                            return;
+                        }
+                    }
+                }
             }
         }
+    }
+    // Beat jump: [ / ] = ±1 beat, { / } = ±4 beats (on focused deck)
+    if (!event.ctrlKey && !event.metaKey &&
+        event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+        if (event.key === '[')  { doBeatJump(focusedHotCueTrack, -1); event.preventDefault(); }
+        if (event.key === ']')  { doBeatJump(focusedHotCueTrack,  1); event.preventDefault(); }
+        if (event.key === '{')  { doBeatJump(focusedHotCueTrack, -4); event.preventDefault(); }
+        if (event.key === '}')  { doBeatJump(focusedHotCueTrack,  4); event.preventDefault(); }
     }
     samplerHandleKeyDown(event, samplerEnabled, activeKeys, playSamplerNoteWrapper);
 }
@@ -3314,10 +3404,13 @@ async function initAudioContext() {
         gainMaster.connect(recordingDestination);
         gainMaster.connect(recordingAnalyser);
         analyser.connect(audioContext.destination);
-        
+
         // Connect oscilloscope to merger if it exists
         connectOscilloscopeToMerger();
-        
+
+        // F-019: Limiter + master meter
+        initMasterLimiter();
+
         // Initialize effects for both tracks using module
         const effects1 = await initAudioEffects(audioContext, 1);
         gain1 = effects1.gain;
@@ -3407,7 +3500,8 @@ async function initAudioContext() {
             if (!finalMix1) {
                 finalMix1 = fm1;
             }
-            
+            setupTrackMeter(1);
+
             source1Connected = true; // Mark as connected
             console.log('✅ Track 1 file connected to effect chain and merger');
             
@@ -3486,7 +3580,8 @@ async function initAudioContext() {
             if (!finalMix2) {
                 finalMix2 = fm2;
             }
-            
+            setupTrackMeter(2);
+
             source2Connected = true; // Mark as connected
             console.log('✅ Track 2 file connected to effect chain and merger');
             
@@ -4149,6 +4244,8 @@ audioFile1.addEventListener('change', async (e) => {
 
         // Set up beat grid with detected BPM
         enableBeatGridControls(1, getBPMValue(bpm1Display));
+        enableLoopRollControls(1);
+        setupTrackMeter(1);
         drawBeatGrid(1);
         slipBtn1.disabled = false;
         sidechainToggle.disabled = false;
@@ -4325,6 +4422,8 @@ audioFile2.addEventListener('change', async (e) => {
 
         // Set up beat grid with detected BPM
         enableBeatGridControls(2, getBPMValue(bpm2Display));
+        enableLoopRollControls(2);
+        setupTrackMeter(2);
         drawBeatGrid(2);
         slipBtn2.disabled = false;
         sidechainToggle.disabled = false;
@@ -7733,6 +7832,132 @@ function exitSlip(trackNumber) {
     }
 }
 
+// ----- F-058: Loop Roll + Beat Jump -----
+function startRoll(trackNumber, bars) {
+    const loopState = trackNumber === 1 ? loopState1 : loopState2;
+    const rollState = trackNumber === 1 ? rollState1 : rollState2;
+    const audioEl   = trackNumber === 1 ? audioElement1 : audioElement2;
+    const bg        = trackNumber === 1 ? beatGrid1 : beatGrid2;
+    const lBtn      = trackNumber === 1 ? loopBtn1 : loopBtn2;
+
+    if (!audioEl.duration || bg.bpm <= 0) return;
+
+    // Save previous loop state
+    rollState.prevEnabled = loopState.enabled;
+    rollState.prevStart   = loopState.start;
+    rollState.prevEnd     = loopState.end;
+    rollState.active      = true;
+
+    // Start slip tracking from current position
+    const slipSt = trackNumber === 1 ? slipState1 : slipState2;
+    slipSt.enabled        = true;
+    slipSt.startAudioTime = audioEl.currentTime;
+    slipSt.startWallMs    = Date.now();
+
+    // Compute roll loop boundaries
+    const rollDuration = bars * 4 * (60 / bg.bpm);
+    const rollStart    = snapTimeForTrack(audioEl.currentTime, trackNumber);
+    const rollEnd      = Math.min(rollStart + rollDuration, audioEl.duration - 0.05);
+
+    // Seek to rollStart if playhead is outside the window
+    if (audioEl.currentTime < rollStart || audioEl.currentTime >= rollEnd) {
+        audioEl.currentTime = rollStart;
+    }
+
+    // Activate loop
+    loopState.start   = rollStart;
+    loopState.end     = rollEnd;
+    loopState.enabled = true;
+    loopState.reverse = false;
+    lBtn.classList.add('active');
+    updateLoopMarkersAfterZoom(trackNumber);
+}
+
+function endRoll(trackNumber) {
+    const loopState = trackNumber === 1 ? loopState1 : loopState2;
+    const rollState = trackNumber === 1 ? rollState1 : rollState2;
+    const lBtn      = trackNumber === 1 ? loopBtn1 : loopBtn2;
+    const lRegion   = trackNumber === 1 ? loopRegion1 : loopRegion2;
+    const lStart    = trackNumber === 1 ? loopMarkerStart1 : loopMarkerStart2;
+    const lEnd      = trackNumber === 1 ? loopMarkerEnd1 : loopMarkerEnd2;
+
+    if (!rollState.active) return;
+    rollState.active = false;
+
+    // Restore pre-roll loop state
+    loopState.enabled = rollState.prevEnabled;
+    loopState.start   = rollState.prevStart;
+    loopState.end     = rollState.prevEnd;
+    lBtn.classList.toggle('active', rollState.prevEnabled);
+
+    // Seek to where playback would have been (slip exit)
+    exitSlip(trackNumber);
+
+    // Sync markers
+    if (loopState.enabled && loopState.start !== null) {
+        updateLoopMarkersAfterZoom(trackNumber);
+    } else {
+        lRegion.style.display = 'none';
+        lStart.style.display  = 'none';
+        lEnd.style.display    = 'none';
+    }
+}
+
+function doBeatJump(trackNumber, beats) {
+    const audioEl   = trackNumber === 1 ? audioElement1 : audioElement2;
+    const bg        = trackNumber === 1 ? beatGrid1 : beatGrid2;
+    const loopState = trackNumber === 1 ? loopState1 : loopState2;
+
+    if (!audioEl.duration || bg.bpm <= 0) return;
+
+    const delta   = beats * bg.getBeatInterval();
+    const rawTime = audioEl.currentTime + delta;
+    const newTime = Math.min(Math.max(0, rawTime), audioEl.duration - 0.05);
+    audioEl.currentTime = snapTimeForTrack(newTime, trackNumber);
+
+    // Shift active loop region so it follows the jump
+    if (loopState.enabled && loopState.start !== null && loopState.end !== null) {
+        loopState.start = Math.max(0, loopState.start + delta);
+        loopState.end   = Math.min(audioEl.duration - 0.05, loopState.end + delta);
+        updateLoopMarkersAfterZoom(trackNumber);
+    }
+}
+
+function initLoopRollAndJump(trackNumber) {
+    const rollBtns = document.querySelectorAll(`.roll-btn[data-track="${trackNumber}"]`);
+    const jumpBtns = document.querySelectorAll(`.jump-btn[data-track="${trackNumber}"]`);
+
+    rollBtns.forEach(btn => {
+        const onStart = (e) => {
+            e.preventDefault();
+            startRoll(trackNumber, parseFloat(btn.dataset.bars));
+            btn.classList.add('active');
+            const onEnd = () => {
+                endRoll(trackNumber);
+                btn.classList.remove('active');
+                window.removeEventListener('mouseup',  onEnd);
+                window.removeEventListener('touchend', onEnd);
+            };
+            window.addEventListener('mouseup',  onEnd);
+            window.addEventListener('touchend', onEnd);
+        };
+        btn.addEventListener('mousedown',  onStart);
+        btn.addEventListener('touchstart', onStart, { passive: false });
+    });
+
+    jumpBtns.forEach(btn => {
+        btn.addEventListener('click', () => doBeatJump(trackNumber, parseInt(btn.dataset.beats, 10)));
+    });
+}
+
+function enableLoopRollControls(trackNumber) {
+    const section  = trackNumber === 1 ? loopRollSection1 : loopRollSection2;
+    const bg       = trackNumber === 1 ? beatGrid1 : beatGrid2;
+    const disabled = bg.bpm <= 0;
+    section.style.display = 'flex';
+    section.querySelectorAll('.roll-btn, .jump-btn').forEach(b => b.disabled = disabled);
+}
+
 function initSlipControls(trackNumber) {
     const btn = trackNumber === 1 ? slipBtn1 : slipBtn2;
 
@@ -7754,6 +7979,8 @@ function initSlipControls(trackNumber) {
 
 initSlipControls(1);
 initSlipControls(2);
+initLoopRollAndJump(1);
+initLoopRollAndJump(2);
 
 // ----- F-009: Sidechain Compression -----
 function trySetupSidechain() {
@@ -8402,13 +8629,133 @@ function updateModeButtons() {
     if (currentMode === 'sphere') modeSphereBtn.classList.add('active');
 }
 
+// ── F-019: VU Metering + Master Limiter ──────────────────────────
+function initMasterLimiter() {
+    limiterNode = audioContext.createDynamicsCompressor();
+    limiterNode.threshold.value = -1;
+    limiterNode.knee.value      = 0;
+    limiterNode.ratio.value     = 20;
+    limiterNode.attack.value    = 0.001;
+    limiterNode.release.value   = 0.01;
+
+    gainMaster.disconnect(analyser);
+    gainMaster.disconnect(recordingDestination);
+    gainMaster.disconnect(recordingAnalyser);
+    gainMaster.connect(limiterNode);
+    limiterNode.connect(analyser);
+    limiterNode.connect(recordingDestination);
+    limiterNode.connect(recordingAnalyser);
+
+    masterMeterAnalyser = audioContext.createAnalyser();
+    masterMeterAnalyser.fftSize = 256;
+    masterMeterAnalyser.smoothingTimeConstant = 0;
+    limiterNode.connect(masterMeterAnalyser);
+
+    masterMeterSection.style.display = 'block';
+
+    limiterToggleBtn.addEventListener('click', () => {
+        limiterEnabled = !limiterEnabled;
+        limiterNode.threshold.value = limiterEnabled ? -1 : 0;
+        limiterNode.ratio.value     = limiterEnabled ? 20 : 1;
+        limiterToggleBtn.classList.toggle('active', limiterEnabled);
+    });
+
+    [[vuClip1, 'track1'], [vuClip2, 'track2'], [vuMasterClip, 'master']].forEach(([el, key]) => {
+        el.addEventListener('click', () => {
+            vuState[key].clipped = false;
+            el.classList.remove('lit');
+        });
+    });
+}
+
+function setupTrackMeter(trackNumber) {
+    if (!audioContext) return;
+    if (trackNumber === 1 && track1MeterAnalyser) return;
+    if (trackNumber === 2 && track2MeterAnalyser) return;
+    const finalMix = trackNumber === 1 ? finalMix1 : finalMix2;
+    if (!finalMix) return;
+    const meterAnalyser = audioContext.createAnalyser();
+    meterAnalyser.fftSize = 256;
+    meterAnalyser.smoothingTimeConstant = 0;
+    finalMix.connect(meterAnalyser);
+    if (trackNumber === 1) { track1MeterAnalyser = meterAnalyser; vuMeterRow1.style.display = 'flex'; }
+    else                   { track2MeterAnalyser = meterAnalyser; vuMeterRow2.style.display = 'flex'; }
+}
+
+function _vuRMS(analyserNode) {
+    analyserNode.getFloatTimeDomainData(vuBuf);
+    let s = 0;
+    for (let i = 0; i < vuBuf.length; i++) s += vuBuf[i] * vuBuf[i];
+    return 20 * Math.log10(Math.max(Math.sqrt(s / vuBuf.length), 1e-6));
+}
+
+function _vuTick(st, db, now) {
+    const dt = now - st._lastMs;
+    st._lastMs = now;
+    st.level = db > st.level ? db : Math.max(db, st.level - VU_DECAY_DB_PER_MS * dt);
+    if (db > st.peak) { st.peak = db; st._peakHoldStart = now; }
+    else if (now - st._peakHoldStart > VU_PEAK_HOLD_MS) {
+        st.peak = Math.max(VU_MIN_DB, st.peak - VU_DECAY_DB_PER_MS * dt);
+    }
+    if (db > -0.5) st.clipped = true;
+}
+
+function _vuDraw(canvas, st) {
+    const w = canvas.clientWidth;
+    if (w < 1) return;
+    if (canvas.width !== w) canvas.width = w;
+    const h = canvas.height;
+    const ctx = canvas.getContext('2d');
+    const norm = v => Math.max(0, Math.min(1, (v - VU_MIN_DB) / -VU_MIN_DB));
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, 0, w, h);
+    const lvlW = norm(st.level) * w;
+    if (lvlW > 0) {
+        const g = ctx.createLinearGradient(0, 0, w, 0);
+        g.addColorStop(0,    '#22c55e');
+        g.addColorStop(0.65, '#eab308');
+        g.addColorStop(0.87, '#f97316');
+        g.addColorStop(1,    '#ef4444');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, lvlW, h);
+    }
+    const pkX = Math.floor(norm(st.peak) * w);
+    if (pkX > 1) {
+        ctx.fillStyle = st.peak > -6 ? '#ef4444' : '#fff';
+        ctx.fillRect(pkX - 1, 0, 2, h);
+    }
+}
+
+function updateVUMeters() {
+    const now = performance.now();
+    if (track1MeterAnalyser) {
+        _vuTick(vuState.track1, _vuRMS(track1MeterAnalyser), now);
+        _vuDraw(vuMeter1Canvas, vuState.track1);
+        vuClip1.classList.toggle('lit', vuState.track1.clipped);
+    }
+    if (track2MeterAnalyser) {
+        _vuTick(vuState.track2, _vuRMS(track2MeterAnalyser), now);
+        _vuDraw(vuMeter2Canvas, vuState.track2);
+        vuClip2.classList.toggle('lit', vuState.track2.clipped);
+    }
+    if (masterMeterAnalyser) {
+        _vuTick(vuState.master, _vuRMS(masterMeterAnalyser), now);
+        _vuDraw(vuMasterCanvas, vuState.master);
+        vuMasterClip.classList.toggle('lit', vuState.master.clipped);
+        if (limiterEnabled && limiterNode)
+            limiterGRSpan.textContent = Math.abs(limiterNode.reduction).toFixed(1);
+    }
+}
+// ── end F-019 ────────────────────────────────────────────────────
+
 // Animation function (reused from original but uses merged audio)
 function animate() {
     animationId = requestAnimationFrame(animate);
     
     if (analyser && dataArray) {
         analyser.getByteFrequencyData(dataArray);
-        
+        updateVUMeters();
+
         const bassSum = dataArray.slice(0, 8).reduce((a, b) => a + b, 0) / 8;
         const trebleSum = dataArray.slice(dataArray.length - 16).reduce((a, b) => a + b, 0) / 16;
         bassLevel = bassSum / 255;

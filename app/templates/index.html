@@ -95,6 +95,10 @@
                             <span class="key-display-inline">Key: <span id="key1">--</span></span>
                             <span class="duration-display"><span id="currentTime1">0:00</span> / <span id="duration1">0:00</span></span>
                         </div>
+                        <div class="vu-meter-row" id="vuMeterRow1" style="display:none;">
+                            <canvas id="vuMeter1" class="vu-meter-canvas" height="8"></canvas>
+                            <div class="vu-clip-indicator" id="vuClip1" title="Clip — click to reset"></div>
+                        </div>
                         <div class="track-controls">
                             <button id="playBtn1" class="control-btn-small" disabled aria-label="Play Track 1">▶️</button>
                             <button id="pauseBtn1" class="control-btn-small" disabled aria-label="Pause Track 1">⏸️</button>
@@ -128,6 +132,10 @@
                                 <span class="hc-hint-item">Dbl-click → <strong>rename</strong></span>
                                 <span class="hc-hint-sep">·</span>
                                 <span class="hc-hint-item"><kbd>1</kbd>–<kbd>8</kbd> → jump &nbsp;<kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>8</kbd> → set</span>
+                            </div>
+                            <div class="hot-cues-hint hc-hint-crossdeck">
+                                <span class="hc-hint-item hc-hint-crossdeck-label">Cross-deck:</span>
+                                <span class="hc-hint-item"><kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>8</kbd> → jump on <strong>other track</strong></span>
                             </div>
                         </div>
 
@@ -183,6 +191,36 @@
                             </div>
                             <div class="loop-hint">
                                 💡 Click to set <strong>A</strong> and <strong>B</strong> • Click again to adjust nearest marker • Hover to see time
+                            </div>
+                        </div>
+                        <div class="loop-roll-section" id="loopRollSection1" style="display: none;">
+                            <div class="loop-roll-controls-row">
+                                <div class="roll-group">
+                                    <span class="lr-label">Roll</span>
+                                    <div class="roll-buttons">
+                                        <button class="roll-btn" data-bars="0.03125" data-track="1">1/32</button>
+                                        <button class="roll-btn" data-bars="0.0625"  data-track="1">1/16</button>
+                                        <button class="roll-btn" data-bars="0.125"   data-track="1">1/8</button>
+                                        <button class="roll-btn" data-bars="0.25"    data-track="1">1/4</button>
+                                        <button class="roll-btn" data-bars="0.5"     data-track="1">1/2</button>
+                                        <button class="roll-btn" data-bars="1"       data-track="1">1</button>
+                                        <button class="roll-btn" data-bars="2"       data-track="1">2</button>
+                                        <button class="roll-btn" data-bars="4"       data-track="1">4</button>
+                                    </div>
+                                </div>
+                                <div class="jump-group">
+                                    <span class="lr-label">Jump</span>
+                                    <div class="jump-buttons">
+                                        <button class="jump-btn" data-beats="-8" data-track="1">-8</button>
+                                        <button class="jump-btn" data-beats="-4" data-track="1">-4</button>
+                                        <button class="jump-btn" data-beats="-2" data-track="1">-2</button>
+                                        <button class="jump-btn" data-beats="-1" data-track="1">-1</button>
+                                        <button class="jump-btn" data-beats="1"  data-track="1">+1</button>
+                                        <button class="jump-btn" data-beats="2"  data-track="1">+2</button>
+                                        <button class="jump-btn" data-beats="4"  data-track="1">+4</button>
+                                        <button class="jump-btn" data-beats="8"  data-track="1">+8</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="tempo-volume-row">
@@ -386,6 +424,17 @@
                             </div>
                             <span class="sc-value" id="scGRVal">0%</span>
                         </div>
+                    </div>
+                </div>
+
+                <div class="master-meter-section" id="masterMeterSection">
+                    <div class="master-meter-row">
+                        <canvas id="vuMasterMeter" class="vu-meter-canvas" height="8"></canvas>
+                        <div class="vu-clip-indicator" id="vuMasterClip" title="Clip — click to reset"></div>
+                    </div>
+                    <div class="master-limiter-row">
+                        <button class="limiter-btn active" id="limiterToggle">Limiter</button>
+                        <span class="limiter-gr-label">GR: <span id="limiterGR">0.0</span> dB</span>
                     </div>
                 </div>
 
@@ -604,6 +653,10 @@
                             <span class="key-display-inline">Key: <span id="key2">--</span></span>
                             <span class="duration-display"><span id="currentTime2">0:00</span> / <span id="duration2">0:00</span></span>
                         </div>
+                        <div class="vu-meter-row" id="vuMeterRow2" style="display:none;">
+                            <canvas id="vuMeter2" class="vu-meter-canvas" height="8"></canvas>
+                            <div class="vu-clip-indicator" id="vuClip2" title="Clip — click to reset"></div>
+                        </div>
                         <div class="track-controls">
                             <button id="playBtn2" class="control-btn-small" disabled aria-label="Play Track 2">▶️</button>
                             <button id="pauseBtn2" class="control-btn-small" disabled aria-label="Pause Track 2">⏸️</button>
@@ -637,6 +690,10 @@
                                 <span class="hc-hint-item">Dbl-click → <strong>rename</strong></span>
                                 <span class="hc-hint-sep">·</span>
                                 <span class="hc-hint-item"><kbd>1</kbd>–<kbd>8</kbd> → jump &nbsp;<kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>8</kbd> → set</span>
+                            </div>
+                            <div class="hot-cues-hint hc-hint-crossdeck">
+                                <span class="hc-hint-item hc-hint-crossdeck-label">Cross-deck:</span>
+                                <span class="hc-hint-item"><kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>8</kbd> → jump on <strong>other track</strong></span>
                             </div>
                         </div>
 
@@ -692,6 +749,36 @@
                             </div>
                             <div class="loop-hint">
                                 💡 Click to set <strong>A</strong> and <strong>B</strong> • Click again to adjust nearest marker • Hover to see time
+                            </div>
+                        </div>
+                        <div class="loop-roll-section" id="loopRollSection2" style="display: none;">
+                            <div class="loop-roll-controls-row">
+                                <div class="roll-group">
+                                    <span class="lr-label">Roll</span>
+                                    <div class="roll-buttons">
+                                        <button class="roll-btn" data-bars="0.03125" data-track="2">1/32</button>
+                                        <button class="roll-btn" data-bars="0.0625"  data-track="2">1/16</button>
+                                        <button class="roll-btn" data-bars="0.125"   data-track="2">1/8</button>
+                                        <button class="roll-btn" data-bars="0.25"    data-track="2">1/4</button>
+                                        <button class="roll-btn" data-bars="0.5"     data-track="2">1/2</button>
+                                        <button class="roll-btn" data-bars="1"       data-track="2">1</button>
+                                        <button class="roll-btn" data-bars="2"       data-track="2">2</button>
+                                        <button class="roll-btn" data-bars="4"       data-track="2">4</button>
+                                    </div>
+                                </div>
+                                <div class="jump-group">
+                                    <span class="lr-label">Jump</span>
+                                    <div class="jump-buttons">
+                                        <button class="jump-btn" data-beats="-8" data-track="2">-8</button>
+                                        <button class="jump-btn" data-beats="-4" data-track="2">-4</button>
+                                        <button class="jump-btn" data-beats="-2" data-track="2">-2</button>
+                                        <button class="jump-btn" data-beats="-1" data-track="2">-1</button>
+                                        <button class="jump-btn" data-beats="1"  data-track="2">+1</button>
+                                        <button class="jump-btn" data-beats="2"  data-track="2">+2</button>
+                                        <button class="jump-btn" data-beats="4"  data-track="2">+4</button>
+                                        <button class="jump-btn" data-beats="8"  data-track="2">+8</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="tempo-volume-row">
