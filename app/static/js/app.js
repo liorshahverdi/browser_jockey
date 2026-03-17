@@ -83,6 +83,7 @@ import { HotCueManager, HOT_CUE_COLORS } from './modules/hot-cues.js';
 import { BeatGrid } from './modules/beat-grid.js';
 import { SidechainCompressor } from './modules/sidechain.js';
 import { Transcriber } from './modules/transcription.js';
+import { PatternDeck } from './modules/pattern-deck.js';
 
 // Get DOM elements for Track 1
 const audioFile1 = document.getElementById('audioFile1');
@@ -244,6 +245,9 @@ const beatGridBPMEl2   = document.getElementById('beatGridBPM2');
 // Beat Grid managers
 const beatGrid1 = new BeatGrid();
 const beatGrid2 = new BeatGrid();
+
+// Pattern Deck (F-021)
+const patternDeck = new PatternDeck();
 
 // Slip Mode DOM elements & state
 const slipBtn1      = document.getElementById('slipBtn1');
@@ -446,6 +450,7 @@ const routeMicrophone = document.getElementById('routeMicrophone');
 const routeSampler = document.getElementById('routeSampler');
 const routeTheremin = document.getElementById('routeTheremin');
 const routeSequencer = document.getElementById('routeSequencer');
+const routePatternDeck = document.getElementById('routePatternDeck');
 const filterSliderMaster = document.getElementById('filterSliderMaster');
 const filterValueMaster = document.getElementById('filterValueMaster');
 const filterTypeMaster = document.getElementById('filterTypeMaster');
@@ -2800,6 +2805,20 @@ function toggleThereminRouting(enabled) {
     }
 }
 
+function togglePatternDeckRouting(enabled) {
+    const duckGain = patternDeck?.strudelDuckGain;
+    if (!duckGain || !merger) return;
+    try {
+        if (enabled) {
+            duckGain.connect(merger);
+        } else {
+            duckGain.disconnect(merger);
+        }
+    } catch (e) {
+        // Already connected/disconnected
+    }
+}
+
 function toggleSequencerRouting(enabled) {
     if (!sequencer || !merger) {
         console.warn('Sequencer or merger not initialized');
@@ -3452,8 +3471,14 @@ async function initAudioContext() {
                 console.log('✅ Sequencer initially routed to master');
             }
         }
+
+        // Enable recording as soon as audio context is ready (not just on track load)
+        if (recordBtn) recordBtn.disabled = false;
     }
-    
+
+    // Initialize Pattern Deck — F-021
+    await patternDeck.initialize(audioContext, merger);
+
     //Connect track 1 if it exists and isn't already connected
     if (audioElement1.src && !source1) {
         try {
@@ -7491,6 +7516,10 @@ routeSequencer.addEventListener('change', (e) => {
     toggleSequencerRouting(e.target.checked);
 });
 
+routePatternDeck?.addEventListener('change', (e) => {
+    togglePatternDeckRouting(e.target.checked);
+});
+
 masterVolumeSlider.addEventListener('input', (e) => {
     const volume = parseInt(e.target.value) / 100;
     if (gainMaster) {
@@ -9047,6 +9076,67 @@ function draw() {
 document.addEventListener('DOMContentLoaded', () => {
     initOscilloscope();
     setupRecordedAudioConnection();
+
+    // Pattern Deck play controls — initAudioContext first so the deck works
+    // even if no track has been loaded yet.
+    document.getElementById('patternDeckPlay')?.addEventListener('click', async () => {
+        await initAudioContext();
+        await patternDeck.play();
+    });
+    document.getElementById('patternDeckStop')?.addEventListener('click', () => {
+        patternDeck.stop();
+    });
+    document.querySelectorAll('.pattern-preset-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            await initAudioContext();
+            await patternDeck.loadPreset(btn.dataset.preset);
+        });
+    });
+    document.getElementById('patternDeckVolume')?.addEventListener('input', (e) => {
+        const v = e.target.value / 100;
+        const display = document.getElementById('patternDeckVolumeDisplay');
+        if (display) display.textContent = `${e.target.value}%`;
+        patternDeck.setVolume(v);
+    });
+
+    // Pattern Deck BPM sync — F-021
+    document.getElementById('patternDeckSyncT1')?.addEventListener('click', () => {
+        const bpm = getBPMValue(bpm1Display);
+        if (bpm) patternDeck.syncBPM(bpm);
+    });
+    document.getElementById('patternDeckSyncT2')?.addEventListener('click', () => {
+        const bpm = getBPMValue(bpm2Display);
+        if (bpm) patternDeck.syncBPM(bpm);
+    });
+
+    // Pattern Deck sidechain radio buttons — F-021
+    document.querySelectorAll('input[name="pdSidechain"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const pdSc = document.getElementById('pdSidechainParams');
+            if (e.target.value === 'off') {
+                patternDeck.disableSidechain();
+                if (pdSc) pdSc.style.display = 'none';
+            } else {
+                const src = e.target.value === 't1' ? gain1 : gain2;
+                patternDeck.enableSidechain(src);
+                if (pdSc) pdSc.style.display = 'flex';
+            }
+        });
+    });
+
+    // Pattern Deck sidechain parameter sliders — F-021
+    document.getElementById('pdScThresh')?.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        const display = document.getElementById('pdScThreshVal');
+        if (display) display.textContent = `${val}dB`;
+        if (patternDeck.sidechain) patternDeck.sidechain.setThreshold(val);
+    });
+    document.getElementById('pdScRatio')?.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        const display = document.getElementById('pdScRatioVal');
+        if (display) display.textContent = `${val}:1`;
+        if (patternDeck.sidechain) patternDeck.sidechain.setRatio(val);
+    });
 });
 
 // Setup event listeners for recorded audio playback to connect to oscilloscope

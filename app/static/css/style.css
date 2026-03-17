@@ -5860,3 +5860,187 @@ body.sequencer-fullscreen .visualization-wrapper {
     font-size: 0.68rem;
     color: rgba(255,255,255,0.45);
 }
+
+/* =====================================================================
+   F-021 Pattern Deck — Electric Violet Theme
+   ===================================================================== */
+
+.pattern-deck-section {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(153,51,255,0.45);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 8px 0;
+}
+
+.pattern-deck-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #b366ff;
+    letter-spacing: 0.03em;
+}
+
+.pattern-deck-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: rgba(153,51,255,0.25);
+    border: 1px solid rgba(153,51,255,0.55);
+    color: #b366ff;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.pattern-deck-help-text {
+    font-size: 0.68rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: normal;
+}
+
+.pattern-deck-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 10px;
+}
+
+.pattern-deck-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.pattern-deck-btn {
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(153,51,255,0.5);
+    background: rgba(153,51,255,0.1);
+    color: #b366ff;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.pattern-deck-btn:hover {
+    background: rgba(153,51,255,0.25);
+    border-color: #9933ff;
+}
+
+.pattern-deck-sync-btn {
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(153,51,255,0.35);
+    background: rgba(153,51,255,0.06);
+    color: rgba(179,102,255,0.8);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.pattern-deck-sync-btn:hover {
+    background: rgba(153,51,255,0.18);
+    border-color: rgba(153,51,255,0.6);
+}
+
+.pattern-preset-btn {
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(153,51,255,0.35);
+    background: rgba(153,51,255,0.07);
+    color: rgba(179,102,255,0.85);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+}
+.pattern-preset-btn:hover {
+    background: rgba(153,51,255,0.22);
+    border-color: rgba(153,51,255,0.65);
+    color: #b366ff;
+}
+
+.preset-label {
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.4);
+    margin-right: 2px;
+}
+
+.pattern-deck-tempo {
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.45);
+    margin-left: 4px;
+}
+
+.pattern-deck-vol-slider {
+    width: 120px;
+}
+
+.pattern-deck-sidechain {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 6px 8px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(153,51,255,0.2);
+    border-radius: 5px;
+    margin-bottom: 10px;
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.75);
+}
+
+.pattern-deck-sidechain label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.sidechain-label {
+    color: rgba(179,102,255,0.7);
+    font-weight: 600;
+    margin-right: 2px;
+}
+
+.pd-sidechain-params {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.pd-sidechain-params label {
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.6);
+}
+
+.pattern-deck-editor {
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(153,51,255,0.3);
+}
+
+strudel-repl {
+    display: block;
+    width: 100%;
+    min-height: 220px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.pattern-deck-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60px;
+    color: rgba(179,102,255,0.4);
+    font-size: 0.75rem;
+    font-style: italic;
+}

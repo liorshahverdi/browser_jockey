@@ -1078,8 +1078,64 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Pattern Deck — F-021 -->
+            <div class="pattern-deck-section">
+                <div class="pattern-deck-header">
+                    <span>⌨️ Strudel Pattern Deck <span class="pattern-deck-badge">LIVE CODE</span></span>
+                    <span class="pattern-deck-help-text">Live-code synced patterns · routed to master</span>
+                </div>
+
+                <div class="pattern-deck-controls">
+                    <div class="pattern-deck-row">
+                        <button id="patternDeckPlay" class="control-btn pattern-deck-btn">▶ Play</button>
+                        <button id="patternDeckStop" class="control-btn pattern-deck-btn">■ Stop</button>
+                        <button id="patternDeckSyncT1" class="control-btn pattern-deck-sync-btn">↺ Sync T1</button>
+                        <button id="patternDeckSyncT2" class="control-btn pattern-deck-sync-btn">↺ Sync T2</button>
+                        <span class="pattern-deck-tempo">
+                            CPS <span id="patternDeckCps">0.50</span> · <span id="patternDeckBpm">120</span> BPM
+                        </span>
+                    </div>
+
+                    <div class="pattern-deck-row">
+                        <span class="preset-label">Presets:</span>
+                        <button class="control-btn pattern-preset-btn" data-preset="kicksnare">Kick/Snare</button>
+                        <button class="control-btn pattern-preset-btn" data-preset="fullkit">Full Kit</button>
+                        <button class="control-btn pattern-preset-btn" data-preset="bassline">Bass</button>
+                        <button class="control-btn pattern-preset-btn" data-preset="acid">Acid</button>
+                        <button class="control-btn pattern-preset-btn" data-preset="pads">Pads</button>
+                        <button class="control-btn pattern-preset-btn" data-preset="jungle">Jungle</button>
+                    </div>
+
+                    <div class="pattern-deck-row">
+                        <label>Volume: <span id="patternDeckVolumeDisplay">80%</span></label>
+                        <input type="range" id="patternDeckVolume" min="0" max="100" value="80"
+                               class="effect-slider pattern-deck-vol-slider">
+                    </div>
+                </div>
+
+                <!-- Sidechain Section -->
+                <div class="pattern-deck-sidechain">
+                    <span class="sidechain-label">Sidechain Duck:</span>
+                    <label><input type="radio" name="pdSidechain" value="off" checked> Off</label>
+                    <label><input type="radio" name="pdSidechain" value="t1"> From T1</label>
+                    <label><input type="radio" name="pdSidechain" value="t2"> From T2</label>
+                    <div class="pd-sidechain-params" id="pdSidechainParams" style="display:none;">
+                        <label>Threshold: <span id="pdScThreshVal">-20dB</span>
+                            <input type="range" id="pdScThresh" min="-60" max="0" value="-20" class="effect-slider"></label>
+                        <label>Ratio: <span id="pdScRatioVal">4:1</span>
+                            <input type="range" id="pdScRatio" min="1" max="20" value="4" class="effect-slider"></label>
+                    </div>
+                </div>
+
+                <div class="pattern-deck-editor" id="patternDeckEditor">
+                    <div class="pattern-deck-placeholder">
+                        Click ▶ Play or a preset to load the Pattern Deck
+                    </div>
+                </div>
+            </div>
         </div>
-        
+
         <!-- Master Channel Effects -->
         <div class="master-effects-section">
             <div class="master-effects-header">
@@ -1119,6 +1175,11 @@
                             <input type="checkbox" id="routeSequencer" checked>
                             <span>🎼 Sequencer</span>
                             <span class="activity-indicator" id="activitySequencer"></span>
+                        </label>
+                        <label class="routing-toggle">
+                            <input type="checkbox" id="routePatternDeck" checked>
+                            <span>⌨️ Strudel</span>
+                            <span class="activity-indicator" id="activityPatternDeck"></span>
                         </label>
                     </div>
                 </div>

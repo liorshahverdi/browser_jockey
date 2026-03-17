@@ -2,16 +2,17 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browser-jockey.onrender.com/)
 
-A dual-track DJ mixing web application with advanced multi-track sequencer, independent pitch and tone controls, seamless timestretching with reverse mode, 3D audio visualization, BPM detection, beat grid + snap, hot cues (CDJ-style), slip mode, loop roll + beat jump, sidechain compression, master limiter with per-track VU metering, browser whisper transcription, precise loop markers, professional constant-power stereo panning, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, drag-and-drop track loading, clip-based arrangement with zoom/pan/fullscreen and real-time effects, and authentic DJ controls.
+A dual-track DJ mixing web application with advanced multi-track sequencer, independent pitch and tone controls, seamless timestretching with reverse mode, 3D audio visualization, BPM detection, beat grid + snap, hot cues (CDJ-style), slip mode, loop roll + beat jump, sidechain compression, master limiter with per-track VU metering, browser whisper transcription, live Strudel pattern deck, precise loop markers, professional constant-power stereo panning, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, drag-and-drop track loading, clip-based arrangement with zoom/pan/fullscreen and real-time effects, and authentic DJ controls.
 
 ## Quick Links
 
 📖 **[Full Changelog](CHANGELOG.md)** | 🎯 **[Features](docs/features/)** | 📚 **[User Guides](docs/guides/)** | 🧪 **[Testing Guide](docs/guides/TESTING_GUIDE.md)** | 🏗️ **[Module Architecture](MODULES.md)**
 
-**Latest Update (v3.32.0)**: Master Limiter + Per-Track VU Metering! Hard limiter on the master bus prevents clipping; three real-time horizontal RMS meters (Track 1, Track 2, Master) with peak hold, latching clip indicators, and a GR readout. Also: `Alt+1`–`8` cross-deck hot cue triggering.
+**Latest Update (v3.33.0)**: Strudel Pattern Deck! Live-code Tidal/Strudel patterns (kick drums, acid basslines, chord stabs, jungle breaks) directly inside the DJ app. Output routes through the master chain (limiter + recorder). BPM sync, 6 presets, volume control, sidechain duck from Track 1 or 2, and a master routing toggle.
 
 ## Recent Updates
 
+- **v3.33.0**: Strudel Pattern Deck — embedded live-coding environment via `@strudel/repl`; output bridged through master chain via MediaStream; BPM sync (`setcps`), 6 presets, volume slider, sidechain from T1/T2, master routing toggle; lazy-loads on first use
 - **v3.32.0**: Master Limiter + Per-Track VU Metering + cross-deck hot cues — hard limiter on master bus; three RMS meters (Track 1, Track 2, Master) with peak hold, latching clip indicators, GR readout; `Alt+1`–`8` cross-deck hot cue triggering; hot cues/beat grid/slip now enabled when loading recordings to tracks
 - **v3.31.0**: Browser Whisper Transcription — offline speech-to-text via Transformers.js + whisper-base; per-track and master-output transcription with export
 - **v3.30.0**: Sidechain bidirectional improvement — ducking works in both directions (Track 1 from 2, Track 2 from 1)
@@ -54,6 +55,13 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history.
   - ⬅️ ➡️ Nudge buttons to align grid to the first downbeat
 - 🌊 **Slip Mode** - Hold-to-slip; ghost amber playhead shows where audio would be; release snaps back
 - 🔀 **Sidechain Compression** - Duck Track 2 from Track 1's energy (or vice-versa); threshold, ratio, attack, release, wet/dry controls
+- ⌨️ **Strudel Pattern Deck** - Live-code Tidal/Strudel patterns mid-mix
+  - 🥁 Kick patterns, acid basslines, chord stabs, jungle breaks — all in the browser
+  - 🔗 Output routes through master chain (limiter, recorder, master EQ)
+  - 🎛️ BPM sync button injects `setcps()` from Track 1 or Track 2
+  - 🎹 6 instant presets: Kick/Snare, Full Kit, Bass, Acid, Pads, Jungle
+  - 🦆 Sidechain duck from Track 1 or Track 2 with threshold + ratio controls
+  - 🔌 Master routing toggle; lazy-loads on first use (no page-load overhead)
 - 🔁 **Loop Roll + Beat Jump** - CDJ-style performance controls
   - 🥁 8 hold-to-roll buttons per track (1/32 – 4 bars); releases to slip position
   - ⏩ 8 beat-jump buttons per track (±1, ±2, ±4, ±8 beats)

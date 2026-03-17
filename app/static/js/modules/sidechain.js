@@ -132,6 +132,41 @@ export class SidechainCompressor {
 
     isReady() { return this._isSetUp; }
 
+    /**
+     * Setup sidechain for Pattern Deck — accepts explicit nodes instead of
+     * assuming the Track1→Track2 topology used by setup().
+     *
+     * strudelDuckGain is already wired into the pattern deck chain; this method
+     * only adds the analyser tap on the source track and enables RAF polling.
+     *
+     * @param {AudioNode}   sourceNode - Track 1 or 2 gain node to tap for RMS
+     * @param {AudioNode}   signalGain - strudelOutputGain (informational only)
+     * @param {GainNode}    duckGain   - strudelDuckGain already in chain; we modulate it
+     * @param {AudioContext} ac        - AudioContext instance
+     */
+    trySetupPatternDeck(sourceNode, signalGain, duckGain, ac) {
+        if (this._isSetUp) return;
+        if (!sourceNode || !duckGain || !ac) {
+            console.warn('SidechainCompressor.trySetupPatternDeck: missing required nodes');
+            return;
+        }
+
+        this.ac = ac;
+
+        // Tap the source track for RMS measurement (side-tap only, no audio output)
+        this.analyserNode = ac.createAnalyser();
+        this.analyserNode.fftSize = 256;
+        this.analyserNode.smoothingTimeConstant = 0;
+        this._buffer = new Float32Array(this.analyserNode.fftSize);
+        sourceNode.connect(this.analyserNode);
+
+        // Reference the existing duck gain (already in the pattern deck chain)
+        this.duckGain = duckGain;
+
+        this._isSetUp = true;
+        this.enable();
+    }
+
     destroy() {
         this.disable();
         if (this.analyserNode) try { this.analyserNode.disconnect(); } catch (e) {}

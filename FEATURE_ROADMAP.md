@@ -24,8 +24,8 @@ Features that were already implemented in the codebase have been removed from th
 | 8. Analysis + Intelligence | 4 | F-044 – F-047 |
 | 9. Project + Data Management | 3 | F-049 – F-051 |
 | 10. UX + Accessibility | 5 | F-052 – F-055, F-057 |
-| 11. New Features (v3.28.2+) | 4 | F-059 – F-062 |
-| **Total** | **49** | |
+| 11. New Features (v3.28.2+) | 5 | F-059 – F-063 |
+| **Total** | **50** | |
 
 ---
 
@@ -1104,6 +1104,7 @@ The following features from earlier roadmap versions were removed because they a
 | F-058–F-062 | Browser Whisper Transcription | Implemented v3.31.0: `modules/transcription.js` + `modules/transcription-worker.js`, Xenova/whisper-base via Transformers.js CDN worker |
 | F-058 | Loop Roll + Beat Jump | Implemented v3.28.1: `startRoll`/`endRoll`/`doBeatJump` in `app.js`; 8 roll + 8 jump buttons per track wired to slip mode + beat grid; keyboard `[`/`]`/`{`/`}` |
 | F-019 | Master Limiter + Per-Track VU Metering | Implemented v3.32.0: `DynamicsCompressorNode` on master bus; 3× `AnalyserNode` meter taps (track1, track2, master); horizontal RMS canvas meters with peak hold + clip latch; limiter toggle + GR readout; `initMasterLimiter()` / `setupTrackMeter(n)` / `updateVUMeters()` in `app.js` |
+| F-063 | Strudel Pattern Deck | Implemented v3.33.0: `modules/pattern-deck.js`; lazy-loads `@strudel/repl@1.3.0` via esm.sh; MediaStream bridge routes Strudel's AudioContext output through app's master chain; `CustomElementRegistry.prototype.define` patch suppresses duplicate-registration errors from multiple `@strudel/core` copies; `AudioNode.prototype.connect` intercept redirects `destinationGain→strudelCtx.destination` to bridge; `StrudelMirror` API (`replEl.editor.evaluate/setCode/stop`); BPM sync, 6 presets, volume slider, sidechain via `SidechainCompressor.trySetupPatternDeck()`, master routing toggle |
 
 ---
 
@@ -1296,3 +1297,37 @@ Messages are JSON: `{ type: 'param', key: 'crossfader', value: 0.6, seq: 1458 }`
 - Chat: a minimal 3-line scrolling text overlay at the bottom of the mixer panel; press `T` to focus the input field; messages broadcast over the same data channel
 
 **Graceful degradation:** if WebRTC is unavailable (rare corporate firewalls), show a friendly error: "Collaboration requires a modern browser with WebRTC support. Try Chrome or Firefox." The rest of the app works normally.
+
+---
+
+### ~~F-063 — Strudel Pattern Deck~~ ✅ Implemented v3.33.0
+
+**Complexity:** Medium
+**New module:** `modules/pattern-deck.js`
+
+Embeds a live [Tidal/Strudel](https://strudel.cc) coding environment directly in the DJ app. The DJ can live-code kick patterns, acid basslines, chord stabs, and jungle breaks mid-mix — all routed through the master chain (limiter, recorder, EQ) and BPM-synced to either deck.
+
+**Features:**
+- **Live REPL** — `@strudel/repl` web component (`strudel-editor`) lazy-loaded on first use; no page-load overhead
+- **Master chain routing** — Strudel's output bridged from its own `AudioContext` into the app's master chain via `MediaStreamAudioDestinationNode` → `MediaStreamAudioSourceNode`; routed through `strudelOutputGain → strudelDuckGain → merger → limiter → destination`
+- **BPM sync** — "Sync T1" / "Sync T2" buttons inject `setcps(bpm/240)` into the editor code; display shows live CPS + BPM values
+- **6 presets** — Kick/Snare, Full Kit, Bass, Acid, Pads, Jungle; one-click load + auto-play
+- **Volume control** — slider modulates `strudelOutputGain.gain` (0–100%)
+- **Sidechain duck** — Off / From T1 / From T2 radio; routes via existing `SidechainCompressor.trySetupPatternDeck()` with threshold + ratio controls
+- **Master routing toggle** — "⌨️ Strudel" checkbox in the master routing section; connects/disconnects `strudelDuckGain` from `merger`
+
+**Audio chain:**
+```
+Strudel (strudelCtx)
+  → MediaStreamAudioDestinationNode
+  → MediaStream
+  → MediaStreamAudioSourceNode (ourCtx)
+  → strudelOutputGain (volume)
+  → strudelDuckGain  (sidechain target)
+  → merger → master EQ → limiterNode → destination
+```
+
+**Implementation notes:**
+- `CustomElementRegistry.prototype.define` patched to silently skip duplicate registrations (esm.sh loads multiple copies of `@strudel/core`, each trying to re-register `strudel-editor`)
+- `AudioNode.prototype.connect` intercept armed before the dynamic import; fires once when superdough connects its `destinationGain → strudelCtx.destination`, redirects to the MediaStream bridge, then self-restores
+- `replEl.editor` → `StrudelMirror` instance with `evaluate()`, `stop()`, `setCode()` methods (not a CM6 `EditorView`)
