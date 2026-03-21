@@ -9086,6 +9086,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('patternDeckStop')?.addEventListener('click', () => {
         patternDeck.stop();
     });
+
+    // Pattern Deck keyboard shortcuts — Ctrl+Enter = play, Ctrl+. = stop
+    document.addEventListener('keydown', async (event) => {
+        if (!event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        if (event.key === 'Enter') {
+            await initAudioContext();
+            await patternDeck.play();
+            // No preventDefault — strudel-editor handles its own Ctrl+Enter internally
+        } else if (event.key === '.') {
+            patternDeck.stop();
+            event.preventDefault();
+        }
+    });
+
     document.querySelectorAll('.pattern-preset-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             await initAudioContext();

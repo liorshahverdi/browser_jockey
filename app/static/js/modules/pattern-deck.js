@@ -10,25 +10,86 @@
  */
 import { SidechainCompressor } from './sidechain.js';
 
-const STRUDEL_CDN = 'https://esm.sh/@strudel/repl@1.3.0';
+// Load directly from the package's pre-built dist/ folder via jsdelivr.
+// esm.sh re-processes each Vite code-split chunk (index-1NNF4L0p.js,
+// index-CnvsRUeh.js, hydra-C4R5I71T.js, …) and rewrites their relative
+// imports to separate esm.sh URLs, so every chunk loads its own copy of
+// @strudel/core → 6 copies → [query] error: Cannot read properties of
+// undefined (reading 'value').
+// jsdelivr serves the raw dist files as-is; relative imports between the
+// chunks resolve to the same base URL → browser module-cache deduplication
+// → exactly ONE @strudel/core instance → no query errors.
+const STRUDEL_CDN = 'https://cdn.jsdelivr.net/npm/@strudel/repl@1.3.0/dist/index.mjs';
 const STRUDEL_ELEMENT = 'strudel-editor';
 
 const PRESETS = {
-  kicksnare: `sound("bd ~ sd ~")`,
-  fullkit: `stack(
-  sound("bd ~ sd ~"),
-  sound("hh*8").gain(0.35),
-  sound("cp:2").every(4, fast(2))
+  techno: `stack(
+  sound("bd*4").gain(0.9),
+  sound("~ ~ ~ sd:2").gain(0.75),
+  sound("hh*8").gain(perlin.range(0.05,0.28)).pan(sine.range(-0.5,0.5).slow(3)),
+  sound("~ oh ~ oh").gain(0.28).room(0.25),
+  sound("cp*8").gain(0.07).pan(rand.range(-0.9,0.9)).degradeBy(0.55)
 )`,
-  bassline: `note("<c2 ~ eb2 f2>")
-  .sound("sawtooth").lpf(600).gain(0.55)`,
-  acid: `note("c3 [c3 c3] eb3 f3*2")
-  .sound("sawtooth")
-  .lpf(sine.range(400, 2000).slow(4))
-  .res(10).gain(0.5)`,
-  pads: `note("<Cm7 Fm7 Bb7 Eb7>/2")
-  .sound("piano").room(0.6).gain(0.3).attack(0.2)`,
-  jungle: `sound("bd:3 sd:2 [bd:3 bd:3] sd:2").fast(2)`
+  acid: `stack(
+  note("c2 ~ [c2 d2] ~ [c2 ~] ~ [bb1 c2] ~")
+    .sound("sawtooth")
+    .lpf(sine.range(200,3200).slow(2))
+    .gain(0.55),
+  sound("bd*4").gain(0.85),
+  sound("~ ~ sd:3 ~").gain(0.65),
+  sound("hh*8").gain(0.12).pan(rand.range(-0.7,0.7))
+)`,
+  arp: `note("c4 eb4 g4 bb4 c5 bb4 g4 eb4 f4 ab4 c5 eb5 g4 bb4 d5 f5")
+  .sound("triangle")
+  .lpf(perlin.range(400,5000).slow(6))
+  .attack(0.005).release(0.1).gain(0.38)
+  .room(0.5).size(0.65)
+  .pan(sine.range(-0.6,0.6).slow(7))`,
+  dub: `stack(
+  sound("bd ~ bd ~"),
+  sound("~ cp ~ ~").gain(0.55).delay(0.25).delaytime(0.375),
+  note("<c2 ~ f2 g2>/2").sound("sawtooth")
+    .lpf(600).gain(0.45).delay(0.5).delaytime(0.75).room(0.45).size(0.6)
+)`,
+  minimal: `stack(
+  sound("bd*4").gain(0.82),
+  sound("hh*8").gain(perlin.range(0.04,0.22)).pan(rand.range(-0.7,0.7)),
+  note("c3 ~ [eb3 f3] ~ g3 ~ [f3 ~] ~")
+    .sound("square").lpf(sine.range(350,1800).slow(9))
+    .gain(0.25).room(0.3),
+  note("<c4 eb4 g4 bb4>/4").sound("sine")
+    .gain(perlin.range(0.04,0.18)).attack(0.08).release(0.25)
+    .room(0.65).pan(rand.range(-0.6,0.6)).degradeBy(0.4)
+)`,
+  glitch: `stack(
+  sound("bd ~ sd ~").fast(2)
+    .chunk(4, x => x.speed("<2 1 0.5 -1>").gain(0.9)),
+  sound("hh*16").gain(perlin.range(0.05,0.22)).pan(saw.range(-0.8,0.8)),
+  note("c4 [~ c4] eb4 ~").sound("sawtooth")
+    .lpf(rand.range(300,3500)).gain(0.28).degradeBy(0.35)
+)`,
+  evolve: `stack(
+  note("c3 eb3 g3 bb3 c4 g3 f3 d3")
+    .sound("sine")
+    .attack(0.6).release(1.8)
+    .gain(perlin.range(0.08,0.32))
+    .room(0.85).size(0.95)
+    .pan(sine.range(-0.8,0.8).slow(6))
+    .slow(3),
+  note("c2 g2 eb2 bb1")
+    .sound("triangle").gain(0.18)
+    .attack(1.2).release(2.5)
+    .room(0.8).slow(8)
+    .pan(perlin.range(-0.4,0.4).slow(5))
+)`,
+  poly: `stack(
+  sound("bd*3").gain(0.88),
+  sound("sd*2").gain(0.6).pan(-0.35),
+  sound("hh*5").gain(perlin.range(0.06,0.2)).pan(rand.range(-0.8,0.8)),
+  sound("oh:1*7").gain(0.1).room(0.4).degradeBy(0.5),
+  note("c4 ~ eb4 ~ g4 ~ bb3 ~").sound("square")
+    .lpf(1400).gain(0.22).pan(0.4).room(0.25)
+)`
 };
 
 export class PatternDeck {
@@ -63,9 +124,17 @@ export class PatternDeck {
   // ── Public API ────────────────────────────────────────────────────────────
 
   async play() {
+    const alreadyLoaded = !!this.replEl;
     const ok = await this._ensureStrudelLoaded();
     if (!ok) return;
-    this._evalRepl();
+    if (alreadyLoaded) {
+      // Element was already running — re-evaluate whatever is in the editor.
+      this._evalRepl();
+    }
+    // On first load: the 'code' attribute already triggered the initial eval.
+    // Calling _evalRepl() again here (after all superdough instances are ready)
+    // would invoke a second eval in a polluted global scope and cause
+    // [query] errors. The attribute eval is sufficient to start playback.
   }
 
   stop() {
@@ -89,7 +158,9 @@ export class PatternDeck {
     if (!current) return;
     const updated = /^setcps\([^)]+\)/m.test(current)
       ? current.replace(/^setcps\([^)]+\)/m, `setcps(${cps})`)
-      : `setcps(${cps})\n${current}`;
+      : /\.cps\([^)]+\)/.test(current)
+        ? current.replace(/\.cps\([^)]+\)/, `.cps(${cps})`)
+        : `setcps(${cps})\n${current}`;
     this._setCode(updated);
   }
 
@@ -137,6 +208,33 @@ export class PatternDeck {
     const container = document.getElementById('patternDeckEditor');
     if (!container) return false;
 
+    // Set up console intercepts once to surface Strudel eval errors in the UI.
+    // '[eval] code updated'  → new eval starting  → clear any old error
+    // '[eval] error: <msg>'  → eval failed         → show message in error box
+    if (!window.__strudelConsoleArmed) {
+      window.__strudelConsoleArmed = true;
+      const _origLog = console.log;
+      const _origErr = console.error;
+      console.log = function(...args) {
+        _origLog.apply(console, args);
+        if (args[0] === '[eval] code updated') {
+          const el = document.getElementById('patternDeckError');
+          if (el) { el.textContent = ''; el.style.display = 'none'; }
+        }
+      };
+      console.error = function(...args) {
+        _origErr.apply(console, args);
+        const first = String(args[0] ?? '');
+        if (first.includes('[eval] error:')) {
+          const msg = (args[1] instanceof Error)
+            ? args[1].message
+            : first.replace(/.*?\[eval\] error:\s*/, '');
+          const el = document.getElementById('patternDeckError');
+          if (el) { el.textContent = msg.slice(0, 400); el.style.display = 'block'; }
+        }
+      };
+    }
+
     // Intercept the moment superdough wires its destinationGain → strudelCtx.destination.
     // We redirect that connection through a MediaStream bridge into our master chain.
     // Must be armed BEFORE the import so it's in place when evaluate() triggers
@@ -161,9 +259,17 @@ export class PatternDeck {
       const defined = !!customElements.get(STRUDEL_ELEMENT);
       console.log(`✅ PatternDeck: @strudel/repl loaded, ${STRUDEL_ELEMENT} defined: ${defined}`);
 
+      // Set initial code via attribute BEFORE mounting. strudel-editor reads
+      // this as its starting document, which avoids triggering a programmatic
+      // re-eval after superdough has already initialised multiple contexts.
+      // (Calling _setCode() after mount causes a second [eval] that conflicts
+      // with the 6 concurrent @strudel/core copies and produces [query] errors.)
+      const defaultCode = `stack(\n  sound("bd ~ sd ~"),\n  sound("hh*8").gain(0.35)\n).cps(0.5)`;
+
       container.innerHTML = '';
       this.replEl = document.createElement(STRUDEL_ELEMENT);
       this.replEl.id = 'patternDeckRepl';
+      this.replEl.setAttribute('code', defaultCode);
       container.appendChild(this.replEl);
 
       await customElements.whenDefined(STRUDEL_ELEMENT);
@@ -172,10 +278,6 @@ export class PatternDeck {
       // replEl.editor → StrudelMirror instance (has setCode/evaluate/start/stop/hush).
       // This is NOT a CM6 EditorView — it's Strudel's own mirror object.
       this.mirror = await this._waitForMirror();
-
-      // Set default code once mirror is available
-      const defaultCode = `setcps(0.5)\nstack(\n  sound("bd ~ sd ~"),\n  sound("hh*8").gain(0.35)\n)`;
-      this._setCode(defaultCode);
 
       // Diagnostics
       const elMethods = ['evaluate','start','stop','hush','play','setCode','getCode']
@@ -291,6 +393,11 @@ export class PatternDeck {
       // Use dest === dest.context?.destination instead of instanceof for robustness.
       if (dest && dest === dest.context?.destination && dest.context !== ourCtx) {
         const strudelCtx = dest.context;
+        // OfflineAudioContext (used internally by Strudel to render reverb IRs)
+        // has no createMediaStreamDestination — skip bridging it.
+        if (typeof strudelCtx.createMediaStreamDestination !== 'function') {
+          return _orig.call(this, dest, ...args);
+        }
         if (!bridgedCtxs.has(strudelCtx)) {
           bridgedCtxs.add(strudelCtx);
           try {

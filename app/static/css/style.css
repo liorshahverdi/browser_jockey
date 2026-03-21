@@ -6035,6 +6035,21 @@ strudel-repl {
     overflow: hidden;
 }
 
+/* strudel-editor mounts its CodeMirror into a sibling <div> it creates
+   via connectedCallback → parentElement.insertBefore(n, nextSibling).
+   The custom element itself is empty; hiding it removes the phantom
+   min-height gap above the actual editor. */
+strudel-editor {
+    display: none;
+}
+
+#patternDeckEditor > div {
+    min-height: 220px;
+    border-radius: 4px;
+    overflow: hidden;
+    width: 100%;
+}
+
 .pattern-deck-placeholder {
     display: flex;
     align-items: center;
@@ -6043,4 +6058,21 @@ strudel-repl {
     color: rgba(179,102,255,0.4);
     font-size: 0.75rem;
     font-style: italic;
+}
+
+.pattern-deck-error {
+    display: none;
+    margin-top: 6px;
+    padding: 7px 10px;
+    background: rgba(255, 55, 55, 0.1);
+    border: 1px solid rgba(255, 80, 80, 0.4);
+    border-radius: 4px;
+    color: #ff8888;
+    font-family: 'Courier New', monospace;
+    font-size: 0.68rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 80px;
+    overflow-y: auto;
 }
