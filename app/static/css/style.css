@@ -4441,7 +4441,7 @@ body.sequencer-fullscreen .visualization-wrapper {
     color: rgba(255, 255, 255, 0.9);
 }
 
-.track-controls {
+.sequencer-track .track-controls {
     display: flex;
     gap: 5px;
     align-items: center;
