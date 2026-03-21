@@ -4963,6 +4963,24 @@ body.sequencer-fullscreen .visualization-wrapper {
         flex: 1 1 auto;
         text-align: center;
     }
+
+    .control-btn-small {
+        padding: 12px 16px;
+        min-width: 60px;
+        min-height: 60px;
+    }
+
+    .track-controls {
+        gap: 8px;
+    }
+
+    .loop-roll-controls-row {
+        gap: 6px;
+    }
+
+    .file-name {
+        max-width: 100%;
+    }
 }
 
 /* 480 px — mobile: single-column, larger tap targets, hide 3-D visualiser */
@@ -4990,9 +5008,76 @@ body.sequencer-fullscreen .visualization-wrapper {
         width: 100%;
     }
 
-    /* Stack effect controls vertically */
+    /* Sliders: switch vertical → horizontal */
+    .volume-slider,
+    .tempo-control-inline input[type="range"],
+    .pitch-slider,
+    .stretch-slider,
+    .eq-slider {
+        writing-mode: horizontal-tb;
+        direction: ltr;
+        width: 100%;
+        height: 32px;
+    }
+
+    /* Slider containers: switch column → row */
+    .volume-control-inline,
+    .tempo-control-inline,
+    .pitch-control-inline,
+    .stretch-control-inline,
+    .eq-control-inline {
+        flex-direction: row;
+        min-height: auto;
+        align-items: center;
+        width: 100%;
+        gap: 8px;
+        padding: 8px;
+    }
+
+    /* tempo-volume-row: 2-column grid instead of stacked column */
     .tempo-volume-row {
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    /* control-btn-small: smaller tap targets on tiny screens */
+    .control-btn-small {
+        min-width: 50px;
+        min-height: 50px;
+        padding: 8px 12px;
+        font-size: 1rem;
+    }
+
+    /* track-controls: tighter grid for 480px */
+    .track-controls {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        gap: 6px;
+    }
+
+    /* hot-cue-btn: better touch target */
+    .hot-cue-btn {
+        width: 38px;
+        height: 34px;
+    }
+
+    /* beat-nudge-btn: better touch target */
+    .beat-nudge-btn {
+        width: 36px;
+        height: 32px;
+    }
+
+    .dj-mixer-section {
+        padding: 10px;
+    }
+
+    .controls {
+        padding: 10px;
+    }
+
+    .hot-cues-label,
+    .beat-grid-label {
+        white-space: normal;
     }
 
     /* Hide the 3-D oscilloscope visualiser — too heavy for mobile */
@@ -5254,6 +5339,7 @@ body.sequencer-fullscreen .visualization-wrapper {
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-wrap: wrap;
 }
 
 .beat-nudge-btn {
@@ -5761,6 +5847,7 @@ body.sequencer-fullscreen .visualization-wrapper {
 .roll-buttons, .jump-buttons {
     display: flex;
     gap: 3px;
+    flex-wrap: wrap;
 }
 .roll-btn, .jump-btn {
     font-size: 0.68rem;
