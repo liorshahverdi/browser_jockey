@@ -1,6 +1,6 @@
 # Browser Jockey
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://browser-jockey.onrender.com/)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://liorshahverdi.github.io/browser_jockey/)
 
 A dual-track DJ mixing web application with advanced multi-track sequencer, independent pitch and tone controls, seamless timestretching with reverse mode, 3D audio visualization, BPM detection, beat grid + snap, hot cues (CDJ-style), slip mode, loop roll + beat jump, sidechain compression, master limiter with per-track VU metering, browser whisper transcription, live Strudel pattern deck, precise loop markers, professional constant-power stereo panning, audio effects, microphone input with vocoder and auto-tune, standalone microphone recording, flexible audio routing, professional crossfader, browser tab audio capture, drag-and-drop track loading, clip-based arrangement with zoom/pan/fullscreen and real-time effects, and authentic DJ controls.
 
