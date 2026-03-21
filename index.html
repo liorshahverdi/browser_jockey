@@ -12,23 +12,26 @@
     <style>
     /* Mobile overrides — inlined to bypass CSS file caching */
     body { overflow-x: hidden; }
+    @media (max-width: 1400px) {
+        .track-controls { grid-template-columns: repeat(4, 1fr); }
+        .tempo-volume-row { flex-wrap: wrap; }
+        .beat-grid-controls-row { flex-wrap: wrap; }
+        .roll-buttons, .jump-buttons { flex-wrap: wrap; }
+    }
     @media (max-width: 768px) {
         body { padding: 10px; }
         .controls { padding: 15px; }
         .dj-decks-container { grid-template-columns: 1fr; }
         .file-name { max-width: 100%; }
         .control-btn-small { padding: 12px 16px; min-width: 60px; min-height: 60px; }
-        .track-controls { grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px; }
+        .track-controls { gap: 8px; padding: 12px; }
         .loop-roll-controls-row { gap: 6px; }
-        .tempo-volume-row { flex-wrap: wrap; }
-        .beat-grid-controls-row { flex-wrap: wrap; }
-        .roll-buttons, .jump-buttons { flex-wrap: wrap; }
     }
     @media (max-width: 480px) {
         .controls { padding: 10px; }
         .dj-mixer-section { padding: 10px; }
         .control-btn-small { min-width: 0; min-height: 44px; padding: 8px 6px; font-size: 1.2rem; }
-        .track-controls { grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 8px; }
+        .track-controls { gap: 6px; padding: 8px; }
         .volume-slider,
         .tempo-control-inline input[type="range"],
         .pitch-slider, .stretch-slider, .eq-slider {

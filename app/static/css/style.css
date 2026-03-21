@@ -143,6 +143,24 @@ h1 {
     .dj-decks-container {
         grid-template-columns: 1fr; /* Stack vertically on smaller screens */
     }
+
+    /* Once the layout stacks, cap button rows at 4 so they wrap */
+    .track-controls {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    /* Prevent 7 slider containers from stretching into one overflowing row */
+    .tempo-volume-row {
+        flex-wrap: wrap;
+    }
+
+    .beat-grid-controls-row {
+        flex-wrap: wrap;
+    }
+
+    .roll-buttons, .jump-buttons {
+        flex-wrap: wrap;
+    }
 }
 
 .dj-mixer-section {
