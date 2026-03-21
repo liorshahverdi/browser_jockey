@@ -10,6 +10,7 @@ body {
     color: white;
     min-height: 100vh;
     padding: 20px;
+    overflow-x: hidden;
 }
 
 .container {
@@ -4971,7 +4972,9 @@ body.sequencer-fullscreen .visualization-wrapper {
     }
 
     .track-controls {
+        grid-template-columns: repeat(4, 1fr);
         gap: 8px;
+        padding: 12px;
     }
 
     .loop-roll-controls-row {
@@ -4980,6 +4983,11 @@ body.sequencer-fullscreen .visualization-wrapper {
 
     .file-name {
         max-width: 100%;
+    }
+
+    /* Prevent the 7 slider containers from overflowing at tablet widths */
+    .tempo-volume-row {
+        flex-wrap: wrap;
     }
 }
 
@@ -5041,18 +5049,19 @@ body.sequencer-fullscreen .visualization-wrapper {
         gap: 6px;
     }
 
-    /* control-btn-small: smaller tap targets on tiny screens */
+    /* control-btn-small: allow buttons to shrink freely on narrow screens */
     .control-btn-small {
-        min-width: 50px;
-        min-height: 50px;
-        padding: 8px 12px;
-        font-size: 1rem;
+        min-width: 0;
+        min-height: 44px;
+        padding: 8px 6px;
+        font-size: 1.2rem;
     }
 
-    /* track-controls: tighter grid for 480px */
+    /* track-controls: fixed 4-column grid, reduced padding */
     .track-controls {
-        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        grid-template-columns: repeat(4, 1fr);
         gap: 6px;
+        padding: 8px;
     }
 
     /* hot-cue-btn: better touch target */
