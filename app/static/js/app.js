@@ -84,6 +84,7 @@ import { BeatGrid } from './modules/beat-grid.js';
 import { SidechainCompressor } from './modules/sidechain.js';
 import { Transcriber } from './modules/transcription.js';
 import { PatternDeck } from './modules/pattern-deck.js';
+import { LofiStation } from './modules/lofi-station.js';
 
 // Get DOM elements for Track 1
 const audioFile1 = document.getElementById('audioFile1');
@@ -248,6 +249,9 @@ const beatGrid2 = new BeatGrid();
 
 // Pattern Deck (F-021)
 const patternDeck = new PatternDeck();
+
+// Lo-fi Station (F-022)
+const lofiStation = new LofiStation();
 
 // Slip Mode DOM elements & state
 const slipBtn1      = document.getElementById('slipBtn1');
@@ -451,6 +455,7 @@ const routeSampler = document.getElementById('routeSampler');
 const routeTheremin = document.getElementById('routeTheremin');
 const routeSequencer = document.getElementById('routeSequencer');
 const routePatternDeck = document.getElementById('routePatternDeck');
+const routeLofiStation = document.getElementById('routeLofiStation');
 const filterSliderMaster = document.getElementById('filterSliderMaster');
 const filterValueMaster = document.getElementById('filterValueMaster');
 const filterTypeMaster = document.getElementById('filterTypeMaster');
@@ -2819,6 +2824,20 @@ function togglePatternDeckRouting(enabled) {
     }
 }
 
+function toggleLofiStationRouting(enabled) {
+    const rg = lofiStation?.getRoutingGain();
+    if (!rg || !merger) return;
+    try {
+        if (enabled) {
+            rg.connect(merger);
+        } else {
+            rg.disconnect(merger);
+        }
+    } catch (e) {
+        // Already connected/disconnected
+    }
+}
+
 function toggleSequencerRouting(enabled) {
     if (!sequencer || !merger) {
         console.warn('Sequencer or merger not initialized');
@@ -3479,6 +3498,9 @@ async function initAudioContext() {
     // Initialize Pattern Deck — F-021
     await patternDeck.initialize(audioContext, merger);
 
+    // Initialize Lo-fi Station — F-022
+    await lofiStation.initialize(audioContext, merger);
+
     //Connect track 1 if it exists and isn't already connected
     if (audioElement1.src && !source1) {
         try {
@@ -3738,6 +3760,32 @@ function initOscilloscope() {
     // Start drawing if not already started
     if (!oscilloscopeAnimationId) {
         drawOscilloscope();
+    }
+
+    // Fullscreen toggle
+    const fsBtn = document.getElementById('oscilloscopeFullscreenBtn');
+    if (fsBtn) {
+        const toggleOscFullscreen = () => {
+            const c = document.getElementById('oscilloscope-container');
+            if (!c) return;
+            c.classList.toggle('fullscreen');
+            fsBtn.textContent = c.classList.contains('fullscreen') ? '✕' : '⛶';
+            requestAnimationFrame(() => {
+                if (oscilloscopeCanvas) {
+                    oscilloscopeCanvas.width = c.offsetWidth;
+                    oscilloscopeCanvas.height = c.offsetHeight - 50;
+                }
+            });
+        };
+        fsBtn.addEventListener('click', toggleOscFullscreen);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const c = document.getElementById('oscilloscope-container');
+                if (c && c.classList.contains('fullscreen')) {
+                    toggleOscFullscreen();
+                }
+            }
+        });
     }
 }
 
@@ -7520,6 +7568,10 @@ routePatternDeck?.addEventListener('change', (e) => {
     togglePatternDeckRouting(e.target.checked);
 });
 
+routeLofiStation?.addEventListener('change', (e) => {
+    toggleLofiStationRouting(e.target.checked);
+});
+
 masterVolumeSlider.addEventListener('input', (e) => {
     const volume = parseInt(e.target.value) / 100;
     if (gainMaster) {
@@ -9150,6 +9202,72 @@ document.addEventListener('DOMContentLoaded', () => {
         const display = document.getElementById('pdScRatioVal');
         if (display) display.textContent = `${val}:1`;
         if (patternDeck.sidechain) patternDeck.sidechain.setRatio(val);
+    });
+
+    // Lo-fi Station controls — F-022
+    document.getElementById('lofiPlay')?.addEventListener('click', async () => {
+        await initAudioContext();
+        lofiStation.play();
+    });
+    document.getElementById('lofiStop')?.addEventListener('click', () => {
+        lofiStation.stop();
+    });
+    document.getElementById('lofiRegenerate')?.addEventListener('click', () => {
+        lofiStation.regenerate();
+    });
+    document.getElementById('lofiSyncT1')?.addEventListener('click', () => {
+        const bpm = getBPMValue(bpm1Display);
+        if (bpm) {
+            lofiStation.syncBPM(bpm);
+            const display = document.getElementById('lofiBpmDisplay');
+            const slider = document.getElementById('lofiBpmSlider');
+            if (display) display.textContent = Math.round(bpm);
+            if (slider) slider.value = Math.round(bpm);
+        }
+    });
+    document.getElementById('lofiSyncT2')?.addEventListener('click', () => {
+        const bpm = getBPMValue(bpm2Display);
+        if (bpm) {
+            lofiStation.syncBPM(bpm);
+            const display = document.getElementById('lofiBpmDisplay');
+            const slider = document.getElementById('lofiBpmSlider');
+            if (display) display.textContent = Math.round(bpm);
+            if (slider) slider.value = Math.round(bpm);
+        }
+    });
+    document.getElementById('lofiBpmSlider')?.addEventListener('input', (e) => {
+        const bpm = parseInt(e.target.value);
+        const display = document.getElementById('lofiBpmDisplay');
+        if (display) display.textContent = bpm;
+        lofiStation.syncBPM(bpm);
+    });
+    document.getElementById('lofiAmountSlider')?.addEventListener('input', (e) => {
+        const v = parseInt(e.target.value);
+        const display = document.getElementById('lofiAmountDisplay');
+        if (display) display.textContent = `${v}%`;
+        lofiStation.setLofiAmount(v / 100);
+    });
+    document.getElementById('lofiVolumeSlider')?.addEventListener('input', (e) => {
+        const v = parseInt(e.target.value);
+        const display = document.getElementById('lofiVolumeDisplay');
+        if (display) display.textContent = `${v}%`;
+        lofiStation.setVolume(v / 100);
+    });
+
+    // Lo-fi Station layer mute buttons
+    ['Drums', 'Chords', 'Melody', 'Ambient'].forEach(name => {
+        const layer = name.toLowerCase();
+        document.getElementById(`lofiMute${name}`)?.addEventListener('click', (e) => {
+            const muted = lofiStation.toggleLayerMute(layer);
+            e.currentTarget.classList.toggle('muted', muted);
+        });
+    });
+
+    // Lo-fi Station layer volume sliders
+    document.querySelectorAll('.lofi-layer-slider').forEach(slider => {
+        slider.addEventListener('input', (e) => {
+            lofiStation.setLayerVolume(e.target.dataset.layer, parseInt(e.target.value) / 100);
+        });
     });
 });
 

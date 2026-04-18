@@ -3130,6 +3130,7 @@ h1 {
 }
 
 .oscilloscope-header {
+    position: relative;
     padding: 15px;
     text-align: center;
     background: rgba(255, 255, 255, 0.05);
@@ -3142,6 +3143,50 @@ h1 {
     color: rgba(0, 255, 255, 0.9);
     text-transform: uppercase;
     letter-spacing: 2px;
+}
+
+.oscilloscope-fullscreen-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 255, 255, 0.15);
+    border: 1px solid rgba(0, 255, 255, 0.4);
+    color: rgba(0, 255, 255, 0.9);
+    font-size: 1.1rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.oscilloscope-fullscreen-btn:hover {
+    background: rgba(0, 255, 255, 0.3);
+    border-color: rgba(0, 255, 255, 0.7);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.oscilloscope-container.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    z-index: 10000;
+    border-radius: 0;
+    background: rgba(0, 0, 0, 0.95);
+    animation: fullscreenEnter 0.3s ease;
+}
+
+.oscilloscope-container.fullscreen .oscilloscope-fullscreen-btn {
+    background: rgba(0, 255, 255, 0.25);
 }
 
 .oscilloscope-canvas {
@@ -6189,4 +6234,155 @@ strudel-editor {
     word-break: break-word;
     max-height: 80px;
     overflow-y: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   F-022  Lo-fi Station
+   ═══════════════════════════════════════════════════════════════ */
+
+.lofi-station-section {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(230,168,50,0.45);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 8px 0;
+}
+
+.lofi-station-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #e6a832;
+    letter-spacing: 0.03em;
+}
+
+.lofi-station-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: rgba(230,168,50,0.2);
+    border: 1px solid rgba(230,168,50,0.55);
+    color: #e6a832;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.lofi-station-help-text {
+    font-size: 0.68rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: normal;
+}
+
+.lofi-station-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.lofi-station-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.lofi-btn {
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(230,168,50,0.5);
+    background: rgba(230,168,50,0.1);
+    color: #e6a832;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.lofi-btn:hover {
+    background: rgba(230,168,50,0.25);
+    border-color: #e6a832;
+}
+
+.lofi-sync-btn {
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(230,168,50,0.35);
+    background: rgba(230,168,50,0.06);
+    color: rgba(230,168,50,0.8);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.lofi-sync-btn:hover {
+    background: rgba(230,168,50,0.18);
+    border-color: rgba(230,168,50,0.6);
+}
+
+.lofi-tempo-display {
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.45);
+    margin-left: 4px;
+}
+
+.lofi-slider-label {
+    font-size: 0.72rem;
+    color: rgba(230,168,50,0.7);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.lofi-slider {
+    width: 120px;
+}
+
+.lofi-value-display {
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.5);
+    min-width: 30px;
+}
+
+.lofi-layers-row {
+    padding: 6px 8px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(230,168,50,0.2);
+    border-radius: 5px;
+    gap: 10px;
+}
+
+.lofi-layer {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.lofi-mute-btn {
+    font-size: 0.72rem;
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(230,168,50,0.35);
+    background: rgba(230,168,50,0.08);
+    cursor: pointer;
+    transition: background 0.12s, opacity 0.12s;
+    line-height: 1;
+}
+
+.lofi-mute-btn:hover {
+    background: rgba(230,168,50,0.2);
+}
+
+.lofi-mute-btn.muted {
+    opacity: 0.35;
+    border-color: rgba(255,255,255,0.15);
+}
+
+.lofi-layer-slider {
+    width: 60px;
 }
