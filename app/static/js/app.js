@@ -3788,9 +3788,10 @@ function initOscilloscope() {
         drawOscilloscope();
     }
 
-    // Fullscreen toggle
+    // Fullscreen toggle (bind once)
     const fsBtn = document.getElementById('oscilloscopeFullscreenBtn');
-    if (fsBtn) {
+    if (fsBtn && !fsBtn._oscFsBound) {
+        fsBtn._oscFsBound = true;
         const toggleOscFullscreen = () => {
             const c = document.getElementById('oscilloscope-container');
             if (!c) return;
