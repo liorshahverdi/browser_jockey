@@ -1461,10 +1461,12 @@ async function captureTabAudioAsMic() {
                 echoCancellation: false,
                 noiseSuppression: false,
                 autoGainControl: false,
-                channelCount: 2
-            }
+                channelCount: 2,
+                suppressLocalAudioPlayback: true
+            },
+            suppressLocalAudioPlayback: true
         });
-        
+
         // Check if audio track exists
         const audioTracks = stream.getAudioTracks();
         if (audioTracks.length === 0) {
@@ -1472,7 +1474,18 @@ async function captureTabAudioAsMic() {
             stream.getTracks().forEach(track => track.stop());
             return;
         }
-        
+
+        // Suppress audio in the captured tab so user only hears it through BJ
+        for (const track of audioTracks) {
+            if (typeof track.applyConstraints === 'function') {
+                try {
+                    await track.applyConstraints({ suppressLocalAudioPlayback: true });
+                } catch (e) {
+                    console.log('suppressLocalAudioPlayback not supported:', e.message);
+                }
+            }
+        }
+
         console.log(`Tab audio captured with ${audioTracks.length} audio track(s) for microphone`);
         
         // Disable regular microphone if it's enabled
@@ -1911,10 +1924,12 @@ async function captureTabAudio(trackNumber) {
                 echoCancellation: false,
                 noiseSuppression: false,
                 autoGainControl: false,
-                channelCount: 2
-            }
+                channelCount: 2,
+                suppressLocalAudioPlayback: true
+            },
+            suppressLocalAudioPlayback: true
         });
-        
+
         // Check if audio track exists
         const audioTracks = stream.getAudioTracks();
         if (audioTracks.length === 0) {
@@ -1922,7 +1937,18 @@ async function captureTabAudio(trackNumber) {
             stream.getTracks().forEach(track => track.stop());
             return;
         }
-        
+
+        // Suppress audio in the captured tab so user only hears it through BJ
+        for (const track of audioTracks) {
+            if (typeof track.applyConstraints === 'function') {
+                try {
+                    await track.applyConstraints({ suppressLocalAudioPlayback: true });
+                } catch (e) {
+                    console.log('suppressLocalAudioPlayback not supported:', e.message);
+                }
+            }
+        }
+
         console.log(`Tab audio captured with ${audioTracks.length} audio track(s)`);
         
         // Initialize audio context if not already
