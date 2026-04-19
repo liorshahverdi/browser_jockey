@@ -1179,6 +1179,65 @@
             </div>
         </div>
 
+            <!-- Lo-fi Station — F-022 -->
+            <div class="lofi-station-section">
+                <div class="lofi-station-header">
+                    <span>🌧️ Lo-fi Station <span class="lofi-station-badge">GENERATIVE</span></span>
+                    <span class="lofi-station-help-text">Synthesized lo-fi grooves · drums + chords + melody + vinyl</span>
+                </div>
+
+                <div class="lofi-station-controls">
+                    <div class="lofi-station-row">
+                        <button id="lofiPlay" class="control-btn lofi-btn">▶ Play</button>
+                        <button id="lofiStop" class="control-btn lofi-btn">■ Stop</button>
+                        <button id="lofiRegenerate" class="control-btn lofi-btn">🎲 Regenerate</button>
+                        <button id="lofiSyncT1" class="control-btn lofi-sync-btn">↺ Sync T1</button>
+                        <button id="lofiSyncT2" class="control-btn lofi-sync-btn">↺ Sync T2</button>
+                        <span class="lofi-tempo-display"><span id="lofiBpmDisplay">75</span> BPM</span>
+                    </div>
+
+                    <div class="lofi-station-row">
+                        <label class="lofi-slider-label">Tempo:</label>
+                        <input type="range" id="lofiBpmSlider" min="55" max="100" value="75"
+                               class="effect-slider lofi-slider">
+                    </div>
+
+                    <div class="lofi-station-row lofi-layers-row">
+                        <div class="lofi-layer">
+                            <button id="lofiMuteDrums" class="control-btn lofi-mute-btn" title="Mute Drums">🥁</button>
+                            <input type="range" id="lofiVolDrums" min="0" max="100" value="70"
+                                   class="effect-slider lofi-layer-slider" data-layer="drums">
+                        </div>
+                        <div class="lofi-layer">
+                            <button id="lofiMuteChords" class="control-btn lofi-mute-btn" title="Mute Chords">🎹</button>
+                            <input type="range" id="lofiVolChords" min="0" max="100" value="25"
+                                   class="effect-slider lofi-layer-slider" data-layer="chords">
+                        </div>
+                        <div class="lofi-layer">
+                            <button id="lofiMuteMelody" class="control-btn lofi-mute-btn" title="Mute Melody">🎵</button>
+                            <input type="range" id="lofiVolMelody" min="0" max="100" value="30"
+                                   class="effect-slider lofi-layer-slider" data-layer="melody">
+                        </div>
+                        <div class="lofi-layer">
+                            <button id="lofiMuteAmbient" class="control-btn lofi-mute-btn" title="Mute Ambient">📻</button>
+                            <input type="range" id="lofiVolAmbient" min="0" max="100" value="15"
+                                   class="effect-slider lofi-layer-slider" data-layer="ambient">
+                        </div>
+                    </div>
+
+                    <div class="lofi-station-row">
+                        <label class="lofi-slider-label">Lo-fi:</label>
+                        <input type="range" id="lofiAmountSlider" min="0" max="100" value="50"
+                               class="effect-slider lofi-slider">
+                        <span id="lofiAmountDisplay" class="lofi-value-display">50%</span>
+                        <label class="lofi-slider-label" style="margin-left:10px;">Volume:</label>
+                        <input type="range" id="lofiVolumeSlider" min="0" max="100" value="80"
+                               class="effect-slider lofi-slider">
+                        <span id="lofiVolumeDisplay" class="lofi-value-display">80%</span>
+                    </div>
+                </div>
+            </div>
+
         <!-- Master Channel Effects -->
         <div class="master-effects-section">
             <div class="master-effects-header">
@@ -1223,6 +1282,11 @@
                             <input type="checkbox" id="routePatternDeck" checked>
                             <span>⌨️ Strudel</span>
                             <span class="activity-indicator" id="activityPatternDeck"></span>
+                        </label>
+                        <label class="routing-toggle">
+                            <input type="checkbox" id="routeLofiStation" checked>
+                            <span>🌧️ Lo-fi Station</span>
+                            <span class="activity-indicator" id="activityLofiStation"></span>
                         </label>
                     </div>
                 </div>
@@ -1617,6 +1681,7 @@
             <div id="oscilloscope-container" class="oscilloscope-container">
                 <div class="oscilloscope-header">
                     <label>Oscilloscope</label>
+                    <button id="oscilloscopeFullscreenBtn" class="oscilloscope-fullscreen-btn" title="Toggle Fullscreen">⛶</button>
                 </div>
                 <canvas id="oscilloscope" class="oscilloscope-canvas"></canvas>
             </div>
