@@ -90,6 +90,7 @@ import {
 } from '/static/js/modules/vocoder.js';
 
 import { PlaybackController } from '/static/js/modules/playback-controller.js';
+import { Sequencer } from '/static/js/modules/sequencer.js';
 
 /* ─────────────────────────────────────────────────────────────────────────── *
  * Helper: create a minimal AudioContext for testing
@@ -714,6 +715,140 @@ window.runBug002b = function() {
     });
 };
 
+
+/* ═══════════════════════════════════════════════════════════════════════════ *
+ * BUG-022: Sequencer project save/load drops timeline arrangements
+ * ═══════════════════════════════════════════════════════════════════════════ */
+window.runBug022 = async function() {
+    suite('BUG-022 — Sequencer project save/load preserves track placements');
+
+    test('serializeProject stores placed clip duration and explicit trimEnd=0', () => {
+        const fakeSequencer = {
+            currentProjectId: 'tdd-save-load',
+            currentBPM: 128,
+            numberOfBars: 8,
+            zoomLevel: 1,
+            autoTimestretachEnabled: false,
+            projectBPM: 128,
+            clips: new Map([
+                ['clip-1', {
+                    id: 'clip-1',
+                    name: 'Kick Loop',
+                    duration: 4,
+                    startTime: 0,
+                    endTime: 4,
+                    detectedBPM: 128
+                }]
+            ]),
+            sequencerTracks: [{
+                id: 'track-1',
+                clips: [{
+                    id: 'placed-1',
+                    sourceClip: { id: 'clip-1', duration: 4 },
+                    barPosition: 2,
+                    trimStart: 0,
+                    trimEnd: 0
+                }]
+            }]
+        };
+
+        const project = Sequencer.prototype.serializeProject.call(fakeSequencer);
+        const placement = project.tracks[0].clips[0];
+
+        assert(placement.duration === 4,
+            `Expected placed clip duration to come from source clip, got ${placement.duration}`);
+        assert(placement.trimEnd === 0,
+            `Expected explicit trimEnd=0 to be preserved, got ${placement.trimEnd}`);
+    });
+
+    try {
+        const projectData = {
+            version: '1.0',
+            name: 'restored-project',
+            bpm: 120,
+            numberOfBars: 8,
+            zoomLevel: 1,
+            clips: [{
+                id: 'clip-1',
+                name: 'Kick Loop',
+                duration: 4,
+                detectedBPM: 120
+            }],
+            tracks: [{
+                id: 'track-1',
+                name: 'Drums',
+                clips: [{
+                    id: 'placed-1',
+                    clipId: 'clip-1',
+                    startBar: 3,
+                    duration: 4,
+                    trimStart: 0.5,
+                    trimEnd: 0
+                }]
+            }]
+        };
+
+        const fakeSequencer = {
+            audioContext: {},
+            clips: new Map(),
+            sequencerTracks: [],
+            dbManager: {
+                loadProject: async () => projectData,
+                loadAudioBuffer: async () => ({ duration: 4 })
+            },
+            updateClipsList() {},
+            updateTimelineRuler() {},
+            updateAllTrackTimelines() {},
+            initializeTimeline() {},
+            addSequencerTrack(name, options = {}) {
+                const track = {
+                    id: options.id || `track-${this.sequencerTracks.length + 1}`,
+                    name,
+                    clips: [],
+                    element: document.createElement('div')
+                };
+                this.sequencerTracks.push(track);
+                return track;
+            },
+            addClipToTrack(trackId, clip, pixelPosition, options = {}) {
+                const track = this.sequencerTracks.find(t => t.id === trackId);
+                if (!track) throw new Error(`Track ${trackId} was not recreated before clip restore`);
+                track.clips.push({
+                    id: options.id,
+                    sourceClip: clip,
+                    barPosition: pixelPosition / 150,
+                    pixelPosition,
+                    trimStart: options.trimStart,
+                    trimEnd: options.trimEnd
+                });
+            }
+        };
+
+        await Sequencer.prototype.loadProject.call(fakeSequencer, 'restored-project');
+
+        const restoredTrack = fakeSequencer.sequencerTracks.find(t => t.id === 'track-1');
+        assert(restoredTrack, 'Expected saved track id to be recreated');
+        assert(restoredTrack.name === 'Drums', `Expected track name Drums, got ${restoredTrack.name}`);
+        assert(restoredTrack.clips.length === 1,
+            `Expected one restored placed clip, got ${restoredTrack.clips.length}`);
+
+        const restoredClip = restoredTrack.clips[0];
+        assert(restoredClip.id === 'placed-1', `Expected placed clip id preserved, got ${restoredClip.id}`);
+        assert(restoredClip.sourceClip.id === 'clip-1', 'Expected restored placement to reference saved source clip');
+        assert(restoredClip.pixelPosition === 450,
+            `Expected startBar=3 to restore to pixelPosition=450 at 150px/bar, got ${restoredClip.pixelPosition}`);
+        assert(restoredClip.trimStart === 0.5, `Expected trimStart=0.5, got ${restoredClip.trimStart}`);
+        assert(restoredClip.trimEnd === 0, `Expected trimEnd=0, got ${restoredClip.trimEnd}`);
+
+        results.pass++;
+        output.innerHTML += `<div class="suite pass">✅ loadProject recreates saved tracks and clip placements</div>`;
+    } catch (e) {
+        results.fail++;
+        output.innerHTML += `<div class="suite fail">❌ loadProject recreates saved tracks and clip placements</div>
+            <div class="info">→ ${e.message}</div>`;
+    }
+};
+
 /* ═══════════════════════════════════════════════════════════════════════════ *
  * Run all tests
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -730,6 +865,7 @@ window.runAll = async function() {
     await window.runBug004();
     await window.runBug002();
     window.runBug002b();
+    await window.runBug022();
 
     // Summary
     const allPass = results.fail === 0 && results.skip === 0;
