@@ -150,8 +150,8 @@ async function runDemo() {
     clips.forEach(c => seq.clips.set(c.id, c));
     seq.updateClipsList();
 
-    const drums = seq.addSequencerTrack('Restored Track A — drums', { id: 'qa-track-drums', volume: 0.72 });
-    const lead = seq.addSequencerTrack('Restored Track B — lead', { id: 'qa-track-lead', volume: 0.64 });
+    const drums = seq.addSequencerTrack('Restored Track A — drums', { id: 'qa-track-drums', volume: 0.35, muted: true });
+    const lead = seq.addSequencerTrack('Restored Track B — lead', { id: 'qa-track-lead', volume: 0.64, solo: true });
     seq.addClipToTrack(drums.id, clips[0], 0, { id: 'qa-placement-drums-1', trimStart: 0, trimEnd: 0 });
     seq.addClipToTrack(drums.id, clips[0], 450, { id: 'qa-placement-drums-2', trimStart: 0.25, trimEnd: 0.5 });
     seq.addClipToTrack(lead.id, clips[1], 225, { id: 'qa-placement-lead-1', trimStart: 0.1, trimEnd: 0 });
@@ -170,7 +170,7 @@ async function runDemo() {
 
     const restoredTracks = after.tracks.length;
     const restoredPlacements = after.tracks.flatMap(track => track.clips).length;
-    status.innerHTML = `<strong>BUG-022 visual verification:</strong> saved project was wiped from the timeline, then <code>loadProject()</code> restored <strong>${restoredTracks} tracks</strong> and <strong>${restoredPlacements} placed clips</strong> in the real Sequencer UI.`;
+    status.innerHTML = `<strong>BUG-022 visual verification:</strong> saved project was wiped from the timeline, then <code>loadProject()</code> restored <strong>${restoredTracks} tracks</strong>, <strong>${restoredPlacements} placed clips</strong>, and visible mute/solo/volume state in the real Sequencer UI.`;
     status.dataset.ready = 'true';
     window.__bug022VisualDemoResult = { before, after, restoredTracks, restoredPlacements };
 }

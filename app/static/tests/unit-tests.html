@@ -847,6 +847,93 @@ window.runBug022 = async function() {
         output.innerHTML += `<div class="suite fail">❌ loadProject recreates saved tracks and clip placements</div>
             <div class="info">→ ${e.message}</div>`;
     }
+
+    let originalPrompt;
+    try {
+        originalPrompt = window.prompt;
+        let promptCalled = false;
+        window.prompt = () => {
+            promptCalled = true;
+            throw new Error('showLoadProjectDialog should render an in-app picker, not call prompt()');
+        };
+
+        document.querySelectorAll('.sequencer-project-picker-modal').forEach(el => el.remove());
+
+        const fakeSequencer = {
+            dbManager: {
+                listProjects: async () => ([
+                    { id: 'project-a', name: 'Project A', savedAt: '2026-06-08T10:30:00Z' },
+                    { id: 'project-b', name: 'Project B', savedAt: '2026-06-08T11:45:00Z' }
+                ])
+            },
+            loadProject: async () => {},
+            renderProjectPickerModal: Sequencer.prototype.renderProjectPickerModal,
+            closeProjectPickerModal: Sequencer.prototype.closeProjectPickerModal
+        };
+
+        await Sequencer.prototype.showLoadProjectDialog.call(fakeSequencer);
+        window.prompt = originalPrompt;
+
+        const modal = document.querySelector('.sequencer-project-picker-modal');
+        const projectButtons = [...document.querySelectorAll('.sequencer-project-load-btn')];
+
+        assert(!promptCalled, 'Expected no native prompt() call');
+        assert(modal, 'Expected in-app project picker modal to be rendered');
+        assert(modal.textContent.includes('Project A'), 'Expected first project name in modal');
+        assert(projectButtons.length === 2, `Expected two load buttons, got ${projectButtons.length}`);
+
+        modal.remove();
+        results.pass++;
+        output.innerHTML += `<div class="suite pass">✅ showLoadProjectDialog renders in-app project picker instead of prompt</div>`;
+    } catch (e) {
+        results.fail++;
+        output.innerHTML += `<div class="suite fail">❌ showLoadProjectDialog renders in-app project picker instead of prompt</div>
+            <div class="info">→ ${e.message}</div>`;
+    } finally {
+        if (originalPrompt) window.prompt = originalPrompt;
+    }
+
+    try {
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+
+        const fakeSequencer = {
+            audioContext: null,
+            outputGain: null,
+            sequencerTracks: [],
+            sequencerTracksContainer: container,
+            numberOfBars: 8,
+            barWidth: 150,
+            updateTrackTimeline() {},
+            setupDropZone() {}
+        };
+
+        const restoredTrack = Sequencer.prototype.addSequencerTrack.call(fakeSequencer, 'Restored State Track', {
+            id: 'restored-state-track',
+            muted: true,
+            solo: true,
+            volume: 0.35
+        });
+
+        const muteBtn = restoredTrack.element.querySelector('.mute-btn');
+        const soloBtn = restoredTrack.element.querySelector('.solo-btn');
+        const volumeSlider = restoredTrack.element.querySelector('.track-volume-slider');
+        const volumeValue = restoredTrack.element.querySelector('.track-volume-value');
+
+        assert(volumeSlider.value === '35', `Expected restored volume slider 35, got ${volumeSlider.value}`);
+        assert(volumeValue.textContent === '35%', `Expected restored volume label 35%, got ${volumeValue.textContent}`);
+        assert(muteBtn.textContent.includes('Unmute'), `Expected muted track button to show Unmute, got ${muteBtn.textContent}`);
+        assert(muteBtn.style.background.includes('255, 100, 100'), 'Expected muted button active background');
+        assert(soloBtn.style.background.includes('100, 255, 100'), 'Expected solo button active background');
+
+        container.remove();
+        results.pass++;
+        output.innerHTML += `<div class="suite pass">✅ restored mute/solo/volume state is visible in track controls</div>`;
+    } catch (e) {
+        results.fail++;
+        output.innerHTML += `<div class="suite fail">❌ restored mute/solo/volume state is visible in track controls</div>
+            <div class="info">→ ${e.message}</div>`;
+    }
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════ *

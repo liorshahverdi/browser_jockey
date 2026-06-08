@@ -11,6 +11,49 @@
 - `fix/playback-controller-reverse-position`
   - Fixes `PlaybackController.getCurrentTime()` reverse/buffer position calculation when `reverseStartTime` is `0`.
 
+## Additional release-branch fix: Sequencer project picker + restored track UI state
+
+### Problem
+
+Two Sequencer persistence UX issues remained after the save/load restoration work:
+
+- loading a saved project used a blocking native `prompt()` where users had to type a project number,
+- saved mute/solo/volume metadata was restored into track objects, but the visible track controls did not reflect that restored state.
+
+### Fix
+
+Updated `app/static/js/modules/sequencer.js` so the Sequencer now:
+
+- renders an in-app project picker modal for saved projects,
+- lists saved project names and saved timestamps,
+- loads the selected project from the modal without `prompt()`,
+- shows an empty-state modal when no saved projects exist,
+- restores visible track volume slider/label state,
+- restores visible muted state as `Unmute` with the active mute styling,
+- restores visible solo active styling,
+- keeps `track.volume` synchronized when the volume slider changes.
+
+Added browser-unit coverage for both behaviors in `app/static/tests/unit-tests.html`.
+
+### RED/GREEN evidence
+
+Before implementation, the new tests failed as expected:
+
+```text
+❌ showLoadProjectDialog renders in-app project picker instead of prompt
+→ Expected no native prompt() call
+❌ restored mute/solo/volume state is visible in track controls
+→ Expected restored volume slider 35, got 80
+```
+
+After implementation:
+
+```text
+✅ showLoadProjectDialog renders in-app project picker instead of prompt
+✅ restored mute/solo/volume state is visible in track controls
+Results: 40 passed / 0 failed / 1 skipped
+```
+
 ## Additional release-branch fix: Sequencer responsive layout
 
 ### Problem
@@ -63,13 +106,13 @@ PASS mobile 390px columns=318px clips=3
 Verified at:
 
 ```text
-http://127.0.0.1:5001/static/tests/unit-tests.html?final=1
+http://127.0.0.1:5001/static/tests/unit-tests.html?final=project-picker-ui-state
 ```
 
 Result:
 
 ```text
-Results: 38 passed / 0 failed / 1 skipped
+Results: 40 passed / 0 failed / 1 skipped
 ```
 
 ## Visual evidence
@@ -80,6 +123,8 @@ The screenshots below use the real BUG-022 visual demo page, which creates Seque
 screenshots/sequencer-responsive-desktop.png
 screenshots/sequencer-responsive-tablet.png
 screenshots/sequencer-responsive-mobile.png
+screenshots/sequencer-release-save-load-ui-state.png
+screenshots/sequencer-release-project-picker-modal.png
 ```
 
-The mobile screenshot shows controls wrapped into touch-friendly rows, Available Clips stacked above the timeline, and restored tracks/clips visible in the Sequencer timeline.
+The mobile screenshot shows controls wrapped into touch-friendly rows, Available Clips stacked above the timeline, and restored tracks/clips visible in the Sequencer timeline. The release UI-state screenshot shows the real Sequencer after save/load with restored placements plus visible `35%` muted drums and `64%` solo lead track controls. The project-picker screenshot shows the new in-app modal listing the saved project and Load/Cancel actions.

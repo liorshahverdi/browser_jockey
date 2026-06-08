@@ -1039,16 +1039,21 @@ export class Sequencer {
         const trackId = options.id || `seq-track-${Date.now()}`;
         trackElement.dataset.trackId = trackId;
         
+        const initialVolume = options.volume ?? 0.8;
+        const initialVolumePercent = Math.round(initialVolume * 100);
+        const initialMuted = options.muted || false;
+        const initialSolo = options.solo || false;
+
         trackElement.innerHTML = `
             <div class="track-header">
                 <span class="track-name">${name}</span>
                 <div class="track-controls">
                     <div class="track-volume-control">
                         <label>Vol</label>
-                        <input type="range" class="track-volume-slider" min="0" max="100" value="80" />
-                        <span class="track-volume-value">80%</span>
+                        <input type="range" class="track-volume-slider" min="0" max="100" value="${initialVolumePercent}" />
+                        <span class="track-volume-value">${initialVolumePercent}%</span>
                     </div>
-                    <button class="track-control-btn mute-btn">🔇 Mute</button>
+                    <button class="track-control-btn mute-btn">${initialMuted ? '🔊 Unmute' : '🔇 Mute'}</button>
                     <button class="track-control-btn solo-btn">🎯 Solo</button>
                     <button class="track-control-btn delete-btn">🗑️ Delete</button>
                 </div>
@@ -1065,7 +1070,7 @@ export class Sequencer {
         // Create audio gain node for this track
         const trackGain = this.audioContext ? this.audioContext.createGain() : null;
         if (trackGain) {
-            trackGain.gain.value = 0.8; // Default 80% volume
+            trackGain.gain.value = initialVolume; // Restore saved volume, default 80%
             trackGain.connect(this.outputGain); // Connect to sequencer output
             console.log(`✅ Created gain node for track: ${name}`);
         }
@@ -1079,6 +1084,12 @@ export class Sequencer {
         
         const soloBtn = trackElement.querySelector('.solo-btn');
         soloBtn.addEventListener('click', (e) => this.toggleSolo(trackId, e.target));
+        if (initialMuted) {
+            muteBtn.style.background = 'rgba(255, 100, 100, 0.3)';
+        }
+        if (initialSolo) {
+            soloBtn.style.background = 'rgba(100, 255, 100, 0.3)';
+        }
         
         // Volume control
         const volumeSlider = trackElement.querySelector('.track-volume-slider');
@@ -1086,6 +1097,10 @@ export class Sequencer {
         volumeSlider.addEventListener('input', (e) => {
             const value = parseInt(e.target.value);
             volumeValue.textContent = `${value}%`;
+            const track = this.sequencerTracks.find(t => t.id === trackId);
+            if (track) {
+                track.volume = value / 100;
+            }
             if (trackGain) {
                 trackGain.gain.value = value / 100;
             }
@@ -1101,7 +1116,7 @@ export class Sequencer {
             muted: options.muted || false,
             solo: options.solo || false,
             gainNode: trackGain, // Store the gain node
-            volume: options.volume ?? 0.8
+            volume: initialVolume
         };
         
         this.sequencerTracks.push(track);
@@ -4231,28 +4246,107 @@ export class Sequencer {
     async showLoadProjectDialog() {
         try {
             const projects = await this.dbManager.listProjects();
-
-            if (projects.length === 0) {
-                alert('No saved projects found.');
-                return;
-            }
-
-            let message = 'Select a project to load:\n\n';
-            projects.forEach((project, index) => {
-                const date = new Date(project.savedAt).toLocaleString();
-                message += `${index + 1}. ${project.name} (saved: ${date})\n`;
-            });
-
-            const choice = prompt(message + '\nEnter project number:');
-            const index = parseInt(choice) - 1;
-
-            if (index >= 0 && index < projects.length) {
-                await this.loadProject(projects[index].id);
-            }
+            this.renderProjectPickerModal(projects);
         } catch (error) {
             console.error('Failed to list projects:', error);
             alert('Failed to load projects list.');
         }
+    }
+
+    /**
+     * Render an in-app modal for choosing a saved project to load.
+     * @param {Array<object>} projects - Saved project metadata from IndexedDB
+     */
+    renderProjectPickerModal(projects = []) {
+        this.closeProjectPickerModal();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'sequencer-project-picker-modal';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'sequencerProjectPickerTitle');
+
+        const panel = document.createElement('div');
+        panel.className = 'sequencer-project-picker-panel';
+
+        const title = document.createElement('h3');
+        title.id = 'sequencerProjectPickerTitle';
+        title.textContent = 'Load Sequencer Project';
+        panel.appendChild(title);
+
+        const description = document.createElement('p');
+        description.className = 'sequencer-project-picker-help';
+        description.textContent = projects.length > 0
+            ? 'Choose a project saved in this browser.'
+            : 'No saved projects were found in this browser.';
+        panel.appendChild(description);
+
+        const list = document.createElement('div');
+        list.className = 'sequencer-project-picker-list';
+
+        projects.forEach(project => {
+            const row = document.createElement('div');
+            row.className = 'sequencer-project-picker-row';
+
+            const details = document.createElement('div');
+            details.className = 'sequencer-project-picker-details';
+
+            const name = document.createElement('strong');
+            name.className = 'sequencer-project-picker-name';
+            name.textContent = project.name || project.id || 'Untitled Project';
+            details.appendChild(name);
+
+            const savedAt = document.createElement('span');
+            savedAt.className = 'sequencer-project-picker-date';
+            savedAt.textContent = project.savedAt
+                ? `Saved: ${new Date(project.savedAt).toLocaleString()}`
+                : 'Saved date unavailable';
+            details.appendChild(savedAt);
+
+            const loadButton = document.createElement('button');
+            loadButton.type = 'button';
+            loadButton.className = 'sequencer-project-load-btn';
+            loadButton.textContent = 'Load';
+            loadButton.addEventListener('click', async () => {
+                this.closeProjectPickerModal();
+                await this.loadProject(project.id);
+            });
+
+            row.appendChild(details);
+            row.appendChild(loadButton);
+            list.appendChild(row);
+        });
+
+        panel.appendChild(list);
+
+        const actions = document.createElement('div');
+        actions.className = 'sequencer-project-picker-actions';
+
+        const cancelButton = document.createElement('button');
+        cancelButton.type = 'button';
+        cancelButton.className = 'sequencer-project-picker-cancel';
+        cancelButton.textContent = projects.length > 0 ? 'Cancel' : 'Close';
+        cancelButton.addEventListener('click', () => this.closeProjectPickerModal());
+        actions.appendChild(cancelButton);
+
+        panel.appendChild(actions);
+        overlay.appendChild(panel);
+
+        overlay.addEventListener('click', (event) => {
+            if (event.target === overlay) {
+                this.closeProjectPickerModal();
+            }
+        });
+
+        document.body.appendChild(overlay);
+        cancelButton.focus();
+    }
+
+    /**
+     * Close the in-app project picker if it is open.
+     */
+    closeProjectPickerModal() {
+        document.querySelectorAll('.sequencer-project-picker-modal').forEach(modal => modal.remove());
     }
 
     /**
