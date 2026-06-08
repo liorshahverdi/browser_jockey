@@ -4479,6 +4479,16 @@ body.sequencer-fullscreen .visualization-wrapper {
     margin-bottom: 10px;
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    width: min(100%, calc(100vw - 380px));
+    max-width: calc(100vw - 380px);
+    box-sizing: border-box;
+    background: rgba(10, 10, 25, 0.92);
+    border-radius: 6px;
+    padding: 8px;
+    gap: 10px;
 }
 
 .track-name {
@@ -4490,8 +4500,10 @@ body.sequencer-fullscreen .visualization-wrapper {
     display: flex;
     gap: 5px;
     align-items: center;
-    flex-wrap: nowrap;
-    white-space: nowrap;
+    flex-wrap: wrap;
+    white-space: normal;
+    justify-content: flex-end;
+    min-width: 0;
 }
 
 .track-volume-control {
@@ -4968,6 +4980,80 @@ body.sequencer-fullscreen .visualization-wrapper {
 }
 
 /* ─── Responsive breakpoints ─────────────────────────────────────────────── */
+
+/* Sequencer: stack source clips above timeline before tablet/mobile widths.
+   The timeline itself remains horizontally scrollable so bars/clips keep their
+   readable editing scale without forcing the whole page sideways. */
+@media (max-width: 900px) {
+    .sequencer-container {
+        padding: 14px;
+        overflow-x: hidden;
+    }
+
+    .sequencer-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .sequencer-header h2 {
+        font-size: 1.5rem;
+        line-height: 1.2;
+    }
+
+    .sequencer-controls {
+        width: 100%;
+        align-items: stretch;
+        justify-content: flex-start;
+    }
+
+    .sequencer-controls .sequencer-btn,
+    .sequencer-controls .control-btn,
+    .sequencer-controls .bpm-control,
+    .sequencer-controls .zoom-control,
+    .sequencer-controls .cache-status {
+        flex: 1 1 140px;
+        min-width: 0;
+    }
+
+    .sequencer-workspace,
+    .sequencer-workspace.effects-visible {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .clips-panel {
+        min-height: 0;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .sequencer-timeline-container,
+    .timeline-panel {
+        width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+    }
+
+    .sequencer-tracks,
+    .sequencer-track {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .track-header {
+        width: min(100%, calc(100vw - 64px));
+        max-width: calc(100vw - 64px);
+        flex-direction: column;
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .sequencer-track .track-controls {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
 
 /* 768 px — tablet: single-column, reduced font sizes, stacked mixer controls */
 @media (max-width: 768px) {

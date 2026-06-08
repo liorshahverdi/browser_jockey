@@ -44,7 +44,7 @@
         This page uses the real <code>Sequencer</code> module methods. It creates a project, saves it to IndexedDB, wipes the visible timeline, then calls <code>loadProject()</code>. The restored tracks and clips below are the visual result.
     </div>
 
-    <section class="sequencer-panel">
+    <section class="sequencer-container sequencer-panel" id="sequencerContainer">
         <div class="sequencer-header">
             <h2>🎼 Sequencer — Save/Load Restoration Evidence</h2>
             <div class="sequencer-controls">
@@ -79,8 +79,10 @@
                 <button id="addTrackBtn" class="control-btn add-track-btn">➕ Add New Track</button>
             </aside>
 
-            <main class="timeline-panel">
-                <div id="timelineRuler" class="timeline-ruler"></div>
+            <main class="sequencer-timeline-container timeline-panel">
+                <div class="timeline-header">
+                    <div id="timelineRuler" class="timeline-ruler"></div>
+                </div>
                 <div id="sequencerTracks" class="sequencer-tracks"></div>
             </main>
         </div>
