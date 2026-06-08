@@ -1032,11 +1032,11 @@ export class Sequencer {
         });
     }
     
-    addSequencerTrack(name) {
+    addSequencerTrack(name, options = {}) {
         const trackElement = document.createElement('div');
         trackElement.className = 'sequencer-track';
         
-        const trackId = `seq-track-${Date.now()}`;
+        const trackId = options.id || `seq-track-${Date.now()}`;
         trackElement.dataset.trackId = trackId;
         
         trackElement.innerHTML = `
@@ -1098,10 +1098,10 @@ export class Sequencer {
             name: name,
             element: trackElement,
             clips: [],
-            muted: false,
-            solo: false,
+            muted: options.muted || false,
+            solo: options.solo || false,
             gainNode: trackGain, // Store the gain node
-            volume: 0.8
+            volume: options.volume ?? 0.8
         };
         
         this.sequencerTracks.push(track);
@@ -1167,7 +1167,7 @@ export class Sequencer {
         });
     }
     
-    addClipToTrack(trackId, clip, pixelPosition) {
+    addClipToTrack(trackId, clip, pixelPosition, options = {}) {
         const track = this.sequencerTracks.find(t => t.id === trackId);
         if (!track) return;
         
@@ -1184,7 +1184,7 @@ export class Sequencer {
         clipElement.style.left = `${pixelPosition}px`;
         clipElement.style.width = `${clipWidthPx}px`;
         
-        const clipId = `placed-clip-${Date.now()}`;
+        const clipId = options.id || `placed-clip-${Date.now()}`;
         clipElement.dataset.clipId = clipId;
         clipElement.dataset.sourceClipId = clip.id;
         
@@ -1236,8 +1236,8 @@ export class Sequencer {
             barPosition: barPosition,
             pixelPosition: pixelPosition,
             element: clipElement,
-            trimStart: 0, // Trim from start in seconds
-            trimEnd: 0    // Trim from end in seconds
+            trimStart: options.trimStart ?? 0, // Trim from start in seconds
+            trimEnd: options.trimEnd ?? 0      // Trim from end in seconds
         });
     }
     
@@ -4055,17 +4055,24 @@ export class Sequencer {
         this.sequencerTracks.forEach((track, index) => {
             const trackData = {
                 id: track.id,
+                name: track.name || `Track ${index + 1}`,
                 index: index,
+                muted: track.muted || false,
+                solo: track.solo || false,
+                volume: track.volume ?? 0.8,
                 clips: []
             };
 
             track.clips.forEach(placedClip => {
+                const sourceClipId = placedClip.sourceClip?.id || placedClip.clipId || placedClip.sourceClipId || placedClip.id;
                 trackData.clips.push({
-                    clipId: placedClip.id,
-                    startBar: placedClip.startBar,
-                    duration: placedClip.duration,
-                    trimStart: placedClip.trimStart || 0,
-                    trimEnd: placedClip.trimEnd || placedClip.duration
+                    id: placedClip.id,
+                    clipId: sourceClipId,
+                    sourceClipId: sourceClipId,
+                    startBar: placedClip.barPosition ?? ((placedClip.pixelPosition || 0) / this.barWidth),
+                    duration: placedClip.sourceClip?.duration ?? placedClip.duration ?? 0,
+                    trimStart: placedClip.trimStart ?? 0,
+                    trimEnd: placedClip.trimEnd ?? 0
                 });
             });
 
@@ -4123,23 +4130,28 @@ export class Sequencer {
             // Load project metadata
             const projectData = await this.dbManager.loadProject(projectId);
 
-            // Clear current state
+            // Clear current state, including any existing track DOM nodes.
             this.clips.clear();
             this.sequencerTracks = [];
+            if (this.sequencerTracksContainer) {
+                this.sequencerTracksContainer.innerHTML = '';
+            }
             this.updateClipsList();
 
             // Restore project settings
             this.currentBPM = projectData.bpm || 120;
             this.numberOfBars = projectData.numberOfBars || 8;
             this.zoomLevel = projectData.zoomLevel || 1.0;
+            this.barWidth = (this.baseBarWidth || 150) * this.zoomLevel;
             this.autoTimestretachEnabled = projectData.autoTimestretachEnabled || false;
             this.projectBPM = projectData.projectBPM || 120;
 
             if (this.bpmInput) this.bpmInput.value = this.currentBPM;
             if (this.zoomSlider) this.zoomSlider.value = this.zoomLevel * 100;
+            if (this.zoomValue) this.zoomValue.textContent = `${Math.round(this.zoomLevel * 100)}%`;
 
-            // Load audio buffers and restore clips
-            for (const clipData of projectData.clips) {
+            // Load audio buffers and restore source clips.
+            for (const clipData of projectData.clips || []) {
                 try {
                     const audioBuffer = await this.dbManager.loadAudioBuffer(clipData.id, this.audioContext);
                     
@@ -4167,10 +4179,41 @@ export class Sequencer {
 
             this.updateClipsList();
 
-            // Restore tracks and clip placements
-            // (Track restoration would require recreating track DOM elements)
-            this.initializeTimeline(); // Reinitialize timeline
+            // Restore saved tracks and their clip placements. Older projects may not
+            // have track data; keep the legacy behavior by creating one empty track.
+            const savedTracks = Array.isArray(projectData.tracks) ? projectData.tracks : [];
+            if (savedTracks.length === 0) {
+                this.initializeTimeline();
+            } else {
+                savedTracks.forEach((trackData, index) => {
+                    const track = this.addSequencerTrack(trackData.name || `Track ${index + 1}`, {
+                        id: trackData.id,
+                        muted: trackData.muted || false,
+                        solo: trackData.solo || false,
+                        volume: trackData.volume ?? 0.8
+                    });
 
+                    (trackData.clips || []).forEach(placement => {
+                        const sourceClipId = placement.sourceClipId || placement.clipId;
+                        const clip = this.clips.get(sourceClipId);
+                        if (!clip) {
+                            console.warn(`Skipping placement ${placement.id || '(unknown)'}: source clip ${sourceClipId} was not found`);
+                            return;
+                        }
+
+                        const startBar = placement.startBar ?? 0;
+                        const pixelPosition = startBar * this.barWidth;
+                        this.addClipToTrack(track.id, clip, pixelPosition, {
+                            id: placement.id,
+                            trimStart: placement.trimStart ?? 0,
+                            trimEnd: placement.trimEnd ?? 0
+                        });
+                    });
+                });
+            }
+
+            this.updateTimelineRuler();
+            this.updateAllTrackTimelines();
             this.currentProjectId = projectId;
 
             console.log('✅ Project loaded successfully');

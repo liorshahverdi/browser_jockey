@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUG-022 Visual Demo — Browser Jockey Sequencer Save/Load</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+    body { padding: 28px; }
+    .visual-demo-shell { max-width: 1280px; margin: 0 auto; }
+    .evidence-banner {
+        background: #103d22;
+        color: #d7ffe4;
+        border: 2px solid #36d576;
+        border-radius: 10px;
+        box-shadow: 0 4px 18px #0008;
+        padding: 14px 18px;
+        margin: 18px 0;
+        font: 17px/1.45 system-ui, sans-serif;
+    }
+    .evidence-banner code { color: #ffffff; background: #0005; padding: 2px 5px; border-radius: 4px; }
+    .demo-note {
+        color: #d7e6ff;
+        background: rgba(0,0,0,0.22);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+    }
+    .sequencer-panel { display: block !important; }
+    .sequencer-workspace { min-height: 420px; }
+    .clips-list { min-height: 320px; }
+    #status { font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="visual-demo-shell">
+    <header class="app-header">
+        <h1>BROWSER JOCKEY</h1>
+    </header>
+
+    <div id="status" class="evidence-banner"><strong>BUG-022 visual demo:</strong> this page saves a Sequencer project, wipes the visible timeline, then uses <code>loadProject()</code> to restore the tracks and clip placements shown below.</div>
+    <div class="demo-note">
+        This page uses the real <code>Sequencer</code> module methods. It creates a project, saves it to IndexedDB, wipes the visible timeline, then calls <code>loadProject()</code>. The restored tracks and clips below are the visual result.
+    </div>
+
+    <section class="sequencer-panel">
+        <div class="sequencer-header">
+            <h2>🎼 Sequencer — Save/Load Restoration Evidence</h2>
+            <div class="sequencer-controls">
+                <button id="sequencerPlayBtn" class="control-btn">▶️ Play</button>
+                <button id="sequencerPauseBtn" class="control-btn">⏸️ Pause</button>
+                <button id="sequencerStopBtn" class="control-btn">⏹️ Stop</button>
+                <button id="sequencerLoopToggleBtn" class="control-btn">🔁 Loop</button>
+                <button id="sequencerRecordBtn" class="control-btn">⏺️ Record</button>
+                <button id="addBarBtn" class="control-btn">➕ Add Bar</button>
+                <button id="removeBarBtn" class="control-btn">➖ Remove Bar</button>
+                <label>BPM:<input id="sequencerBPM" type="number" value="120" min="60" max="200"></label>
+                <button id="sequencerAutoTimestrechBtn" class="control-btn">🎵 Auto-Stretch</button>
+                <span>Cache: <span id="cacheSize">0 MB</span> / 200 MB</span>
+                <button id="clearCacheBtn" class="control-btn">🗑️ Clear Cache</button>
+                <button id="saveProjectBtn" class="control-btn">💾 Save</button>
+                <button id="loadProjectBtn" class="control-btn">📂 Load</button>
+                <button id="exportProjectBtn" class="control-btn">📥 Export</button>
+                <button id="importProjectBtn" class="control-btn">📤 Import</button>
+                <input id="importProjectInput" type="file" style="display:none">
+                <label>Zoom:<input id="sequencerZoom" type="range" min="25" max="200" value="100"><span id="zoomValue">100%</span></label>
+                <button id="toggleEffectsPanel" class="control-btn">🎛️ Effects Panel</button>
+                <button id="sequencerFullscreenBtn" class="control-btn">⛶ Fullscreen</button>
+            </div>
+        </div>
+
+        <div class="sequencer-workspace">
+            <aside class="clips-panel">
+                <h3>Available Clips</h3>
+                <label class="upload-btn">📁 Choose Audio File<input id="sequencerAudioUpload" type="file" accept="audio/*" multiple style="display:none"></label>
+                <p class="upload-hint">Demo clips were generated in-browser.</p>
+                <div id="clipsList" class="clips-list"></div>
+                <button id="addTrackBtn" class="control-btn add-track-btn">➕ Add New Track</button>
+            </aside>
+
+            <main class="timeline-panel">
+                <div id="timelineRuler" class="timeline-ruler"></div>
+                <div id="sequencerTracks" class="sequencer-tracks"></div>
+            </main>
+        </div>
+
+        <section id="sequencerEffectsPanel" class="clip-effects-panel" style="display:none">
+            <span id="selectedClipName">No clip selected</span>
+            <button id="closeClipEffects">×</button>
+            <button id="deleteClipBtn">Delete</button>
+            <button id="resetClipEffects">Reset</button>
+        </section>
+
+        <section id="sequencerRecordingSection" style="display:none">
+            <span id="sequencerRecordingTime">0:00</span>
+            <button id="stopSequencerRecordBtn">Stop</button>
+            <button id="downloadSequencerBtn">Download</button>
+            <button id="loadSequencerToTrack1Btn">Load T1</button>
+            <button id="loadSequencerToTrack2Btn">Load T2</button>
+            <div id="sequencerExportGroup"></div>
+            <button id="sequencerLoopBtn">Loop</button>
+            <button id="sequencerClearLoopBtn">Clear Loop</button>
+            <input id="loopStartBar" type="number" value="1">
+            <input id="loopEndBar" type="number" value="8">
+            <div id="loopRangeControl"></div>
+        </section>
+    </section>
+</div>
+
+<script type="module">
+import { Sequencer } from '/static/js/modules/sequencer.js';
+
+window.alert = (msg) => console.log('[BUG-022 visual demo alert]', msg);
+
+const status = document.getElementById('status');
+const AC = window.AudioContext || window.webkitAudioContext;
+const ctx = new AC();
+const seq = new Sequencer(ctx);
+window.__bug022VisualDemoSequencer = seq;
+seq.currentProjectId = 'bug022-visual-demo-screenshot';
+seq.currentBPM = 120;
+seq.numberOfBars = 8;
+seq.zoomLevel = 1;
+seq.barWidth = seq.baseBarWidth;
+
+function makeBuffer(freq, dur) {
+    const sr = ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, Math.floor(sr * dur), sr);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+        data[i] = Math.sin(2 * Math.PI * freq * i / sr) * 0.65;
+    }
+    return buffer;
+}
+
+async function runDemo() {
+    seq.clips.clear();
+    seq.sequencerTracks = [];
+    seq.sequencerTracksContainer.innerHTML = '';
+    seq.updateTimelineRuler();
+    seq.updateClipsList();
+
+    const clips = [
+        { id: 'qa-drums', name: 'QA Drums Loop', duration: 3.0, audioBuffer: makeBuffer(110, 3.0), startTime: 0, endTime: 3.0, detectedBPM: 120 },
+        { id: 'qa-lead', name: 'QA Lead Hook', duration: 2.0, audioBuffer: makeBuffer(440, 2.0), startTime: 0, endTime: 2.0, detectedBPM: 120 }
+    ];
+    clips.forEach(c => seq.clips.set(c.id, c));
+    seq.updateClipsList();
+
+    const drums = seq.addSequencerTrack('Restored Track A — drums', { id: 'qa-track-drums', volume: 0.72 });
+    const lead = seq.addSequencerTrack('Restored Track B — lead', { id: 'qa-track-lead', volume: 0.64 });
+    seq.addClipToTrack(drums.id, clips[0], 0, { id: 'qa-placement-drums-1', trimStart: 0, trimEnd: 0 });
+    seq.addClipToTrack(drums.id, clips[0], 450, { id: 'qa-placement-drums-2', trimStart: 0.25, trimEnd: 0.5 });
+    seq.addClipToTrack(lead.id, clips[1], 225, { id: 'qa-placement-lead-1', trimStart: 0.1, trimEnd: 0 });
+
+    const before = seq.serializeProject();
+    await seq.saveProject();
+
+    // Deliberately wipe the visible project state before loading.
+    seq.clips.clear();
+    seq.sequencerTracks = [];
+    seq.sequencerTracksContainer.innerHTML = '';
+    seq.updateClipsList();
+
+    await seq.loadProject('bug022-visual-demo-screenshot');
+    const after = seq.serializeProject();
+
+    const restoredTracks = after.tracks.length;
+    const restoredPlacements = after.tracks.flatMap(track => track.clips).length;
+    status.innerHTML = `<strong>BUG-022 visual verification:</strong> saved project was wiped from the timeline, then <code>loadProject()</code> restored <strong>${restoredTracks} tracks</strong> and <strong>${restoredPlacements} placed clips</strong> in the real Sequencer UI.`;
+    status.dataset.ready = 'true';
+    window.__bug022VisualDemoResult = { before, after, restoredTracks, restoredPlacements };
+}
+
+runDemo().catch(error => {
+    console.error(error);
+    status.textContent = 'BUG-022 visual demo failed: ' + error.message;
+    status.style.background = '#4a1010';
+});
+</script>
+</body>
+</html>
