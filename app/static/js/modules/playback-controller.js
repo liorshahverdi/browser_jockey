@@ -528,7 +528,7 @@ export class PlaybackController {
      */
     getCurrentTime() {
         // If using buffer source (timestretched or reverse)
-        if (this.bufferSource && this.reverseStartTime && this.loopStart !== null && this.loopEnd !== null) {
+        if (this.reverseStartTime !== null && this.loopStart !== null && this.loopEnd !== null) {
             const currentTime = this.audioContext.currentTime;
             const elapsedTime = currentTime - this.reverseStartTime;
             const loopDuration = this.loopEnd - this.loopStart;
