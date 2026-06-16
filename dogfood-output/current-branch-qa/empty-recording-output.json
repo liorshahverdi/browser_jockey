@@ -1,0 +1,474 @@
+{
+  "state": {
+    "recordingSection": "block",
+    "time": "29683775:49",
+    "recordBtnText": "\u23fa\ufe0f Record",
+    "clips": null,
+    "isRecording": null
+  },
+  "console": [
+    {
+      "type": "log",
+      "text": "Created audioBuffers object store",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/indexeddb-manager.js",
+        "line": 38,
+        "column": 28,
+        "lineNumber": 38,
+        "columnNumber": 28
+      }
+    },
+    {
+      "type": "log",
+      "text": "Created projects object store",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/indexeddb-manager.js",
+        "line": 43,
+        "column": 28,
+        "lineNumber": 43,
+        "columnNumber": 28
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 IndexedDB opened successfully",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/indexeddb-manager.js",
+        "line": 27,
+        "column": 24,
+        "lineNumber": 27,
+        "columnNumber": 24
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udd34 startRecording() called - NEW VERSION with 300ms delay",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 2940,
+        "column": 16,
+        "lineNumber": 2940,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udd34 Sequencer tracks: 1",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 2941,
+        "column": 16,
+        "lineNumber": 2941,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udd34 Total clips: 0",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 2942,
+        "column": 16,
+        "lineNumber": 2942,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83c\udfb5 Auto-starting sequencer playback for recording",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 2959,
+        "column": 20,
+        "lineNumber": 2959,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u25b6\ufe0f Play button clicked",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 1793,
+        "column": 16,
+        "lineNumber": 1793,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83c\udfb5 Activity indicator sequencer: ON",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/activity-indicators.js",
+        "line": 62,
+        "column": 16,
+        "lineNumber": 62,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u25b6\ufe0f Playing sequencer: Bars 1 to 9 (16.00s)",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 1846,
+        "column": 16,
+        "lineNumber": 1846,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Audio context resumed for recording",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 2952,
+        "column": 24,
+        "lineNumber": 2952,
+        "columnNumber": 24
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Timestretch AudioWorklet processor loaded",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/app.js",
+        "line": 3386,
+        "column": 20,
+        "lineNumber": 3386,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Timestretch nodes created for both tracks",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/app.js",
+        "line": 3391,
+        "column": 20,
+        "lineNumber": 3391,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Reconnected track: Track 1 to new audio context",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 115,
+        "column": 24,
+        "lineNumber": 115,
+        "columnNumber": 24
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Sequencer audio routing initialized",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 119,
+        "column": 16,
+        "lineNumber": 119,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Sequencer audio context updated in initAudioContext",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/app.js",
+        "line": 3407,
+        "column": 20,
+        "lineNumber": 3407,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Tone.js context synchronized with Web Audio API",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/audio-effects.js",
+        "line": 184,
+        "column": 24,
+        "lineNumber": 184,
+        "columnNumber": 24
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Pitch shifter created for track Master",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/audio-effects.js",
+        "line": 199,
+        "column": 20,
+        "lineNumber": 199,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "Oscilloscope connected to audio merger",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/app.js",
+        "line": 3829,
+        "column": 20,
+        "lineNumber": 3829,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Tone.js context synchronized with Web Audio API",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/audio-effects.js",
+        "line": 184,
+        "column": 24,
+        "lineNumber": 184,
+        "columnNumber": 24
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Pitch shifter created for track 1",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/audio-effects.js",
+        "line": 199,
+        "column": 20,
+        "lineNumber": 199,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Tone.js context synchronized with Web Audio API",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/audio-effects.js",
+        "line": 184,
+        "column": 24,
+        "lineNumber": 184,
+        "columnNumber": 24
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Pitch shifter created for track 2",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/audio-effects.js",
+        "line": 199,
+        "column": 20,
+        "lineNumber": 199,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Sequencer initially routed to master",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/app.js",
+        "line": 3515,
+        "column": 24,
+        "lineNumber": 3515,
+        "columnNumber": 24
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 PatternDeck audio chain ready",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/pattern-deck.js",
+        "line": 120,
+        "column": 12,
+        "lineNumber": 120,
+        "columnNumber": 12
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udd17 Sequencer output connected to recording destination",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 2981,
+        "column": 20,
+        "lineNumber": 2981,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcca Stream tracks: 1",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 2982,
+        "column": 20,
+        "lineNumber": 2982,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcca Stream active: true",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 2983,
+        "column": 20,
+        "lineNumber": 2983,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcca AudioContext state: running",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 2984,
+        "column": 20,
+        "lineNumber": 2984,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcca AudioContext time: 0.171",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 2985,
+        "column": 20,
+        "lineNumber": 2985,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83c\udf99\ufe0f Recording with MIME type: audio/webm;codecs=opus",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 3002,
+        "column": 20,
+        "lineNumber": 3002,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udd34 Checking for clips to record...",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 3049,
+        "column": 24,
+        "lineNumber": 3049,
+        "columnNumber": 24
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udd34 Has active sources: false",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 3050,
+        "column": 24,
+        "lineNumber": 3050,
+        "columnNumber": 24
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udd34 Tracks with clips: 0",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 3051,
+        "column": 24,
+        "lineNumber": 3051,
+        "columnNumber": 24
+      }
+    },
+    {
+      "type": "warning",
+      "text": "\u26a0\ufe0f No clips to record - sequencer is empty",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 3054,
+        "column": 28,
+        "lineNumber": 3054,
+        "columnNumber": 28
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83c\udf99\ufe0f Recording will auto-stop after 16.0 seconds (8 bars)",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 3116,
+        "column": 24,
+        "lineNumber": 3116,
+        "columnNumber": 24
+      }
+    },
+    {
+      "type": "log",
+      "text": "\ud83c\udf99\ufe0f Started recording sequencer output",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/sequencer.js",
+        "line": 3121,
+        "column": 20,
+        "lineNumber": 3121,
+        "columnNumber": 20
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Lo-fi Station audio chain ready",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/modules/lofi-station.js",
+        "line": 291,
+        "column": 16,
+        "lineNumber": 291,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u26a0\ufe0f No audio loaded in Track 1",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/app.js",
+        "line": 3544,
+        "column": 16,
+        "lineNumber": 3544,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u26a0\ufe0f No audio loaded in Track 2",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/app.js",
+        "line": 3624,
+        "column": 16,
+        "lineNumber": 3624,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Audio context initialized from sequencer play request",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/app.js",
+        "line": 9399,
+        "column": 16,
+        "lineNumber": 9399,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "log",
+      "text": "\u2705 Sequencer routed to master from play request",
+      "loc": {
+        "url": "http://127.0.0.1:5017/static/js/app.js",
+        "line": 9412,
+        "column": 20,
+        "lineNumber": 9412,
+        "columnNumber": 20
+      }
+    }
+  ],
+  "screenshot": "/home/lior/projects/browser_jockey/dogfood-output/current-branch-qa/screenshots/10-empty-sequencer-recording.png"
+}
