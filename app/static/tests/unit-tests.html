@@ -937,6 +937,64 @@ window.runBug022 = async function() {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════ *
+ * BUG-023: Empty Sequencer recording starts anyway
+ * ═══════════════════════════════════════════════════════════════════════════ */
+window.runBug023 = function() {
+    suite('BUG-023 — Empty Sequencer recording is blocked before recorder setup');
+
+    let originalSetTimeout;
+    let originalAlert;
+    try {
+        originalSetTimeout = window.setTimeout;
+        originalAlert = window.alert;
+        window.setTimeout = (fn) => { fn(); return 1; };
+
+        let alertMessage = '';
+        window.alert = (message) => { alertMessage = message; };
+
+        const recordingSection = document.createElement('div');
+        recordingSection.style.display = 'none';
+        const recordBtn = document.createElement('button');
+        recordBtn.disabled = false;
+        const stopRecordBtn = document.createElement('button');
+        stopRecordBtn.disabled = true;
+
+        let playCalled = false;
+        let setupCalled = false;
+        const fakeSequencer = {
+            outputGain: { connect() {} },
+            audioContext: { state: 'running', resume: () => Promise.resolve() },
+            sequencerTracks: [{ id: 'track-1', clips: [] }],
+            isPlaying: false,
+            recordingSection,
+            recordBtn,
+            stopRecordBtn,
+            play() { playCalled = true; },
+            _setupMediaRecorder() { setupCalled = true; }
+        };
+
+        Sequencer.prototype.startRecording.call(fakeSequencer);
+
+        assert(!playCalled, 'Expected empty sequencer recording to avoid auto-starting playback');
+        assert(!setupCalled, 'Expected empty sequencer recording to avoid MediaRecorder setup');
+        assert(recordingSection.style.display === 'none', 'Expected empty recording UI to stay hidden');
+        assert(recordBtn.disabled === false, 'Expected Record button to remain enabled');
+        assert(stopRecordBtn.disabled === true, 'Expected Stop Recording button to remain disabled');
+        assert(alertMessage.toLowerCase().includes('no clips'), `Expected no-clips alert, got: ${alertMessage}`);
+
+        results.pass++;
+        output.innerHTML += `<div class="suite pass">✅ empty sequencer recording is blocked before playback, recorder setup, and timer UI</div>`;
+    } catch (e) {
+        results.fail++;
+        output.innerHTML += `<div class="suite fail">❌ empty sequencer recording is blocked before playback, recorder setup, and timer UI</div>
+            <div class="info">→ ${e.message}</div>`;
+    } finally {
+        if (originalSetTimeout) window.setTimeout = originalSetTimeout;
+        if (originalAlert) window.alert = originalAlert;
+    }
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════ *
  * Run all tests
  * ═══════════════════════════════════════════════════════════════════════════ */
 window.runAll = async function() {
@@ -953,6 +1011,7 @@ window.runAll = async function() {
     await window.runBug002();
     window.runBug002b();
     await window.runBug022();
+    window.runBug023();
 
     // Summary
     const allPass = results.fail === 0 && results.skip === 0;

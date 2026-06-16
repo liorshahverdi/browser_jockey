@@ -2940,7 +2940,13 @@ export class Sequencer {
     startRecording() {
         console.log('🔴 startRecording() called - NEW VERSION with 300ms delay');
         console.log('🔴 Sequencer tracks:', this.sequencerTracks.length);
-        console.log('🔴 Total clips:', this.sequencerTracks.reduce((sum, t) => sum + (t.clips?.length || 0), 0));
+        const totalClips = this.sequencerTracks.reduce((sum, t) => sum + (t.clips?.length || 0), 0);
+        console.log('🔴 Total clips:', totalClips);
+
+        if (totalClips === 0) {
+            alert('No clips to record. Add at least one clip to the sequencer timeline first.');
+            return;
+        }
         
         if (!this.outputGain) {
             alert('Sequencer audio not initialized. Please load some clips first.');
