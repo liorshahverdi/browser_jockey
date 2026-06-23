@@ -6,7 +6,7 @@ A dual-track DJ mixing web application with advanced multi-track sequencer, inde
 
 ## Quick Links
 
-📖 **[Full Changelog](CHANGELOG.md)** | 🎯 **[Features](docs/features/)** | 📚 **[User Guides](docs/guides/)** | 🧪 **[Testing Guide](docs/guides/TESTING_GUIDE.md)** | 🏗️ **[Module Architecture](MODULES.md)**
+📖 **[Full Changelog](CHANGELOG.md)** | 🎯 **[Features](docs/features/)** | 📚 **[User Guides](docs/guides/)** | 🧪 **[Testing Guide](docs/guides/TESTING_GUIDE.md)** | 🏗️ **[Module Architecture](MODULES.md)** | 🔊 **[Audio Signal Flow](AUDIO_GRAPH.md)**
 
 **Latest Update (v3.33.0)**: Strudel Pattern Deck! Live-code Tidal/Strudel patterns (kick drums, acid basslines, chord stabs, jungle breaks) directly inside the DJ app. Output routes through the master chain (limiter + recorder). BPM sync, 6 presets, volume control, sidechain duck from Track 1 or 2, and a master routing toggle.
 
@@ -207,6 +207,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 - ⏺️ **Master Recording** - Record your mix directly from master output
   - 💾 Export as WebM, WAV, or MP3
   - 📥 Load recordings back to tracks for layering
+  - 🧭 Captures the post-master `gainMaster` signal; see [Audio Signal Flow](AUDIO_GRAPH.md) for the exact Web Audio graph
   - **NEW**: Records tab capture audio with all effects!
 - 💾 **Export** - Export full stems or loop regions as WAV or MP3 files
 - 🎵 **Format Options** - Choose between WAV (lossless) or MP3 (compressed 128kbps) export

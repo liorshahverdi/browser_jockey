@@ -145,6 +145,21 @@ Single-track visualizer (simpler version). Now uses shared modules for constants
 
 ---
 
+## Runtime Audio Signal Flow
+
+The full Web Audio graph is documented in [AUDIO_GRAPH.md](AUDIO_GRAPH.md), including the generated signal-flow diagram at `docs/assets/browser-jockey-true-signal-flow.png`.
+
+Key runtime routing facts reflected in the diagram:
+
+- `initAudioContext()` creates one shared `AudioContext`, the `merger` summing bus, master analyser/recording taps, track effect nodes, and feature integrations.
+- `merger` is a plain `GainNode` used as a stereo summing bus, not a `ChannelMergerNode`.
+- `connectEffectsChain()` routes track and tab-capture sources through gain → pan → optional timestretch → optional Tone.js pitch shift → EQ → filter → reverb → delay → final mix.
+- Microphone, sampler, sequencer, Pattern Deck, and Lo-fi Station can feed the same `merger` bus.
+- Master recording taps `gainMaster` after master effects, while the oscilloscope taps `merger` before master effects.
+- Auto-tune and vocoder are optional inserts that reconnect source/final-mix nodes through their own dry/wet or band-bank output before returning to `merger`.
+
+---
+
 ## Benefits of Modularization
 
 1. **Better Organization** - Related functionality grouped together

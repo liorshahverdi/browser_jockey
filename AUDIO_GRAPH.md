@@ -9,6 +9,10 @@ All signal processing is client-side via the Web Audio API. There is one shared 
 
 ## Top-Level Signal Flow
 
+![Browser Jockey true client-side signal flow](docs/assets/browser-jockey-true-signal-flow.png)
+
+The diagram above was regenerated from a review of the Graphify AST output in `graphify-out/graph.json` (5,411 AST-origin nodes and 5,816 extracted links) plus the concrete Web Audio connection code in `app/static/js/app.js` and the audio modules. The key correction is that `merger` is a `GainNode` summing bus, not a `ChannelMergerNode`; recording and visualization are taps from specific points in the graph.
+
 ```
 Track 1 ──────────────────────────────────────────────────────────┐
 Track 2 ──────────────────────────────────────────────────────────┤
