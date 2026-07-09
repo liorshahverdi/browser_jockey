@@ -3383,7 +3383,9 @@ async function initAudioContext() {
         
         // Load timestretch AudioWorklet processor
         try {
-            await audioContext.audioWorklet.addModule('/static/js/timestretch-processor.js');
+            await audioContext.audioWorklet.addModule(
+                new URL('./timestretch-processor.js', import.meta.url)
+            );
             console.log('✅ Timestretch AudioWorklet processor loaded');
             
             // Create timestretch nodes for both tracks

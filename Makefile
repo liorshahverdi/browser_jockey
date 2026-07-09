@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs clean install test
+.PHONY: help build up down restart logs clean install dev test test-e2e start
 
 help:
 	@echo "🎵 Audio Visualizer - Available Commands:"
@@ -11,7 +11,8 @@ help:
 	@echo "  make clean      - Remove containers and images"
 	@echo "  make install    - Install dependencies locally"
 	@echo "  make dev        - Run in development mode (local)"
-	@echo "  make prod       - Run with Gunicorn (production)"
+	@echo "  make test       - Run unit/static tests"
+	@echo "  make test-e2e   - Run GitHub Pages browser smoke test"
 	@echo ""
 
 build:
@@ -55,9 +56,11 @@ dev:
 	@echo "🔧 Running in development mode..."
 	python run.py
 
-prod:
-	@echo "🚀 Running with Gunicorn (production mode)..."
-	gunicorn -w 4 -b 0.0.0.0:5001 run:app
+test:
+	python3 -m unittest discover -s tests -p 'test_*.py'
+
+test-e2e:
+	npm run test:e2e
 
 start:
 	@./start.sh

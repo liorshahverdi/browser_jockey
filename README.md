@@ -236,8 +236,10 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 ## Prerequisites
 
-- Docker and Docker Compose (recommended)
-- OR Python 3.10+ and `uv` (for local development)
+Production is a static site deployed exclusively through GitHub Pages. For local development, use either:
+
+- Python 3.10+ and `uv`, or
+- Docker and Docker Compose
 
 Install `uv` if you haven't already:
 ```bash
@@ -326,56 +328,25 @@ Available environment variables:
 
 ## Production Deployment
 
-### Deploy to Render (Recommended):
+GitHub Pages is the only supported production target. Pushes to `main` run the complete CI gate and deploy only after it passes.
 
-1. **Fork or push this repository to GitHub**
+The workflow in `.github/workflows/deploy.yml`:
 
-2. **Create a new Web Service on Render:**
-   - Go to [render.com](https://render.com) and sign in
-   - Click "New +" and select "Web Service"
-   - Connect your GitHub repository
-   - Render will automatically detect the `render.yaml` file
+1. Checks Python and JavaScript syntax.
+2. Runs backend and static-artifact tests.
+3. Runs a Playwright smoke test under the `/browser_jockey/` project subpath.
+4. Builds a minimal `dist/` artifact.
+5. Deploys `dist/` to GitHub Pages.
 
-3. **Alternatively, manual setup:**
-   - Runtime: Docker
-   - Build Command: (leave empty, uses Dockerfile)
-   - Start Command: (leave empty, uses Dockerfile CMD)
-   - Set environment variables:
-     - `FLASK_ENV=production`
-     - `FLASK_DEBUG=0`
-     - `SECRET_KEY` (generate a strong secret key)
-     - `HOST=0.0.0.0`
-     - `PORT=5001`
-
-4. **Deploy!**
-   - Render will build and deploy your application
-   - Access your app at the provided URL (e.g., `https://browser-jockey.onrender.com`)
-
-**Note**: The free tier on Render may spin down after inactivity and take ~30 seconds to restart.
-
-### Using Docker:
-
-1. Update `.env` file for production:
-```bash
-FLASK_ENV=production
-FLASK_DEBUG=0
-SECRET_KEY=generate-a-strong-secret-key
-```
-
-2. Comment out volume mounts in `docker-compose.yml`
-
-3. Run with Docker Compose:
-```bash
-docker-compose up -d
-```
-
-### Using Gunicorn (Production WSGI Server):
+Build the production artifact locally with:
 
 ```bash
-# With uv
-uv pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:5001 run:app
+python3 scripts/build_static.py
 ```
+
+Flask, Gunicorn, and Docker are retained for local development only; they are not production deployment paths.
+
+See [Recommended Order of Work](docs/RECOMMENDED_ORDER_OF_WORK.md) for the stabilization plan and completion criteria.
 
 ## Project Structure
 
@@ -410,8 +381,10 @@ browser_jockey/
 ├── requirements.txt        # Python dependencies
 ├── Dockerfile             # Docker configuration
 ├── docker-compose.yml     # Docker Compose configuration
-├── CHAT_HISTORY.md        # Development history
-├── LICENSE                # MIT License
+├── scripts/              # Static build and CI serving tools
+├── tests/                # Backend, artifact, and browser smoke tests
+├── docs/                 # Feature guides and stabilization plan
+├── LICENSE               # MIT License
 └── README.md              # This file
 ```
 
@@ -793,7 +766,8 @@ Each key has its own color, creating a unique visual experience for different so
 
 ## Technologies Used
 
-- **Backend**: Flask 3.0
+- **Production hosting**: Static GitHub Pages artifact
+- **Local development server**: Flask 3.0 (optional)
 - **Frontend**: Three.js r128 for 3D WebGL rendering
 - **Audio**: Web Audio API (AnalyserNode, GainNode, BiquadFilterNode, ConvolverNode, DelayNode, MediaStreamSource, MediaStreamDestination)
 - **Tab Capture**: getDisplayMedia API for screen/tab sharing with audio (Chrome/Edge only)
@@ -808,8 +782,8 @@ Each key has its own color, creating a unique visual experience for different so
   - MP3 encoding via lamejs (128 kbps)
 - **Recording**: MediaRecorder API (WebM format) with MIME type detection
 - **Containerization**: Docker & Docker Compose
-- **Production Server**: Gunicorn
-- **Package Management**: uv (for local development)
+- **CI browser testing**: Playwright
+- **Package Management**: uv and npm (for local development and tests)
 
 ## Browser Compatibility
 

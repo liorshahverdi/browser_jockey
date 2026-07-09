@@ -1,0 +1,12 @@
+{
+  "name": "browser-jockey",
+  "private": true,
+  "scripts": {
+    "build": "python3 scripts/build_static.py",
+    "test": "python3 -m unittest discover -s tests -p 'test_*.py'",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1"
+  }
+}

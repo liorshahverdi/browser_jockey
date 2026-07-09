@@ -64,6 +64,12 @@ logs/
 .pytest_cache/
 .coverage
 htmlcov/
+playwright-report/
+test-results/
+.ci-site/
+
+# Node
+node_modules/
 
 # Docker
 .dockerignore
