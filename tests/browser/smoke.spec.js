@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+import { test, expect } from '@playwright/test';
 
 test('GitHub Pages build boots from the project subpath', async ({ page }) => {
   const pageErrors = [];
@@ -20,14 +20,12 @@ test('GitHub Pages build boots from the project subpath', async ({ page }) => {
   await expect(page.locator('#sequencerPlayBtn')).toHaveCount(1);
   await expect(page.locator('#lofiPlay')).toHaveCount(1);
 
-  // This user gesture initializes the AudioContext and loads the AudioWorklet.
   await page.locator('#lofiPlay').click();
   await expect.poll(
     () => consoleMessages.some(message => message.includes('Timestretch AudioWorklet processor loaded')),
     { timeout: 15_000 }
   ).toBe(true);
 
-  // Fetching the same resolved asset also gives us an explicit HTTP status check.
   const workletStatus = await page.evaluate(async () => {
     const url = new URL('./app/static/js/timestretch-processor.js', document.baseURI);
     return (await fetch(url)).status;
@@ -35,4 +33,22 @@ test('GitHub Pages build boots from the project subpath', async ({ page }) => {
   expect(workletStatus).toBe(200);
   expect(failedLocalRequests).toEqual([]);
   expect(pageErrors).toEqual([]);
+});
+
+test('page shutdown closes the owned AudioContext', async ({ page }) => {
+  let closedContexts = 0;
+  await page.exposeFunction('__reportAudioContextClose', () => { closedContexts += 1; });
+  await page.addInitScript(() => {
+    const Context = window.AudioContext || window.webkitAudioContext;
+    const originalClose = Context.prototype.close;
+    Context.prototype.close = function(...args) {
+      window.__reportAudioContextClose();
+      return originalClose.apply(this, args);
+    };
+  });
+
+  await page.goto('/browser_jockey/', { waitUntil: 'domcontentloaded' });
+  await page.locator('#lofiPlay').click();
+  await page.goto('about:blank');
+  await expect.poll(() => closedContexts).toBeGreaterThan(0);
 });

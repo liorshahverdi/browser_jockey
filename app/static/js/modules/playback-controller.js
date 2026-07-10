@@ -10,6 +10,7 @@ export class PlaybackController {
         this.audioContext = audioContext;
         this.audioElement = audioElement;
         this.effectChainInput = effectChainInput; // The first node in the effects chain to connect to
+        this.effectChainDestination = null;
         this.trackId = trackId;
         
         // Audio nodes
@@ -518,7 +519,12 @@ export class PlaybackController {
      * @param {AudioNode} destination - The first node in the effects chain
      */
     connectToEffectsChain(destination) {
+        if (!destination || this.effectChainDestination === destination) return;
+        if (this.effectChainDestination) {
+            try { this.gainNode.disconnect(this.effectChainDestination); } catch (_) { /* not connected */ }
+        }
         this.gainNode.connect(destination);
+        this.effectChainDestination = destination;
         console.log(`✅ PlaybackController for ${this.trackId} connected to effects chain`);
     }
 
@@ -579,9 +585,8 @@ export class PlaybackController {
             this.bufferSourceStarted = false;
         }
         
-        if (this.gainNode) {
-            this.gainNode.disconnect();
-        }
+        if (this.gainNode) this.gainNode.disconnect();
+        this.effectChainDestination = null;
         
         console.log(`🗑️ PlaybackController for ${this.trackId} destroyed`);
     }

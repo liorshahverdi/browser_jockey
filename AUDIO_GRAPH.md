@@ -1,7 +1,7 @@
 # Browser Jockey — Audio Graph Reference
 
-**Version:** v3.27.8+
-**Last updated:** 2026-03-07
+**Version:** v3.33+
+**Last updated:** 2026-07-09
 
 All signal processing is client-side via the Web Audio API. There is one shared `AudioContext` for the entire application. Tone.js nodes are created inside that same context via `Tone.setContext(audioContext)`.
 
@@ -21,6 +21,20 @@ Tab Capture ──────────────────────�
 Sampler ───────────────────────────────────────────────────────────┤
 Sequencer (optional) ──────────────────────────────────────────────┘
 ```
+
+---
+
+## Audio graph ownership and lifecycle
+
+`modules/audio-graph-lifecycle.js` is the owner of the shared application `AudioContext` and named resource scopes.
+
+- `application` owns subsystem teardown for playback controllers, sequencer, sidechain, Pattern Deck, Lo-fi Station, transcription worker, theremin, recording loops, and capture streams.
+- `microphone` is a replaceable scope. Re-enabling the microphone or switching to tab capture disposes the previous stream, source, gain, analyser, and waveform loop before adopting the replacement.
+- `pagehide` disposes all scopes and closes the shared context unless the page is entering the browser back/forward cache.
+- The Sequencer initializes its UI without an AudioContext. Its gain graph is created later against the shared context, eliminating the previous leaked temporary context.
+- Short-lived contexts used only for file decoding are lexical resources and close in `finally` blocks, including decode failures.
+
+New audio features must either register long-lived resources in a named scope or expose an idempotent `destroy()` method adopted by the `application` scope. Direct creation of an additional long-lived `AudioContext` is not allowed.
 
 ---
 

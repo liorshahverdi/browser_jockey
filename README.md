@@ -8,10 +8,11 @@ A dual-track DJ mixing web application with advanced multi-track sequencer, inde
 
 📖 **[Full Changelog](CHANGELOG.md)** | 🎯 **[Features](docs/features/)** | 📚 **[User Guides](docs/guides/)** | 🧪 **[Testing Guide](docs/guides/TESTING_GUIDE.md)** | 🏗️ **[Module Architecture](MODULES.md)** | 🔊 **[Audio Signal Flow](AUDIO_GRAPH.md)**
 
-**Latest Update (v3.33.0)**: Strudel Pattern Deck! Live-code Tidal/Strudel patterns (kick drums, acid basslines, chord stabs, jungle breaks) directly inside the DJ app. Output routes through the master chain (limiter + recorder). BPM sync, 6 presets, volume control, sidechain duck from Track 1 or 2, and a master routing toggle.
+**Current release:** v3.33.0. Active work is focused on stabilization: deterministic audio-resource lifecycle ownership, CI-gated GitHub Pages deployment, and reduction of `app.js` complexity.
 
 ## Recent Updates
 
+- **Unreleased stabilization**: Shared `AudioContext` lifecycle owner, named resource scopes, deterministic teardown, Lo-fi Station, oscilloscope fullscreen, and expanded Python/Node/Playwright CI coverage
 - **v3.33.0**: Strudel Pattern Deck — embedded live-coding environment via `@strudel/repl`; output bridged through master chain via MediaStream; BPM sync (`setcps`), 6 presets, volume slider, sidechain from T1/T2, master routing toggle; lazy-loads on first use
 - **v3.32.0**: Master Limiter + Per-Track VU Metering + cross-deck hot cues — hard limiter on master bus; three RMS meters (Track 1, Track 2, Master) with peak hold, latching clip indicators, GR readout; `Alt+1`–`8` cross-deck hot cue triggering; hot cues/beat grid/slip now enabled when loading recordings to tracks
 - **v3.31.0**: Browser Whisper Transcription — offline speech-to-text via Transformers.js + whisper-base; per-track and master-output transcription with export
@@ -231,7 +232,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 - 🎨 **Customizable Colors** - Personalize waveform colors for each track
 - ✨ **Enhanced UI/UX** - Premium button styling with CSS Grid distribution, larger controls (80px), backdrop blur effects, and logical layout organization
 - 🏗️ **Modular Architecture** - Clean ES6 modules for maintainability (see [MODULES.md](MODULES.md))
-- 🐛 **Production Ready** - Comprehensive error handling and live performance optimizations
+- ✅ **CI-Gated Deployment** - Syntax, backend, static-artifact, lifecycle, and Playwright smoke tests run before GitHub Pages deployment
 - 🔄 **Live Looping Workflow** - Record, load to tracks, set loop markers, and layer recordings for complex arrangements
 
 ## Prerequisites
@@ -366,6 +367,7 @@ browser_jockey/
 │   │           ├── loop-controls.js
 │   │           ├── audio-utils.js
 │   │           ├── audio-effects.js
+│   │           ├── audio-graph-lifecycle.js  # Shared context/resource ownership
 │   │           ├── recording.js
 │   │           ├── microphone.js
 │   │           ├── vocoder.js
@@ -804,7 +806,11 @@ Each key has its own color, creating a unique visual experience for different so
 
 ## Version History
 
-- **v3.32.0** (Current) - Master Limiter + Per-Track VU Metering + cross-deck hot cues
+- **Unreleased stabilization** - Audio graph lifecycle ownership, deterministic resource teardown, GitHub Pages CI gate, Lo-fi Station, and oscilloscope fullscreen
+- **v3.33.0** (Current release) - Strudel Pattern Deck
+  - Live Strudel editor with presets, BPM synchronization, volume, sidechain controls, and master routing
+  - Lazy-loaded integration routed through the Browser Jockey master chain
+- **v3.32.0** - Master Limiter + Per-Track VU Metering + cross-deck hot cues
   - Hard `DynamicsCompressorNode` limiter on master bus (threshold −1 dBFS, ratio 20:1)
   - Three `AnalyserNode` side-taps: Track 1 (post-effects), Track 2 (post-effects), Master (post-limiter)
   - Horizontal RMS canvas meters; green→yellow→orange→red gradient; 3s peak hold; latching clip dot

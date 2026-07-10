@@ -1,9 +1,11 @@
 {
   "name": "browser-jockey",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "python3 scripts/build_static.py",
-    "test": "python3 -m unittest discover -s tests -p 'test_*.py'",
+    "diagram:signal-flow": "python3 scripts/generate_signal_flow_diagram.py",
+    "test": "python3 -m unittest discover -s tests -p 'test_*.py' && node --test tests/js/*.test.js",
     "test:e2e": "playwright test"
   },
   "devDependencies": {

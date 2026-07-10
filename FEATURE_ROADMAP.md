@@ -1,8 +1,8 @@
 # Feature Roadmap — Browser Jockey
 
-**Base version:** v3.27.9
-**Date:** 2026-03-14
-**Architecture:** Flask + Web Audio API + Tone.js + Three.js (~6,000 LOC, 19 JS modules)
+**Baseline:** v3.33.0 plus unreleased stabilization work
+**Last reviewed:** 2026-07-09
+**Architecture:** Static GitHub Pages frontend (optional Flask local server) + Web Audio API + Tone.js + Three.js (~21,000 JS LOC, 24 JS modules)
 
 All features are grounded in the existing architecture. Bug-fix prerequisites are noted where a feature depends on fixing a known bug first.
 

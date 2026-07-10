@@ -100,7 +100,8 @@ export class Sequencer {
         // Connect output to routing
         this.outputGain.connect(this.routingGain);
         
-        // Reconnect all existing tracks to the new outputGain
+        // Recreate every track gain against the shared context. Tracks created
+        // while the sequencer UI was context-free have no previous gain node.
         this.sequencerTracks.forEach(track => {
             if (track.gainNode) {
                 try {
@@ -108,13 +109,12 @@ export class Sequencer {
                 } catch (e) {
                     // Already disconnected
                 }
-                // Recreate track gain node with new audio context
-                const volume = track.volume || 0.8;
-                track.gainNode = this.audioContext.createGain();
-                track.gainNode.gain.value = volume;
-                track.gainNode.connect(this.outputGain);
-                console.log(`✅ Reconnected track: ${track.name} to new audio context`);
             }
+            const volume = track.volume ?? 0.8;
+            track.gainNode = this.audioContext.createGain();
+            track.gainNode.gain.value = volume;
+            track.gainNode.connect(this.outputGain);
+            console.log(`✅ Connected track: ${track.name} to shared audio context`);
         });
         
         console.log('✅ Sequencer audio routing initialized');
@@ -794,8 +794,12 @@ export class Sequencer {
                     // Read and decode audio file
                     const arrayBuffer = await file.arrayBuffer();
                     const tempContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const audioBuffer = await tempContext.decodeAudioData(arrayBuffer);
-                    tempContext.close();
+                    let audioBuffer;
+                    try {
+                        audioBuffer = await tempContext.decodeAudioData(arrayBuffer);
+                    } finally {
+                        await tempContext.close();
+                    }
                     
                     // Add clip to sequencer
                     const clipId = `drop-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -1707,8 +1711,12 @@ export class Sequencer {
                 // Read and decode audio file
                 const arrayBuffer = await file.arrayBuffer();
                 const tempContext = new (window.AudioContext || window.webkitAudioContext)();
-                const audioBuffer = await tempContext.decodeAudioData(arrayBuffer);
-                tempContext.close();
+                let audioBuffer;
+                try {
+                    audioBuffer = await tempContext.decodeAudioData(arrayBuffer);
+                } finally {
+                    await tempContext.close();
+                }
                 
                 // Add clip to sequencer
                 const clipId = `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -3210,8 +3218,11 @@ export class Sequencer {
             try {
                 const arrayBuffer = await this.recordedBlob.arrayBuffer();
                 const tempContext = new (window.AudioContext || window.webkitAudioContext)();
-                this.recordedAudioBuffer = await tempContext.decodeAudioData(arrayBuffer);
-                tempContext.close();
+                try {
+                    this.recordedAudioBuffer = await tempContext.decodeAudioData(arrayBuffer);
+                } finally {
+                    await tempContext.close();
+                }
                 
                 // Draw proper waveform
                 if (waveformCanvas) {
@@ -4410,5 +4421,29 @@ export class Sequencer {
 
         // Reset file input
         event.target.value = '';
+    }
+
+    destroy() {
+        this.stop();
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+            try { this.mediaRecorder.stop(); } catch (_) { /* already stopped */ }
+        }
+        if (this.recordingTimerInterval) clearInterval(this.recordingTimerInterval);
+        if (this.recordingAutoStopTimeout) clearTimeout(this.recordingAutoStopTimeout);
+        if (this.loopTimeout) clearTimeout(this.loopTimeout);
+        if (this.playheadInterval) clearInterval(this.playheadInterval);
+
+        for (const track of this.sequencerTracks) {
+            try { track.gainNode?.disconnect(); } catch (_) { /* already disconnected */ }
+        }
+        try { this.outputGain?.disconnect(); } catch (_) { /* already disconnected */ }
+        try { this.routingGain?.disconnect(); } catch (_) { /* already disconnected */ }
+        for (const track of this.recordingDestination?.stream?.getTracks?.() ?? []) {
+            try { track.stop(); } catch (_) { /* already stopped */ }
+        }
+        this.closeProjectPickerModal();
+        this.outputGain = null;
+        this.routingGain = null;
+        this.recordingDestination = null;
     }
 }

@@ -31,6 +31,12 @@ class StaticSiteTests(unittest.TestCase):
             with self.subTest(path=path.relative_to(self.dist)):
                 self.assertNotRegex(source, r"['\"]/static/", "Breaks GitHub Pages project subpaths")
 
+    def test_live_app_has_one_owned_context_creation_path(self):
+        source = (self.dist / "app" / "static" / "js" / "app.js").read_text()
+        self.assertEqual(source.count("audioContext = new (window.AudioContext"), 1)
+        self.assertIn("audioGraphLifecycle.setContext(audioContext)", source)
+        self.assertNotIn("tempAudioContext", source)
+
     def test_pages_artifact_excludes_backend_and_docs(self):
         self.assertFalse((self.dist / "app" / "__init__.py").exists())
         self.assertFalse((self.dist / "README.md").exists())

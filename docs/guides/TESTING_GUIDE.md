@@ -1,8 +1,14 @@
-# Testing Guide - After Refactoring
+# Browser Jockey Testing Guide
 
-## 🧪 How to Test the Refactored Code
+GitHub Pages deployment is automatically blocked unless the CI gate passes. Run the same automated checks locally before manual audio QA:
 
-Before deploying, you should test all features to ensure the refactoring didn't break anything.
+```bash
+npm test
+npm run test:e2e
+npm audit --audit-level=high
+```
+
+The automated suite covers backend/static integrity, lifecycle ownership, GitHub Pages subpath loading, AudioWorklet loading, and shared `AudioContext` shutdown. The checklist below covers behavior that still requires browser interaction or listening tests.
 
 ## 🚀 Quick Start Test
 
@@ -12,7 +18,7 @@ Before deploying, you should test all features to ensure the refactoring didn't 
    ```
 
 2. **Open in browser:**
-   - Navigate to `http://localhost:5000` (or your configured port)
+   - Navigate to `http://localhost:5001` (or your configured port)
    - Open browser console (F12) to watch for errors
 
 ## ✅ Testing Checklist

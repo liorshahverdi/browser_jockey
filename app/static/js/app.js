@@ -37,7 +37,6 @@ import {
 } from './modules/recording.js';
 import {
     enableMicrophone as enableMicrophoneModule,
-    disableMicrophone as disableMicrophoneModule,
     drawMicWaveform as drawMicWaveformModule,
     updateMicVolume,
     startMicRecording,
@@ -85,6 +84,7 @@ import { SidechainCompressor } from './modules/sidechain.js';
 import { Transcriber } from './modules/transcription.js';
 import { PatternDeck } from './modules/pattern-deck.js';
 import { LofiStation } from './modules/lofi-station.js';
+import { AudioGraphLifecycle } from './modules/audio-graph-lifecycle.js';
 
 // Get DOM elements for Track 1
 const audioFile1 = document.getElementById('audioFile1');
@@ -252,6 +252,14 @@ const patternDeck = new PatternDeck();
 
 // Lo-fi Station (F-022)
 const lofiStation = new LofiStation();
+
+// Owns long-lived audio resources and performs deterministic teardown.
+const audioGraphLifecycle = new AudioGraphLifecycle();
+
+function createTrackMediaURL(trackNumber, blob) {
+    const scope = audioGraphLifecycle.replaceScope(`track${trackNumber}-media`);
+    return scope.ownObjectURL(URL.createObjectURL(blob));
+}
 
 // Slip Mode DOM elements & state
 const slipBtn1      = document.getElementById('slipBtn1');
@@ -740,7 +748,7 @@ async function loadRecordingToTrack1() {
         audioElement1.currentTime = 0;
         
         console.log('Creating object URL from blob');
-        const url = URL.createObjectURL(blob);
+        const url = createTrackMediaURL(1, blob);
         
         console.log('Setting audio element source');
         audioElement1.src = url;
@@ -902,7 +910,7 @@ async function loadRecordingToTrack2() {
         audioElement2.currentTime = 0;
         
         console.log('Creating object URL from blob');
-        const url = URL.createObjectURL(blob);
+        const url = createTrackMediaURL(2, blob);
         
         console.log('Setting audio element source');
         audioElement2.src = url;
@@ -1331,6 +1339,14 @@ function updateCrossfader(value) {
 }
 
 // Enable microphone input
+function ownMicrophoneResources(state) {
+    const scope = audioGraphLifecycle.replaceScope('microphone');
+    scope.ownStream(state?.micStream);
+    scope.ownNode(state?.micSource);
+    scope.ownNode(state?.micGain);
+    scope.ownNode(state?.micAnalyser);
+}
+
 async function enableMicrophone() {
     try {
         // Initialize audio context if not already (this also creates merger)
@@ -1343,6 +1359,7 @@ async function enableMicrophone() {
         
         // Use module to enable microphone
         micState = await enableMicrophoneModule(audioContext, merger, shouldRoute);
+        ownMicrophoneResources(micState);
         micEnabled = true;
         
         // Update UI
@@ -1374,58 +1391,18 @@ async function enableMicrophone() {
 
 // Disable microphone input
 function disableMicrophone() {
-    // Stop recording if active
-    if (micRecordingState) {
-        stopMicRecordingHandler();
-    }
-    
-    if (micWaveformController) {
-        micWaveformController.cancel();
-        micWaveformController = null;
-    }
-    
-    // Clean up tab capture if it's active
-    if (micTabCaptureStream) {
-        micTabCaptureStream.getTracks().forEach(track => track.stop());
-        micTabCaptureStream = null;
-    }
-    if (micTabCaptureSource) {
-        try {
-            micTabCaptureSource.disconnect();
-        } catch (e) {
-            console.log('Error disconnecting mic tab capture source:', e);
-        }
-        micTabCaptureSource = null;
-    }
-    
-    if (micState) {
-        // Only call disableMicrophoneModule if it's not a tab capture
-        if (!micState.isTabCapture) {
-            disableMicrophoneModule(micState);
-        } else {
-            // For tab capture, manually disconnect
-            if (micState.micGain) {
-                try {
-                    micState.micGain.disconnect();
-                } catch (e) {
-                    console.log('Error disconnecting mic gain:', e);
-                }
-            }
-        }
-        micState = null;
-    }
-    
+    if (micRecordingState) stopMicRecordingHandler();
+
+    // Tear down processors that consume the mic before disconnecting its graph.
+    if (autotuneEnabled && autotuneSource.value === 'mic') disableAutotune();
+    if (vocoderEnabled && vocoderModulator.value === 'mic') disableVocoder();
+
+    audioGraphLifecycle.disposeScope('microphone');
+    micWaveformController = null;
+    micTabCaptureStream = null;
+    micTabCaptureSource = null;
+    micState = null;
     micEnabled = false;
-    
-    // Disable autotune if enabled and using mic source
-    if (autotuneEnabled && autotuneSource.value === 'mic') {
-        disableAutotune();
-    }
-    
-    // Disable vocoder if enabled and using mic as modulator
-    if (vocoderEnabled && vocoderModulator.value === 'mic') {
-        disableVocoder();
-    }
     
     // Update UI
     enableMicBtn.style.display = 'inline-block';
@@ -1524,6 +1501,7 @@ async function captureTabAudioAsMic() {
             micAnalyser: micAnalyser,
             isTabCapture: true // Flag to indicate this is tab capture, not real mic
         };
+        ownMicrophoneResources(micState);
         
         micEnabled = true;
         
@@ -1584,11 +1562,12 @@ async function captureTabAudioAsMic() {
 
 // Draw microphone waveform
 function drawMicWaveform() {
-    if (!micState || !micEnabled) {
-        return;
-    }
-    
-    micWaveformController = drawMicWaveformModule(micWaveform, micState.micAnalyser);
+    if (!micState || !micEnabled) return;
+
+    micWaveformController?.cancel();
+    const controller = drawMicWaveformModule(micWaveform, micState.micAnalyser);
+    micWaveformController = controller;
+    audioGraphLifecycle.scope('microphone').addCleanup(() => controller.cancel());
 }
 
 // Update microphone volume
@@ -3020,10 +2999,8 @@ async function loadSamplerSource() {
 
 // === Sampler Functions (wrappers for module functions) ===
 
-function enableSamplerWrapper() {
-    if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
+async function enableSamplerWrapper() {
+    if (!audioContext) await initAudioContext();
     
     samplerScale = samplerScaleSelect.value;
     samplerRoot = samplerRootSelect.value;
@@ -3157,12 +3134,11 @@ async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, 
     const arrayBuffer = await file.arrayBuffer();
     console.log('Got arrayBuffer:', arrayBuffer.byteLength, 'bytes');
     
-    const tempContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (!audioContext) await initAudioContext();
     let audioBuffer;
     try {
-        audioBuffer = await tempContext.decodeAudioData(arrayBuffer);
+        audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
     } catch (decodeErr) {
-        tempContext.close();
         throw new Error(
             `Could not decode audio file "${file.name}". ` +
             `The format may not be supported by this browser. ` +
@@ -3246,7 +3222,6 @@ async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, 
         console.log('Added clip to sequencer:', clipName);
     }
     
-    tempContext.close();
     console.log('loadAudioFile completed successfully');
 }
 
@@ -3380,6 +3355,7 @@ function reconnectMasterEffectChain(effectsConfig) {
 async function initAudioContext() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioGraphLifecycle.setContext(audioContext);
         
         // Load timestretch AudioWorklet processor
         try {
@@ -4265,7 +4241,7 @@ audioFile1.addEventListener('change', async (e) => {
         const wasPlaying = !audioElement1.paused;
         const currentTime = audioElement1.currentTime;
         
-        const url = URL.createObjectURL(file);
+        const url = createTrackMediaURL(1, file);
         audioElement1.src = url;
         fileName1.textContent = file.name;
         
@@ -4436,7 +4412,7 @@ audioFile2.addEventListener('change', async (e) => {
             console.log('✅ Track 2 tab capture cleaned up');
         }
         
-        const url = URL.createObjectURL(file);
+        const url = createTrackMediaURL(2, file);
         audioElement2.src = url;
         fileName2.textContent = file.name;
         
@@ -6870,9 +6846,6 @@ if (thereminRequireHand) {
         changeThereminHandRequirement(e.target.checked);
     });
 }
-
-// Cleanup theremin on page unload
-window.addEventListener('beforeunload', cleanupTheremin);
 
 // Handle sequencer recording load to track
 window.addEventListener('loadSequencerRecording', async (event) => {
@@ -9308,11 +9281,8 @@ function setupRecordedAudioConnection() {
     }
     
     // Connect recorded audio to oscilloscope when it starts playing
-    recordedAudio.addEventListener('play', () => {
-        if (!audioContext) {
-            // Create audio context if it doesn't exist
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
+    recordedAudio.addEventListener('play', async () => {
+        if (!audioContext) await initAudioContext();
         
         // Resume audio context if suspended
         if (audioContext.state === 'suspended') {
@@ -9376,23 +9346,51 @@ function setupRecordedAudioConnection() {
     });
 }
 
-// Initialize sequencer early (before audio context is created)
-// This ensures it's available when loop points are set
+// Initialize sequencer UI without creating a second AudioContext. Its audio
+// routing is created against the shared context inside initAudioContext().
 if (!sequencer) {
-    // Create a temporary audio context just for sequencer initialization
-    const tempAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-    sequencer = new Sequencer(tempAudioContext);
-    console.log('✅ Sequencer initialized early with temporary audio context');
-    
-    // When the main audio context is created, update the sequencer's reference
-    const originalInitAudioContext = initAudioContext;
-    window.updateSequencerAudioContext = function() {
-        if (sequencer && audioContext) {
-            sequencer.audioContext = audioContext;
-            console.log('✅ Sequencer audio context updated to main context');
-        }
-    };
+    sequencer = new Sequencer(null);
+    console.log('✅ Sequencer UI initialized; audio routing deferred');
 }
+
+const applicationAudioScope = audioGraphLifecycle.scope('application');
+applicationAudioScope.addCleanup(() => {
+    playbackController1?.destroy();
+    playbackController2?.destroy();
+    sidechainCompressor?.destroy();
+    patternDeck.destroy();
+    lofiStation.destroy();
+    transcriber.destroy();
+    sequencer?.destroy();
+    cleanupTheremin();
+
+    for (const stream of [tabCaptureStream1, tabCaptureStream2, micTabCaptureStream]) {
+        for (const track of stream?.getTracks?.() ?? []) {
+            try { track.stop(); } catch (_) { /* already stopped */ }
+        }
+    }
+    for (const recorder of [recordingState.mediaRecorder, micRecordingState?.mediaRecorder, mediaRecorder]) {
+        if (recorder && recorder.state !== 'inactive') {
+            try { recorder.stop(); } catch (_) { /* already stopped */ }
+        }
+    }
+    for (const id of [animationId, oscilloscopeAnimationId, recordingAnimationId, micRecordingAnimationId]) {
+        if (id !== null && id !== undefined) cancelAnimationFrame(id);
+    }
+    for (const id of [recordingInterval, micRecordingInterval]) {
+        if (id !== null && id !== undefined) clearInterval(id);
+    }
+});
+
+let audioShutdownPromise = null;
+function shutdownAudioGraph() {
+    if (!audioShutdownPromise) audioShutdownPromise = audioGraphLifecycle.disposeAll();
+    return audioShutdownPromise;
+}
+
+window.addEventListener('pagehide', (event) => {
+    if (!event.persisted) void shutdownAudioGraph();
+});
 
 // Handle sequencer play requests
 document.addEventListener('sequencerPlayRequested', async () => {

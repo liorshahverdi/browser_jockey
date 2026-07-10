@@ -2,7 +2,61 @@
 
 All notable changes to Browser Jockey are documented here.
 
-## [v3.27.8] - Current Release
+## [Unreleased]
+
+### Added
+- Audio graph lifecycle ownership with named resource scopes and deterministic page shutdown.
+- Generative Lo-fi Station and oscilloscope fullscreen controls.
+- GitHub Pages CI gate covering syntax, backend/static tests, Node lifecycle tests, dependency audit, and Playwright smoke tests.
+- Reproducible signal-flow diagram generation for SVG, HTML, and PNG.
+
+### Changed
+- GitHub Pages is now the only production deployment target; Flask and Docker are local-development options.
+- Sequencer UI initializes without creating a second long-lived `AudioContext` and binds to the shared context when audio starts.
+- Microphone, tab capture, sidechain, playback, transcription, Pattern Deck, Lo-fi Station, and Sequencer resources now have explicit teardown ownership.
+
+### Fixed
+- GitHub Pages subpath loading for the timestretch AudioWorklet.
+- Sidechain analyser connections and track object URLs are released when replaced.
+- Decode-only audio contexts close after both successful and failed decoding.
+
+## [v3.33.0]
+
+### Added
+- Strudel Pattern Deck with presets, BPM synchronization, volume, sidechain controls, and master-chain routing.
+
+## [v3.32.0]
+
+### Added
+- Master limiter and Track 1, Track 2, and master VU meters.
+- Cross-deck hot-cue shortcuts.
+
+## [v3.31.0]
+
+### Added
+- Browser Whisper transcription for tracks and master recordings.
+
+## [v3.30.0]
+
+### Changed
+- Sidechain compression now supports both Track 1 → Track 2 and Track 2 → Track 1 routing.
+
+## [v3.29.0]
+
+### Added
+- Sidechain compression with threshold, ratio, attack, release, wet/dry, and gain-reduction controls.
+
+## [v3.28.1]
+
+### Added
+- Beat grid, snap, slip mode, loop roll, and beat jump controls.
+
+## [v3.28.0]
+
+### Added
+- Eight persistent CDJ-style hot cues per track.
+
+## [v3.27.8]
 
 ### Fixed
 - **Audio element volume restoration after buffer playback** - Fixed critical bug where audio would play silently after using timestretched loop or reverse mode. The audio element volume is now properly restored when switching back to normal playback. See [current-release/RELEASE_NOTES_v3.27.8.md](current-release/RELEASE_NOTES_v3.27.8.md)
@@ -216,5 +270,6 @@ See [docs/archive/releases/](docs/archive/releases/) for detailed release notes 
 
 ---
 
-**Current Version:** v3.27.7  
-**Last Updated:** January 3, 2026
+**Current release:** v3.33.0
+
+**Unreleased stabilization updated:** July 9, 2026

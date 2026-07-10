@@ -48,7 +48,7 @@
 <rect x="790" y="160" width="155" height="75" rx="14" fill="#0f172a"/>
 <rect x="790" y="160" width="155" height="75" rx="14" fill="rgba(8, 51, 68, 0.72)" stroke="#22d3ee" stroke-width="2"/>
 <text x="867.5" y="188" text-anchor="middle" class="box-title">Sequencer</text>
-<text x="867.5" y="209" text-anchor="middle" class="box-sub">clip track gains</text>
+<text x="867.5" y="209" text-anchor="middle" class="box-sub">deferred shared context</text>
 <text x="867.5" y="224" text-anchor="middle" class="box-sub">outputGain → routingGain</text>
 <rect x="970" y="160" width="155" height="75" rx="14" fill="#0f172a"/>
 <rect x="970" y="160" width="155" height="75" rx="14" fill="rgba(8, 51, 68, 0.72)" stroke="#22d3ee" stroke-width="2"/>
@@ -211,15 +211,15 @@
 <rect x="70" y="930" width="330" height="105" rx="14" fill="#0f172a"/>
 <rect x="70" y="930" width="330" height="105" rx="14" fill="rgba(30, 41, 59, 0.75)" stroke="#94a3b8" stroke-width="2"/>
 <text x="235.0" y="958" text-anchor="middle" class="box-title">AST-confirmed orchestration</text>
-<text x="235.0" y="979" text-anchor="middle" class="box-sub">initAudioContext() calls initAudioEffects(),</text>
-<text x="235.0" y="994" text-anchor="middle" class="box-sub">connectEffectsChain(), limiter, oscilloscope;</text>
-<text x="235.0" y="1009" text-anchor="middle" class="box-sub">creates shared AudioContext + merger</text>
+<text x="235.0" y="979" text-anchor="middle" class="box-sub">AudioGraphLifecycle owns shared context;</text>
+<text x="235.0" y="994" text-anchor="middle" class="box-sub">initAudioContext() creates merger/effects;</text>
+<text x="235.0" y="1009" text-anchor="middle" class="box-sub">pagehide disposes scopes + context</text>
 <rect x="430" y="930" width="330" height="105" rx="14" fill="#0f172a"/>
 <rect x="430" y="930" width="330" height="105" rx="14" fill="rgba(30, 41, 59, 0.75)" stroke="#94a3b8" stroke-width="2"/>
-<text x="595.0" y="958" text-anchor="middle" class="box-title">Module entry points</text>
-<text x="595.0" y="979" text-anchor="middle" class="box-sub">audio-effects.connectEffectsChain()</text>
-<text x="595.0" y="994" text-anchor="middle" class="box-sub">microphone.enableMicrophone()</text>
-<text x="595.0" y="1009" text-anchor="middle" class="box-sub">autotune.enableAutotune()</text>
+<text x="595.0" y="958" text-anchor="middle" class="box-title">Ownership + entry points</text>
+<text x="595.0" y="979" text-anchor="middle" class="box-sub">audio-graph-lifecycle.js scopes</text>
+<text x="595.0" y="994" text-anchor="middle" class="box-sub">audio-effects.connectEffectsChain()</text>
+<text x="595.0" y="1009" text-anchor="middle" class="box-sub">microphone.enableMicrophone()</text>
 <rect x="790" y="930" width="330" height="105" rx="14" fill="#0f172a"/>
 <rect x="790" y="930" width="330" height="105" rx="14" fill="rgba(30, 41, 59, 0.75)" stroke="#94a3b8" stroke-width="2"/>
 <text x="955.0" y="958" text-anchor="middle" class="box-title">Feature processors</text>
@@ -231,7 +231,7 @@
 <text x="1340.0" y="958" text-anchor="middle" class="box-title">Truth notes</text>
 <text x="1340.0" y="979" text-anchor="middle" class="box-sub">Recording is post-master from gainMaster;</text>
 <text x="1340.0" y="994" text-anchor="middle" class="box-sub">oscilloscope is pre-master from merger;</text>
-<text x="1340.0" y="1009" text-anchor="middle" class="box-sub">sampler can also tap recordingDestination</text>
+<text x="1340.0" y="1009" text-anchor="middle" class="box-sub">long-lived resources have idempotent teardown</text>
 <rect x="1230" y="38" width="18" height="12" rx="3" fill="rgba(8, 51, 68, 0.72)" stroke="#22d3ee"/>
 <text x="1255" y="48" class="note">source</text>
 <rect x="1342" y="38" width="18" height="12" rx="3" fill="rgba(6, 78, 59, 0.72)" stroke="#34d399"/>
@@ -244,5 +244,5 @@
 <text x="1367" y="76" class="note">master</text>
 <rect x="1454" y="66" width="18" height="12" rx="3" fill="rgba(136, 19, 55, 0.55)" stroke="#fb7185"/>
 <text x="1479" y="76" class="note">record/insert</text>
-<text x="54" y="1070" class="note">Sources reviewed: graphify-out/graph.json; app/static/js/app.js; modules/audio-effects.js, microphone.js, autotune.js, vocoder.js, sampler.js, sequencer.js.</text>
+<text x="54" y="1070" class="note">Sources reviewed: graphify-out/graph.json; app/static/js/app.js; modules/audio-graph-lifecycle.js, audio-effects.js, microphone.js, autotune.js, vocoder.js, sampler.js, sequencer.js.</text>
 </svg></body></html>

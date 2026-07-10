@@ -57,6 +57,17 @@ Audio effects creation and routing:
 
 ---
 
+#### **audio-graph-lifecycle.js**
+Deterministic ownership for long-lived audio resources:
+- Owns the shared application `AudioContext`
+- Groups nodes, streams, workers, timers, object URLs, and cleanup callbacks into named scopes
+- Replaces dynamic scopes without leaking the previous generation
+- Disposes the complete graph on page shutdown
+
+**Exports:** `AudioGraphLifecycle`, `AudioResourceScope`
+
+---
+
 #### **recording.js**
 Master output recording:
 - `startRecording(...)` - Start recording mixed output
@@ -87,7 +98,7 @@ Keyboard sampler functionality:
 
 ---
 
-#### **microphone.js** (145 lines)
+#### **microphone.js**
 Microphone input handling and visualization:
 - `enableMicrophone(context, merger)` - Request and setup microphone access
 - `disableMicrophone(state)` - Cleanup microphone resources
@@ -100,7 +111,7 @@ Microphone input handling and visualization:
 
 ---
 
-#### **vocoder.js** (175 lines)
+#### **vocoder.js**
 Vocoder effect implementation:
 - `enableVocoder(context, micSource, carrierSource, merger, numBands)` - Create vocoder with band-pass filters
 - `disableVocoder(state)` - Cleanup vocoder resources
@@ -113,7 +124,7 @@ Vocoder effect implementation:
 
 ---
 
-#### **autotune.js** (220 lines)
+#### **autotune.js**
 Pitch correction and auto-tune:
 - `enableAutotune(context, micGain, merger, strength)` - Enable pitch correction
 - `disableAutotune(state)` - Cleanup autotune resources
@@ -130,8 +141,8 @@ Pitch correction and auto-tune:
 
 ### Main Files
 
-#### **app.js** (~2,500 lines - refactored)
-Main application file for dual-track DJ mode. Now uses all shared modules.
+#### **app.js**
+Main application integration file for dual-track DJ mode. It remains the primary refactoring target; audio lifecycle ownership is being moved into dedicated modules.
 
 Contains:
 - DOM element references
@@ -140,8 +151,8 @@ Contains:
 - Track management
 - Integration of all modules
 
-#### **simple-player.js** (~845 lines - partially refactored)
-Single-track visualizer (simpler version). Now uses shared modules for constants and key detection.
+#### **simple-player.js**
+Deprecated single-track visualizer retained for compatibility. It shares constants and key-detection utilities with the main application.
 
 ---
 
@@ -151,7 +162,8 @@ The full Web Audio graph is documented in [AUDIO_GRAPH.md](AUDIO_GRAPH.md), incl
 
 Key runtime routing facts reflected in the diagram:
 
-- `initAudioContext()` creates one shared `AudioContext`, the `merger` summing bus, master analyser/recording taps, track effect nodes, and feature integrations.
+- `AudioGraphLifecycle` owns the one long-lived application `AudioContext`; `initAudioContext()` creates its summing bus, master analyser/recording taps, track effect nodes, and feature integrations.
+- Short-lived decode-only contexts are closed in `finally` blocks and never become part of the live signal graph.
 - `merger` is a plain `GainNode` used as a stereo summing bus, not a `ChannelMergerNode`.
 - `connectEffectsChain()` routes track and tab-capture sources through gain → pan → optional timestretch → optional Tone.js pitch shift → EQ → filter → reverb → delay → final mix.
 - Microphone, sampler, sequencer, Pattern Deck, and Lo-fi Station can feed the same `merger` bus.
@@ -165,7 +177,7 @@ Key runtime routing facts reflected in the diagram:
 1. **Better Organization** - Related functionality grouped together
 2. **Reusability** - Modules can be used in both simple-player.js and app.js
 3. **Easier Testing** - Individual modules can be tested independently
-4. **Smaller Files** - Each module focuses on one responsibility
+4. **Incremental Boundaries** - New ownership boundaries can be extracted from the integration files without rewriting the complete application
 5. **Clearer Dependencies** - Import statements show what each module needs
 6. **Better Collaboration** - Team members can work on different modules without conflicts
 
@@ -198,9 +210,10 @@ These features could be extracted into modules next (optional):
 1. ✅ **microphone.js** - Microphone input handling (COMPLETED)
 2. ✅ **vocoder.js** - Vocoder effect (COMPLETED)
 3. ✅ **autotune.js** - Pitch correction (COMPLETED)
-4. **visualization.js** - Three.js visualization logic
-5. **export.js** - Audio export functionality (stems, loops)
-6. **ui-controls.js** - UI interaction helpers
+4. **deck-controller.js** - Shared Track 1/Track 2 source, playback, effects, and lifecycle ownership
+5. **visualization.js** - Three.js visualization logic
+6. **export.js** - Audio export functionality (stems, loops)
+7. **ui-controls.js** - UI interaction helpers
 
 ---
 
@@ -210,3 +223,5 @@ These features could be extracted into modules next (optional):
 - Main files must use `<script type="module">` in HTML
 - Imports must include `.js` extension
 - All paths are relative to the importing file
+- Long-lived audio resources must use an `AudioGraphLifecycle` scope or expose an idempotent `destroy()` method
+- Decode-only `AudioContext` instances must close in a `finally` block

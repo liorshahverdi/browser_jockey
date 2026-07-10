@@ -25,6 +25,7 @@ export class SidechainCompressor {
         this._buffer         = null;
         this._lastGain       = 1.0;
         this._rafId          = null;
+        this._sourceNode     = null;
         this._track2Final    = null;
         this._merger         = null;
         this._isSetUp        = false;
@@ -44,6 +45,7 @@ export class SidechainCompressor {
         if (this._isSetUp) return;
 
         // --- Track 1 tap ---
+        this._sourceNode = track1TapNode;
         this.analyserNode = this.ac.createAnalyser();
         this.analyserNode.fftSize = 256;
         this.analyserNode.smoothingTimeConstant = 0;  // raw per-block RMS
@@ -154,6 +156,7 @@ export class SidechainCompressor {
         this.ac = ac;
 
         // Tap the source track for RMS measurement (side-tap only, no audio output)
+        this._sourceNode = sourceNode;
         this.analyserNode = ac.createAnalyser();
         this.analyserNode.fftSize = 256;
         this.analyserNode.smoothingTimeConstant = 0;
@@ -169,6 +172,9 @@ export class SidechainCompressor {
 
     destroy() {
         this.disable();
+        if (this._sourceNode && this.analyserNode) {
+            try { this._sourceNode.disconnect(this.analyserNode); } catch (e) {}
+        }
         if (this.analyserNode) try { this.analyserNode.disconnect(); } catch (e) {}
         if (this._isSetUp && this._track2Final && this.duckGain && this._merger) {
             try {
@@ -177,6 +183,11 @@ export class SidechainCompressor {
                 this._track2Final.connect(this._merger);
             } catch (e) {}
         }
+        this._sourceNode = null;
+        this.analyserNode = null;
+        this.duckGain = null;
+        this._track2Final = null;
+        this._merger = null;
         this._isSetUp = false;
     }
 }

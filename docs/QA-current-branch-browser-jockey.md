@@ -1,5 +1,7 @@
 # Browser Jockey Current-Branch QA Report
 
+> **Historical QA snapshot:** This report describes commit `66e01af` on the former release branch. Issue #1 was fixed by commit `3172032`; Issues #2 and #3 remain follow-up cleanup items. Current release gating is documented in `.github/workflows/deploy.yml` and `docs/RECOMMENDED_ORDER_OF_WORK.md`.
+
 **Target:** `http://127.0.0.1:5017/`  
 **Branch:** `release/sequencer-save-playback-responsive`  
 **Commit:** `66e01af`  

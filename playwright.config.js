@@ -1,6 +1,6 @@
-const { defineConfig } = require('@playwright/test');
+import { defineConfig } from '@playwright/test';
 
-module.exports = defineConfig({
+export default defineConfig({
   testDir: './tests/browser',
   timeout: 30_000,
   retries: process.env.CI ? 1 : 0,

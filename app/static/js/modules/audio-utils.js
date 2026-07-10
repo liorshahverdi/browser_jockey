@@ -299,26 +299,23 @@ export function detectMusicalKey(analyser, dataArray, audioContext) {
 export async function loadAudioFile(file, canvas, bpmDisplay, audioElement, zoomState, keyDisplay) {
     const arrayBuffer = await file.arrayBuffer();
     const tempContext = new (window.AudioContext || window.webkitAudioContext)();
-    const audioBuffer = await tempContext.decodeAudioData(arrayBuffer);
-    
-    // Store audio buffer for zoom
-    if (zoomState) {
-        zoomState.audioBuffer = audioBuffer;
-        zoomState.level = 1.0;
-        zoomState.offset = 0.0;
+    try {
+        const audioBuffer = await tempContext.decodeAudioData(arrayBuffer);
+
+        if (zoomState) {
+            zoomState.audioBuffer = audioBuffer;
+            zoomState.level = 1.0;
+            zoomState.offset = 0.0;
+        }
+
+        drawWaveform(canvas, audioBuffer);
+        const bpm = detectBPM(audioBuffer);
+        bpmDisplay.textContent = bpm > 0 ? bpm : '--';
+
+        const key = detectKey(audioBuffer);
+        if (keyDisplay) keyDisplay.textContent = key;
+        return audioBuffer;
+    } finally {
+        await tempContext.close();
     }
-    
-    drawWaveform(canvas, audioBuffer);
-    
-    const bpm = detectBPM(audioBuffer);
-    bpmDisplay.textContent = bpm > 0 ? bpm : '--';
-    
-    const key = detectKey(audioBuffer);
-    if (keyDisplay) {
-        keyDisplay.textContent = key;
-    }
-    
-    tempContext.close();
-    
-    return audioBuffer;
 }

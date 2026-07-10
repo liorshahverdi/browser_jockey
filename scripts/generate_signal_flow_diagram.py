@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 from xml.sax.saxutils import escape
 
 OUT = Path(__file__).resolve().parents[1] / "docs" / "assets"
@@ -85,7 +86,7 @@ rect(70,160,155,75,"input","File / <audio>","Track 1 + Track 2\nMediaElementSour
 rect(250,160,155,75,"input","Tab Capture","getDisplayMedia audio\nas track or mic")
 rect(430,160,155,75,"input","Microphone","getUserMedia → micSource\necho/noise opts")
 rect(610,160,155,75,"input","Sampler","AudioBufferSource\nper active key")
-rect(790,160,155,75,"input","Sequencer","clip track gains\noutputGain → routingGain")
+rect(790,160,155,75,"input","Sequencer","deferred shared context\noutputGain → routingGain")
 rect(970,160,155,75,"input","Pattern Deck","initialized with\n(audioContext, merger)")
 rect(1150,160,155,75,"input","Lo-fi Station","initialized with\n(audioContext, merger)")
 
@@ -151,10 +152,10 @@ elbow([(1472,762),(1472,790),(1333,790),(1333,805)],color="#fb7185",marker="arro
 line(1408,834,1435,834,color="#fb7185",marker="arrowRose")
 
 # Call graph provenance cards
-rect(70,930,330,105,"external","AST-confirmed orchestration","initAudioContext() calls initAudioEffects(),\nconnectEffectsChain(), limiter, oscilloscope;\ncreates shared AudioContext + merger")
-rect(430,930,330,105,"external","Module entry points","audio-effects.connectEffectsChain()\nmicrophone.enableMicrophone()\nautotune.enableAutotune()")
+rect(70,930,330,105,"external","AST-confirmed orchestration","AudioGraphLifecycle owns shared context;\ninitAudioContext() creates merger/effects;\npagehide disposes scopes + context")
+rect(430,930,330,105,"external","Ownership + entry points","audio-graph-lifecycle.js scopes\naudio-effects.connectEffectsChain()\nmicrophone.enableMicrophone()")
 rect(790,930,330,105,"external","Feature processors","vocoder.enableVocoder() creates band bank;\nsampler.playSamplerNote() creates note source;\nSequencer.initializeAudioRouting() creates routingGain")
-rect(1150,930,380,105,"external","Truth notes","Recording is post-master from gainMaster;\noscilloscope is pre-master from merger;\nsampler can also tap recordingDestination")
+rect(1150,930,380,105,"external","Truth notes","Recording is post-master from gainMaster;\noscilloscope is pre-master from merger;\nlong-lived resources have idempotent teardown")
 
 # Legend
 legend_x, legend_y = 1230, 38
@@ -164,7 +165,7 @@ for i,(kind,label) in enumerate([("input","source"),("track","track chain"),("ef
     add(f'<rect x="{x}" y="{y}" width="18" height="12" rx="3" fill="{fill}" stroke="{stroke}"/>')
     add(f'<text x="{x+25}" y="{y+10}" class="note">{label}</text>')
 
-add('<text x="54" y="1070" class="note">Sources reviewed: graphify-out/graph.json; app/static/js/app.js; modules/audio-effects.js, microphone.js, autotune.js, vocoder.js, sampler.js, sequencer.js.</text>')
+add('<text x="54" y="1070" class="note">Sources reviewed: graphify-out/graph.json; app/static/js/app.js; modules/audio-graph-lifecycle.js, audio-effects.js, microphone.js, autotune.js, vocoder.js, sampler.js, sequencer.js.</text>')
 add('</svg>')
 
 svg = "\n".join(parts)
@@ -172,3 +173,7 @@ svg_path.write_text(svg)
 html_path.write_text(f"""<!doctype html><html><head><meta charset='utf-8'><title>Browser Jockey Signal Flow</title><style>body{{margin:0;background:#020617}}svg{{display:block}}</style></head><body>{svg}</body></html>""")
 print(svg_path)
 print(html_path)
+subprocess.run(
+    ["node", str(Path(__file__).with_name("render_signal_flow_png.mjs"))],
+    check=True,
+)

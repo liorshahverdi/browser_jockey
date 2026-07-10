@@ -605,4 +605,20 @@ export class LofiStation {
         this._crackleSource = null;
         this._hissSource = null;
     }
+
+    destroy() {
+        this.stop();
+        try { this.wowLfo?.stop(); } catch (_) { /* already stopped */ }
+        const nodes = [
+            this.drumGain, this.chordGain, this.melodyGain, this.ambientGain,
+            this.preFxGain, this.lofiFilter, this.waveShaperNode,
+            this.bitcrusherNode, this.wowLfo, this.wowLfoGain, this.wowDelay,
+            this.outputGain, this.routingGain,
+        ];
+        for (const node of nodes) {
+            try { node?.disconnect(); } catch (_) { /* already disconnected */ }
+        }
+        this._activeChordOscs = [];
+        this._initialized = false;
+    }
 }

@@ -50,13 +50,17 @@ GitHub Pages deployment runs only after the complete test job succeeds.
 
 ## Phase 4 — Reduce application complexity
 
-**Status:** Planned
+**Status:** In progress
 
+- ✅ Added `AudioGraphLifecycle` as the owner of the shared context and named resource scopes.
+- ✅ Removed the Sequencer's second long-lived AudioContext; routing is deferred to the shared context.
+- ✅ Added deterministic microphone replacement and page-shutdown teardown.
+- ✅ Added idempotent teardown for playback, sidechain, Pattern Deck, Lo-fi Station, transcription, and Sequencer resources.
+- ✅ Ensured short-lived decode contexts close on both success and failure.
 - Introduce one deck controller per track.
-- Give the audio graph a single owner and explicit connect/disconnect lifecycle.
+- Move remaining feature-specific nodes and timers into named lifecycle scopes.
 - Separate DOM binding from audio behavior.
 - Split sequencer playback, persistence, rendering, recording, and UI concerns.
-- Ensure every worker, stream, timer, RAF callback, object URL, and audio node has cleanup ownership.
 - Replace production console noise with a small opt-in debug logger.
 
 **Exit criteria:** `app.js` becomes orchestration rather than implementation, and major audio workflows can be tested without the full DOM.

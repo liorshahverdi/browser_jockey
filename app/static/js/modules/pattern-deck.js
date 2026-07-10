@@ -184,7 +184,7 @@ export class PatternDeck {
       console.warn('PatternDeck.enableSidechain: sourceGainNode not ready');
       return;
     }
-    this.sidechain?.disable();
+    this.sidechain?.destroy();
     this.sidechain = new SidechainCompressor();
     this.sidechain.trySetupPatternDeck(
       sourceGainNode, this.strudelOutputGain, this.strudelDuckGain, this.audioContext
@@ -192,8 +192,20 @@ export class PatternDeck {
   }
 
   disableSidechain() {
-    this.sidechain?.disable();
+    this.sidechain?.destroy();
     this.sidechain = null;
+  }
+
+  destroy() {
+    this.stop();
+    this.disableSidechain();
+    for (const node of [this.strudelAnalyser, this.strudelDuckGain, this.strudelOutputGain]) {
+      try { node?.disconnect(); } catch (_) { /* already disconnected */ }
+    }
+    this.strudelAnalyser = null;
+    this.strudelDuckGain = null;
+    this.strudelOutputGain = null;
+    this._initialized = false;
   }
 
   // ── Lazy load ─────────────────────────────────────────────────────────────

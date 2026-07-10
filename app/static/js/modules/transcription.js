@@ -43,6 +43,12 @@ export class Transcriber {
             this.onError?.(`Audio preparation failed: ${e.message}`);
         }
     }
+
+    destroy() {
+        this._worker?.terminate();
+        this._worker = null;
+        this._modelReady = false;
+    }
 }
 
 async function prepareAudio(blob, audioContext) {
